@@ -855,59 +855,73 @@ function applyUniverse(u){
   document.body.style.background=u.bg;
 }
 
+let wormholeT=0;
+let wormholeActive=false;
+
 function triggerWormhole(){
-  // Animation trou de ver
   state='wormhole';
-  let t=0;
-  const animate=()=>{
-    t+=0.04;
-    ctx.fillStyle=`rgba(${Math.floor(t*10)},0,${Math.floor(t*20)},0.15)`;
-    ctx.fillRect(0,0,W,H);
-    // Spirale lumineuse
-    const u=UNIVERSES[currentUniverse];
-    ctx.save();ctx.translate(W/2,H/2);
-    for(let i=0;i<12;i++){
-      const a=i/12*Math.PI*2+t*3;
-      const r=(1-t/Math.PI)*Math.min(W,H)*0.6;
-      ctx.strokeStyle=u.primary+Math.floor((1-t/Math.PI)*200).toString(16).padStart(2,'0');
-      ctx.lineWidth=2;ctx.beginPath();
-      ctx.arc(0,0,r*(0.5+i*0.05),a,a+0.5);ctx.stroke();
-    }
-    ctx.restore();
-    if(t<Math.PI){
-      requestAnimationFrame(animate);
-    }else{
-      // Flash blanc
-      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
-      // Changer d'univers
-      currentUniverse=(currentUniverse+1)%UNIVERSES.length;
-      sectorCount++;
-      applyUniverse(UNIVERSES[currentUniverse]);
-      // Recréer étoiles avec nouvelles couleurs
-      initStars();
-      // Repositionner le vaisseau
-      ship.vx*=0.3;ship.vy*=0.3;
-      // Réactiver le signal pour le prochain secteur (plus loin)
-      signalActive=false;signalPos=null;signalReached=false;
-      missionBarEl2.classList.remove('visible');
-      // Journal
-      journalFullText=`Secteur ${sectorCount+1}. ${UNIVERSES[currentUniverse].name}. Les étoiles ici ont une couleur que je n'avais jamais vue.`;
-      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-      journalEl.classList.add('active');
-      journalDay.textContent='🌀 SAUT DIMENSIONNEL';journalText.textContent='';
-      // Log et son
-      logEvent(`🌀 ${UNIVERSES[currentUniverse].name}`,'planet');
-      mdwReact('wormhole');
-      playTone(220,'sine',0.6,0.2);setTimeout(()=>playTone(440,'sine',0.8,0.15),400);setTimeout(()=>playTone(880,'sine',1.0,0.1),800);
-      // Reprendre le jeu
-      setTimeout(()=>{
-        state='playing';
-        // Nouveau signal plus loin
-        setTimeout(()=>activateSignal(),5000);
-      },1000);
-    }
-  };
-  animate();
+  wormholeT=0;
+  wormholeActive=true;
+}
+
+function updateWormhole(dt){
+  if(!wormholeActive)return;
+  wormholeT+=dt*1.2; // vitesse de l'animation
+
+  if(wormholeT>=Math.PI){
+    // Transition terminée
+    wormholeActive=false;
+    // Flash blanc
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+    // Changer d'univers
+    currentUniverse=(currentUniverse+1)%UNIVERSES.length;
+    sectorCount++;
+    applyUniverse(UNIVERSES[currentUniverse]);
+    initStars();
+    ship.vx*=0.3;ship.vy*=0.3;
+    signalActive=false;signalPos=null;signalReached=false;
+    missionBarEl2.classList.remove('visible');
+    journalFullText=`Secteur ${sectorCount+1}. ${UNIVERSES[currentUniverse].name}. Les étoiles ici ont une couleur que je n'avais jamais vue.`;
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');
+    journalDay.textContent='🌀 SAUT DIMENSIONNEL';journalText.textContent='';
+    logEvent(`🌀 ${UNIVERSES[currentUniverse].name}`,'planet');
+    mdwReact('wormhole');
+    playTone(220,'sine',0.6,0.2);
+    setTimeout(()=>playTone(440,'sine',0.8,0.15),400);
+    setTimeout(()=>playTone(880,'sine',1.0,0.1),800);
+    saveGame();
+    // Reprendre après 1s
+    setTimeout(()=>{
+      state='playing';
+      setTimeout(()=>activateSignal(),5000);
+    },800);
+  }
+}
+
+function drawWormhole(){
+  if(!wormholeActive)return;
+  const t=wormholeT;
+  // Fond qui s'assombrit
+  ctx.fillStyle=`rgba(0,0,0,${Math.min(0.9,t/Math.PI)})`;
+  ctx.fillRect(0,0,W,H);
+  // Spirale lumineuse centrée sur le vaisseau
+  const [sx,sy]=worldToScreen(ship.x,ship.y);
+  ctx.save();ctx.translate(sx,sy);
+  const u=UNIVERSES[currentUniverse];
+  for(let i=0;i<12;i++){
+    const a=i/12*Math.PI*2+t*4;
+    const r=(1-t/Math.PI)*Math.min(W,H)*0.5*(0.3+i*0.06);
+    const alpha=Math.floor((1-t/Math.PI)*200).toString(16).padStart(2,'0');
+    ctx.strokeStyle=u.primary+alpha;
+    ctx.lineWidth=1.5+i*0.2;ctx.shadowColor=u.primary;ctx.shadowBlur=8;
+    ctx.beginPath();ctx.arc(0,0,r,a,a+0.6);ctx.stroke();
+  }
+  // Cercle central qui pulse
+  const cg=ctx.createRadialGradient(0,0,0,0,0,40*(1-t/Math.PI));
+  cg.addColorStop(0,'#ffffff');cg.addColorStop(0.5,u.primary+'aa');cg.addColorStop(1,'transparent');
+  ctx.fillStyle=cg;ctx.beginPath();ctx.arc(0,0,40*(1-t/Math.PI),0,Math.PI*2);ctx.fill();
+  ctx.restore();
 }
 
 
@@ -1335,6 +1349,7 @@ function startGame(){
   clonePhase=0;clonePhaseTimer=0;cloneMessageSent=false;cloneHasTriggered=false;
   rareEventTimer=30+Math.random()*30;
   comets=[];quasars=[];auroraAngle=0;phenomena=[];radarGlitch=0;
+  wormholeActive=false;wormholeT=0;
   BODY_MASSES.blackhole=2000; // reset masse trou noir
   initStars();
   spawnInitialDebris();
@@ -3569,33 +3584,41 @@ function gameLoop(ts){
   ctx.fillStyle='#000902';ctx.fillRect(0,0,W,H);
 
   if(state==='playing'||state==='dying'||state==='wormhole'){
-    if(state==='playing'){
-      gameTime+=dt;score+=dt*10*difficulty;
-      updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
-      updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateParticles(dt);updateFloatingTexts(dt);
-      updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
-      updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-      checkLore();
-      updateAmbient();
-      // Timer notes pentatoniques
-      if(musicDelay){
-        musicTimer-=dt;
-        if(musicTimer<=0){
-          const danger=Math.max(0,1-Math.min(oxygen,hull,energy)/40);
-          playPentaNote(danger);
-          musicTimer=musicInterval*(0.8+Math.random()*0.4);
+    if(state==='wormhole'){
+      // Animation trou de ver — rendu minimal + animation
+      updateWormhole(dt);
+      ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
+      drawNebulae();drawStars(ts);
+      drawShip();
+      drawWormhole();
+    } else {
+      if(state==='playing'){
+        gameTime+=dt;score+=dt*10*difficulty;
+        updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
+        updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
+        checkLore();
+        updateAmbient();
+        if(musicDelay){
+          musicTimer-=dt;
+          if(musicTimer<=0){
+            const danger=Math.max(0,1-Math.min(oxygen,hull,energy)/40);
+            playPentaNote(danger);
+            musicTimer=musicInterval*(0.8+Math.random()*0.4);
+          }
         }
+        checkDead();
       }
-      checkDead();
+      drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
+      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawPlanets();
+      drawTouchTarget();drawClickRipples();
+      drawParticles();drawDebris();drawCapsules();
+      drawFloatingTexts();drawWrecks();drawTradePosts();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
+      if(nightMode)drawNightMode();
+      drawRadar();
+      if(state==='playing')updateHUD();
     }
-    drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
-    drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawPlanets();
-    drawTouchTarget();drawClickRipples();
-    drawParticles();drawDebris();drawCapsules();
-    drawFloatingTexts();drawWrecks();drawTradePosts();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
-    if(nightMode)drawNightMode();
-    drawRadar();
-    if(state==='playing')updateHUD();
   }
   requestAnimationFrame(gameLoop);
 }
