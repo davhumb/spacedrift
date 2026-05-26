@@ -26,17 +26,17 @@
   #radar-planets{font-size:6px;letter-spacing:1px;color:#a070ff;text-align:center;}
 
   /* JOURNAL — bas gauche */
-  #journal{position:absolute;bottom:72px;left:12px;width:175px;pointer-events:none;display:none;z-index:10;}
+  #journal{position:absolute;bottom:72px;left:12px;width:190px;pointer-events:none;display:none;z-index:10;}
   #journal.active{display:block;}
-  #journal-inner{background:rgba(0,9,2,0.92);border:1px solid rgba(0,255,65,0.15);border-left:2px solid var(--green-dim);padding:8px 10px;}
-  #journal-day{font-size:7px;letter-spacing:2px;color:var(--green-dim);margin-bottom:4px;}
-  #journal-text{font-size:8px;color:var(--green);line-height:1.6;letter-spacing:0.5px;min-height:32px;}
+  #journal-inner{background:rgba(0,9,2,0.95);border:1px solid rgba(0,255,65,0.2);border-left:2px solid var(--green-dim);padding:10px 12px;}
+  #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:5px;}
+  #journal-text{font-size:11px;color:var(--green);line-height:1.7;letter-spacing:0.3px;min-height:40px;max-height:80px;overflow:hidden;}
 
   /* GAUGES */
   #gauges{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:16px;padding:8px 12px;background:rgba(0,9,2,0.7);}
 
-  /* PASSAGERS */
-  #passengers{position:absolute;bottom:72px;right:12px;pointer-events:none;text-align:right;z-index:10;}
+  /* PASSAGERS — au dessus des jauges, côté droit */
+  #passengers{position:absolute;bottom:72px;right:12px;pointer-events:none;text-align:right;z-index:10;max-width:160px;}
   .passenger-slot{font-size:8px;letter-spacing:1px;color:var(--green-dim);margin-bottom:3px;}
   .passenger-slot.active{color:var(--amber);}
 
@@ -128,6 +128,13 @@
   /* EFFETS COSMOLOGIQUES */
   #cosmo-overlay{position:fixed;inset:0;pointer-events:none;z-index:45;opacity:0;transition:opacity 1s;}
 
+  /* TITRE — V inline avec OID DRIFT */
+  #title-row{display:flex;align-items:center;justify-content:center;gap:2px;line-height:1;}
+  #title-canvas{display:block;vertical-align:middle;position:relative;top:4px;}
+  #title-oid{font-family:'VT323',monospace;font-size:clamp(48px,12vw,80px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:4px;line-height:1;}
+
+  /* FADE TRANSITION */
+  #launch-fade{position:fixed;inset:0;background:#000902;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.8s;}
   .csp-credit{font-size:7px;letter-spacing:3px;color:rgba(0,255,65,0.25);text-align:center;margin-top:8px;text-transform:uppercase;}
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   .blink{animation:blink 1s infinite;}
@@ -301,8 +308,13 @@
   </div>
 </div>
 
+<div id="launch-fade"></div>
+
 <div id="screen">
-  <div class="big-title">VOID DRIFT</div>
+  <div id="title-row">
+    <canvas id="title-canvas" width="70" height="70"></canvas>
+    <div id="title-oid">OID DRIFT</div>
+  </div>
   <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
   <div class="controls-hint">TAPEZ POUR PROPULSER · PINCEZ POUR ZOOMER<br>COLLECTEZ · EXPLOREZ · SURVIVEZ</div>
   <div class="diff-row">
@@ -333,7 +345,84 @@ const pcVal=document.getElementById('pc-val'),diffBadge=document.getElementById(
 const achEl=document.getElementById('achievement');
 const achIcon=document.getElementById('ach-icon'),achName=document.getElementById('ach-name'),achDesc=document.getElementById('ach-desc');
 const decompEl=document.getElementById('decomp');
-let nightMode=false; // conservé pour compatibilité drawNightMode mais désactivé
+let nightMode=false;
+
+// ── Titre animé — le V est le vaisseau ────────
+const titleCanvas=document.getElementById('title-canvas');
+const tctx=titleCanvas?titleCanvas.getContext('2d'):null;
+const launchFade=document.getElementById('launch-fade');
+
+function drawShipAt(c,cx,cy,angle,scale,thrusting=false,thrustPower=0,modules=[]){
+  c.save();c.translate(cx,cy);c.rotate(angle);
+  const s=scale;
+  const grd=c.createRadialGradient(0,0,0,0,0,25*s);
+  grd.addColorStop(0,'rgba(0,255,65,0.15)');grd.addColorStop(1,'transparent');
+  c.fillStyle=grd;c.beginPath();c.arc(0,0,25*s,0,Math.PI*2);c.fill();
+  if(typeof SHIP_MODULES!=='undefined'){
+    for(const key of modules){
+      const m=SHIP_MODULES[key];
+      if(m&&m.draw){c.save();c.shadowColor=m.color;c.shadowBlur=4;m.draw(c,s);c.restore();}
+    }
+  }
+  c.strokeStyle='#00ff41';c.lineWidth=1.5;c.shadowColor='#00ff41';c.shadowBlur=8;
+  c.beginPath();c.moveTo(14*s,0);c.lineTo(-10*s,-8*s);c.lineTo(-6*s,0);c.lineTo(-10*s,8*s);c.closePath();c.stroke();
+  c.strokeStyle='#aaffcc';c.lineWidth=1;c.beginPath();c.arc(4*s,0,3*s,0,Math.PI*2);c.stroke();
+  if(thrusting){
+    const fl=(8+thrustPower*14+Math.random()*4)*s;
+    c.strokeStyle=`rgba(255,${Math.floor(170+Math.random()*85)},0,0.8)`;
+    c.lineWidth=(2+thrustPower*2)*s;c.shadowColor='#ffaa00';c.shadowBlur=12;
+    c.beginPath();c.moveTo(-7*s,0);c.lineTo(-7*s-fl,(Math.random()-0.5)*4*s);c.stroke();
+  }
+  c.restore();
+}
+
+let titleShipAngle=Math.PI/2; // pointe vers le BAS = forme un V
+let titleShipX=35,titleShipY=32;
+let titleShipVx=0,titleShipVy=0;
+let titleAnimating=false,titlePulse=0;
+
+function drawTitleShip(){
+  if(!tctx||!titleCanvas)return;
+  tctx.clearRect(0,0,70,70);
+  titlePulse+=0.05;
+  const wobble=titleAnimating?0:Math.sin(titlePulse)*0.04;
+  const mods=typeof installedModules!=='undefined'?installedModules:[];
+  drawShipAt(tctx,titleShipX,titleShipY,titleShipAngle+wobble,1.3,titleAnimating,titleAnimating?0.8:0,mods);
+}
+
+let titleLoopRunning=false;
+function titleLoop(){
+  if(typeof state==='undefined'||state!=='menu'&&state!=='dead'){titleLoopRunning=false;return;}
+  titleLoopRunning=true;
+  drawTitleShip();
+  requestAnimationFrame(titleLoop);
+}
+
+function launchSequence(callback){
+  titleAnimating=true;
+  let t=0;
+  // Le vaisseau pointe vers le bas (angle=PI/2), propulsion = vers le haut
+  const step=()=>{
+    t+=0.016;
+    const thrust=Math.min(1,t*0.8);
+    // Propulsion vers le haut
+    titleShipVy-=0.05*thrust;
+    titleShipX+=titleShipVx;titleShipY+=titleShipVy;
+    drawTitleShip();
+    if(t>0.8){launchFade.style.opacity=Math.min(1,(t-0.8)/0.6);}
+    if(t<1.4){requestAnimationFrame(step);}
+    else{
+      titleShipX=35;titleShipY=32;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+      setTimeout(()=>{
+        callback();
+        setTimeout(()=>{launchFade.style.opacity='0';},300);
+      },100);
+    }
+  };
+  step();
+}
+
+// titleLoop() démarré après l'init (voir fin du script)
 
 // ── Succès ────────────────────────────────────
 const ACHIEVEMENTS=[
@@ -355,6 +444,7 @@ const ACHIEVEMENTS=[
   {id:'mdw',         icon:'🤖', name:'MDW TROUVÉ',         desc:'Découvrir le robot dans une épave', check:()=>false},
   {id:'module',      icon:'🔩', name:'PREMIER MODULE',      desc:'Installer un module sur le vaisseau', check:()=>false},
   {id:'fullybuilt',  icon:'🚀', name:'VAISSEAU COMPLET',    desc:'Installer 5 modules', check:()=>installedModules.length>=5},
+  {id:'enemy',       icon:'⚔️', name:'PREMIER COMBAT',      desc:'Détruire un ennemi',  check:()=>false},
 ];
 let unlockedAch=new Set();
 let achQueue=[];
@@ -1321,6 +1411,7 @@ function startGame(){
   journalShownDays=new Set();journalActive=false;journalEl.classList.remove('active');
   debris=[];capsules=[];planets=[];particles=[];clickRipples=[];floatingTexts=[];
   torpedoes=[];wrecks=[];passengers=[];wrecksFound=0;torpedoReady=true;torpedoCooldown=0;
+  enemies=[];enemyTorpedoes=[];gravWaves=[];
   passengersEl.innerHTML='';window._radarBonus=0;
   spawnTimer=0;capsuleTimer=0;eventTimer=0;activeEvent=null;
   touchTarget=null;touchActive=false;
@@ -1865,11 +1956,12 @@ function drawAnomalyPlanet(){
 
 // Sélection et déclenchement événements rares
 const RARE_EVENTS=[
-  {name:'transmission',  minDay:2,  weight:3, trigger:()=>triggerTransmission()},
-  {name:'ghost',         minDay:3,  weight:2, trigger:()=>spawnGhostShip()},
-  {name:'radarecho',     minDay:2,  weight:2, trigger:()=>triggerRadarEcho()},
-  {name:'void',          minDay:4,  weight:1, trigger:()=>triggerVoidSector()},
-  {name:'anomaly',       minDay:3,  weight:2, trigger:()=>spawnAnomalyPlanet()},
+  {name:'transmission',  minDay:2, weight:3, trigger:()=>triggerTransmission()},
+  {name:'ghost',         minDay:3, weight:2, trigger:()=>spawnGhostShip()},
+  {name:'radarecho',     minDay:2, weight:2, trigger:()=>triggerRadarEcho()},
+  {name:'void',          minDay:4, weight:1, trigger:()=>triggerVoidSector()},
+  {name:'anomaly',       minDay:3, weight:2, trigger:()=>spawnAnomalyPlanet()},
+  {name:'neutronstar',   minDay:5, weight:1, trigger:()=>addNeutronStar()},
 ];
 
 // ── BLOC 1 — Phénomènes cosmologiques ─────────
@@ -2144,12 +2236,11 @@ function updateSpawning(dt){
   difficulty=1+gameTime/120*0.3;
   spawnTimer-=dt;if(spawnTimer<=0){spawnDebris(true);spawnTimer=Math.max(2,5-difficulty*0.4);}
   capsuleTimer-=dt;if(capsuleTimer<=0){spawnCapsule();capsuleTimer=7+Math.random()*5;}
-  // Planet spawning
   if(gameTime>30&&Math.random()<0.003*dt*60&&planets.filter(p=>!p.discovered).length<4)spawnPlanet();
-  // Épaves — une toutes les ~2 minutes
   if(gameTime>20&&Math.random()<0.001*dt*60&&wrecks.filter(w=>!w.discovered).length<3)spawnWreck();
-  // Phenomena spawning
   if(gameTime>45&&phenomena.length<3&&Math.random()<0.001*dt*60)spawnPhenomenon();
+  // Ennemis — après jour 7
+  if(survivalDay>=7&&Math.random()<0.0008*dt*60&&enemies.length<4)spawnEnemy();
   eventTimer-=dt;
   if(activeEvent){eventDuration-=dt;activeEvent.onTick(dt);if(eventDuration<=0){logEvent(activeEvent.name+' TERMINÉ','ok');activeEvent=null;}}
   else if(eventTimer<=0&&gameTime>30){
@@ -2161,8 +2252,430 @@ function updateSpawning(dt){
   if(eventTimer<=0&&!activeEvent)eventTimer=30+Math.random()*20;
 }
 
-// ── Phenomena (Pulsar · Trou Noir · Magnétar · Éruption) ──
-// ── Torpille ──────────────────────────────────
+// ── Vaisseaux ennemis ─────────────────────────
+// Physique newtonienne — ils obéissent aux mêmes lois que le joueur
+
+const ENEMY_JOURNALS=[
+  "Jour 34. Je ne me souviens plus de mon nom. Je prends ce dont j'ai besoin.",
+  "Les autres vaisseaux ont des ressources. Je n'ai plus le choix.",
+  "Signal perdu. Cap perdu. Il ne reste que la survie.",
+  "Combien de fois ai-je traversé ce trou ? Je ne sais plus compter.",
+  "J'ai vu un autre vaisseau aujourd'hui. Il avait l'air de savoir où aller. Je l'ai suivi. Puis je l'ai pillé.",
+  "La boucle. Toujours la boucle. Mais moi je m'en souviens. Et ça fait mal.",
+];
+
+const ENEMY_TYPES={
+  pillard:{
+    color:'#ffaa20', label:'PILLARD',
+    mdw:"Pillard classe Rho. Ils cherchent des métaux dans les épaves. Évitez les épaves proches d'eux.",
+    init(e){e.target=null;e.state='patrol';e.hull=40+difficulty*10;e.maxHull=e.hull;e.fireTimer=999;},
+    update(e,dt){
+      // Cherche l'épave la plus proche non pillée
+      let closest=null,minD=800;
+      for(const w of wrecks){
+        if(w.discovered)continue;
+        const d=Math.sqrt((w.x-e.x)**2+(w.y-e.y)**2);
+        if(d<minD){minD=d;closest=w;}
+      }
+      e.target=closest;
+      if(closest&&minD<300){
+        e.state='looting';
+        steerToward(e,closest.x,closest.y,dt,0.003);
+        if(minD<30){
+          // Pille l'épave — la détruit pour le joueur
+          closest.hasResources=false;closest.moduleKey=null;
+          if(minD<15)closest.discovered=true;
+        }
+      } else {
+        e.state='patrol';
+        // Dérive avec légère correction vers les épaves
+        if(closest)steerToward(e,closest.x,closest.y,dt,0.001);
+      }
+      // Hostile si le joueur est trop proche
+      const pd=Math.sqrt((ship.x-e.x)**2+(ship.y-e.y)**2);
+      if(pd<200){e.state='hostile';steerToward(e,ship.x,ship.y,dt,0.004);}
+    },
+  },
+  chasseur:{
+    color:'#ff4040', label:'CHASSEUR',
+    mdw:"Chasseur. Ils ne négocient pas. Manœuvre d'évitement recommandée.",
+    init(e){e.state='hunting';e.hull=60+difficulty*15;e.maxHull=e.hull;e.fireTimer=3+Math.random()*2;},
+    update(e,dt){
+      steerToward(e,ship.x,ship.y,dt,0.006);
+      const pd=Math.sqrt((ship.x-e.x)**2+(ship.y-e.y)**2);
+      // Tir si aligné et assez proche
+      e.fireTimer-=dt;
+      if(e.fireTimer<=0&&pd<350){
+        const angle=Math.atan2(ship.y-e.y,ship.x-e.x);
+        const spread=(Math.random()-0.5)*0.3;
+        spawnEnemyTorpedo(e.x,e.y,angle+spread,e.vx,e.vy);
+        e.fireTimer=2.5+Math.random()*2;
+      }
+    },
+  },
+  magnetique:{
+    color:'#00ccff', label:'MAGNÉTIQUE',
+    mdw:"Technologie magnétique. Elle vient de la même source que la mienne. Je connais ce système.",
+    init(e){e.state='lure';e.hull=50+difficulty*10;e.maxHull=e.hull;e.pullRadius=200;e.pullTimer=0;e.fireTimer=0;},
+    update(e,dt){
+      e.pullTimer+=dt;
+      const pd=Math.sqrt((ship.x-e.x)**2+(ship.y-e.y)**2);
+      // Champ magnétique — attire le vaisseau
+      if(pd<e.pullRadius){
+        const strength=0.04*(1-pd/e.pullRadius);
+        const dx=(e.x-ship.x)/pd,dy=(e.y-ship.y)/pd;
+        ship.vx+=dx*strength*dt*60;
+        ship.vy+=dy*strength*dt*60;
+        // Si capturé — pille les ressources
+        if(pd<30){
+          oxygen=Math.max(0,oxygen-15*drainMult*dt);
+          energy=Math.max(0,energy-10*drainMult*dt);
+          if(Math.random()<0.01*dt*60)logEvent('🔵 PILLAGE MAGNÉTIQUE','danger');
+        }
+      }
+      // Dérive lentement — attend que le joueur vienne
+      e.vx*=Math.pow(0.998,dt*60);e.vy*=Math.pow(0.998,dt*60);
+    },
+  },
+};
+
+let enemies=[];
+let enemyTorpedoes=[];
+
+function steerToward(e,tx,ty,dt,force){
+  // Physique réaliste — on applique une force, pas un virage instantané
+  const dx=tx-e.x,dy=ty-e.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<1)return;
+  e.vx+=dx/dist*force*dt*60;e.vy+=dy/dist*force*dt*60;
+  // Même drag que le joueur
+  e.vx*=Math.pow(1-DRAG,dt*60);e.vy*=Math.pow(1-DRAG,dt*60);
+  e.angle=Math.atan2(e.vy,e.vx);
+}
+
+function spawnEnemy(){
+  const types=Object.keys(ENEMY_TYPES);
+  const typeKey=types[Math.floor(Math.random()*types.length)];
+  const type=ENEMY_TYPES[typeKey];
+  const angle=Math.random()*Math.PI*2;
+  const dist=500+Math.random()*400;
+  const e={
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,
+    angle:Math.random()*Math.PI*2,
+    typeKey,type,
+    trail:[],
+    dead:false,
+  };
+  type.init(e);
+  enemies.push(e);
+  logEvent(`⚠ ${type.label} DÉTECTÉ`,'danger');
+  if(typeof mdwActive!=='undefined'&&mdwActive)setTimeout(()=>mdwSpeak(type.mdw,true),1000);
+}
+
+function spawnEnemyTorpedo(x,y,angle,evx,evy){
+  const spd=2.5;
+  enemyTorpedoes.push({
+    x,y,
+    vx:Math.cos(angle)*spd+evx*0.3,
+    vy:Math.sin(angle)*spd+evy*0.3,
+    life:1,r:3,trail:[],
+  });
+  playTone(400,'sawtooth',0.1,0.06);
+}
+
+function updateEnemies(dt){
+  for(const e of enemies){
+    // Physique — même gravité planétaire que le joueur
+    for(const p of planets){
+      const mass=BODY_MASSES[p.type.massKey]||120;
+      applyGravityOnObject(dt,e,p.x,p.y,mass,p.r+10);
+    }
+    e.type.update(e,dt);
+    e.x+=e.vx*dt*60;e.y+=e.vy*dt*60;
+    e.trail.push({x:e.x,y:e.y});
+    if(e.trail.length>25)e.trail.shift();
+    // Collision torpille joueur
+    for(const t of torpedoes){
+      const dx=t.x-e.x,dy=t.y-e.y;
+      if(Math.sqrt(dx*dx+dy*dy)<e.r+t.r){
+        e.hull-=30+upgrades.torpedo*15;t.life=0;
+        spawnParticles(e.x,e.y,e.type.color,10,1.5);
+        if(e.hull<=0){
+          e.dead=true;killEnemy(e);
+        }
+      }
+    }
+    // Collision vaisseau joueur (ramming)
+    const pd=Math.sqrt((ship.x-e.x)**2+(ship.y-e.y)**2);
+    if(pd<18){
+      hull=Math.max(0,hull-12*drainMult);
+      e.hull-=20;
+      const nx=(ship.x-e.x)/pd,ny=(ship.y-e.y)/pd;
+      ship.vx+=nx*1.2;ship.vy+=ny*1.2;
+      e.vx-=nx*0.8;e.vy-=ny*0.8;
+      triggerFlash(e.type.color,0.2);
+      if(e.hull<=0){e.dead=true;killEnemy(e);}
+    }
+  }
+  enemies=enemies.filter(e=>!e.dead);
+
+  // Torpilles ennemies
+  for(const t of enemyTorpedoes){
+    t.trail.push({x:t.x,y:t.y});if(t.trail.length>12)t.trail.shift();
+    t.x+=t.vx*dt*60;t.y+=t.vy*dt*60;t.life-=0.006*dt*60;
+    const dx=ship.x-t.x,dy=ship.y-t.y;
+    if(Math.sqrt(dx*dx+dy*dy)<t.r+10){
+      hull=Math.max(0,hull-15*drainMult);
+      triggerFlash('#ff4040',0.25);
+      logEvent('💥 TORPILLE ENNEMIE -15 HULL','danger');
+      spawnParticles(t.x,t.y,'#ff4040',8,1.5);
+      t.life=0;
+    }
+  }
+  enemyTorpedoes=enemyTorpedoes.filter(t=>t.life>0);
+}
+
+function killEnemy(e){
+  spawnParticles(e.x,e.y,e.type.color,20,2);
+  playTone(150,'sawtooth',0.4,0.12);
+  // Fragment de journal ennemi
+  const log=ENEMY_JOURNALS[Math.floor(Math.random()*ENEMY_JOURNALS.length)];
+  setTimeout(()=>writeGlitchText(log,'📖 JOURNAL RÉCUPÉRÉ'),500);
+  // Lâche des capsules
+  const types=[{color:'#00ff41',label:'O₂',effect:()=>{oxygen=Math.min(maxOxygen,oxygen+20);}},
+               {color:'#ffaa00',label:'⚡',effect:()=>{energy=Math.min(100,energy+25);}}];
+  for(let i=0;i<2;i++){
+    const a=Math.random()*Math.PI*2,cfg=types[i%2];
+    capsules.push({x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,
+      vx:Math.cos(a)*0.2+e.vx*0.3,vy:Math.sin(a)*0.2+e.vy*0.3,
+      r:12,pulse:Math.random()*Math.PI*2,...cfg});
+  }
+  score+=300+survivalDay*20;
+  logEvent(`✓ ${e.type.label} DÉTRUIT +${300+survivalDay*20}`,'planet');
+  unlockAchievement&&unlockAchievement('enemy');
+}
+
+function drawEnemies(){
+  // Torpilles ennemies
+  for(const t of enemyTorpedoes){
+    ctx.save();
+    for(let i=1;i<t.trail.length;i++){
+      const [tx1,ty1]=worldToScreen(t.trail[i-1].x,t.trail[i-1].y);
+      const [tx2,ty2]=worldToScreen(t.trail[i].x,t.trail[i].y);
+      ctx.strokeStyle=`rgba(255,64,64,${(i/t.trail.length)*0.6})`;
+      ctx.lineWidth=(i/t.trail.length)*1.5;
+      ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
+    }
+    const [sx,sy]=worldToScreen(t.x,t.y);
+    const g=ctx.createRadialGradient(sx,sy,0,sx,sy,t.r*viewZoom*2);
+    g.addColorStop(0,'#ff8080');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,t.r*viewZoom*2,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+  // Vaisseaux ennemis
+  for(const e of enemies){
+    const [sx,sy]=worldToScreen(e.x,e.y);
+    ctx.save();
+    // Traînée
+    for(let i=1;i<e.trail.length;i++){
+      const [tx1,ty1]=worldToScreen(e.trail[i-1].x,e.trail[i-1].y);
+      const [tx2,ty2]=worldToScreen(e.trail[i].x,e.trail[i].y);
+      ctx.strokeStyle=`rgba(${e.type.color.slice(1).match(/../g).map(h=>parseInt(h,16)).join(',')},${(i/e.trail.length)*0.2})`;
+      ctx.lineWidth=(i/e.trail.length)*1.2;
+      ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
+    }
+    // Corps
+    ctx.translate(sx,sy);ctx.rotate(e.angle);
+    const s=viewZoom;
+    // Halo
+    const g=ctx.createRadialGradient(0,0,0,0,0,20*s);
+    g.addColorStop(0,e.type.color+'33');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,20*s,0,Math.PI*2);ctx.fill();
+    // Forme ennemie — inversée par rapport au joueur
+    ctx.strokeStyle=e.type.color;ctx.lineWidth=1.5;ctx.shadowColor=e.type.color;ctx.shadowBlur=6;
+    ctx.beginPath();ctx.moveTo(12*s,0);ctx.lineTo(-8*s,-7*s);ctx.lineTo(-4*s,0);ctx.lineTo(-8*s,7*s);ctx.closePath();ctx.stroke();
+    // Barre de vie
+    if(e.hull<e.maxHull){
+      ctx.fillStyle='rgba(255,0,0,0.3)';ctx.fillRect(-10*s,-14*s,20*s,2*s);
+      ctx.fillStyle=e.type.color;ctx.fillRect(-10*s,-14*s,20*s*(e.hull/e.maxHull),2*s);
+    }
+    // Champ magnétique pour les magnétiques
+    if(e.typeKey==='magnetique'){
+      const pulse=(Math.sin(e.pullTimer*2)+1)*0.5;
+      ctx.strokeStyle=`rgba(0,200,255,${0.1+pulse*0.15})`;ctx.lineWidth=1;
+      ctx.setLineDash([3,5]);
+      ctx.beginPath();ctx.arc(0,0,e.pullRadius*viewZoom,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+    // Label et distance
+    const dist=Math.sqrt((e.x-ship.x)**2+(e.y-ship.y)**2);
+    if(dist<400){
+      ctx.save();ctx.fillStyle=e.type.color;ctx.font=`7px 'Share Tech Mono'`;
+      ctx.textAlign='center';ctx.fillText(`${e.type.label} · ${Math.floor(dist)}u`,sx,sy-16*viewZoom);
+      ctx.restore();
+    }
+    // Sur le radar
+    const RADAR_RANGE=getRadarRange();
+    const rdx=(e.x-ship.x)/RADAR_RANGE*32,rdy=(e.y-ship.y)/RADAR_RANGE*32;
+    if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
+      rctx.fillStyle=e.type.color;rctx.shadowColor=e.type.color;rctx.shadowBlur=4;
+      rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
+    }
+  }
+}
+
+// ── Étoile à neutrons ─────────────────────────
+// Ultra-dense, petite, gravité extrême courte portée, pulsar rapide
+const NEUTRON_STAR_MASS=5000;
+const NEUTRON_STAR_RADIUS=8; // très petite visuellement
+
+function addNeutronStar(){
+  // Ajouté comme phénomène special
+  const angle=Math.random()*Math.PI*2;
+  const dist=500+Math.random()*500;
+  const p={
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    name:'ÉTOILE À NEUTRONS',color:'#ffffff',
+    r:NEUTRON_STAR_RADIUS,
+    pulse:0,
+    jetAngle:0,jetSpeed:0.15, // rotation rapide — ms pulsar
+    mass:NEUTRON_STAR_MASS,
+    announced:false,
+  };
+  phenomena.push(p);
+  logEvent('⭐ ÉTOILE À NEUTRONS DÉTECTÉE','warn');
+  if(typeof mdwActive!=='undefined'&&mdwActive)
+    setTimeout(()=>mdwSpeak('Étoile à neutrons. Masse solaire. Rayon de 10 kilomètres. La gravité de surface est 200 milliards de fois celle de la Terre. Ne vous en approchez pas.',true),500);
+}
+
+function updateNeutronStar(p,dt){
+  p.jetAngle+=p.jetSpeed*dt*60; // rotation très rapide
+  p.pulse+=dt;
+  const dx=ship.x-p.x,dy=ship.y-p.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  // Gravité extrême mais portée courte
+  if(dist<500){
+    const f=G_CONST*p.mass/Math.max(dx*dx+dy*dy,100);
+    ship.vx+=dx/dist*f*dt*60;ship.vy+=dy/dist*f*dt*60;
+    // Perturbation magnétique intense
+    if(dist<200){
+      radarGlitch=Math.max(radarGlitch,1-dist/200);
+      energy=Math.max(0,energy-3*drainMult*(1-dist/200)*dt);
+    }
+  }
+  // Faisceau radio (jet) — dangereux si dedans
+  const shipAngle=Math.atan2(dy,dx);
+  const inJet=[p.jetAngle,p.jetAngle+Math.PI].some(ja=>{
+    let diff=Math.abs(shipAngle-ja)%(Math.PI*2);
+    if(diff>Math.PI)diff=Math.PI*2-diff;
+    return diff<0.2&&dist<300;
+  });
+  if(inJet){
+    hull=Math.max(0,hull-25*drainMult*dt);
+    oxygen=Math.max(0,oxygen-10*drainMult*dt);
+    triggerFlash('#ffffff',0.15);
+  }
+  // Avaler si trop proche
+  if(dist<p.r+12){
+    hull=0;logEvent('💫 MARÉE GRAVITATIONNELLE — DESTRUCTION','danger');
+    triggerFlash('#ffffff',0.9);
+  }
+  // Gravité sur objets
+  for(const d of debris) applyGravityOnObject(dt,d,p.x,p.y,p.mass,p.r+5);
+  for(const c of comets) applyGravityOnObject(dt,c,p.x,p.y,p.mass,p.r+5);
+}
+
+function drawNeutronStar(p){
+  const [sx,sy]=worldToScreen(p.x,p.y);
+  const pulse=(Math.sin(p.pulse*8)+1)*0.5; // pulse rapide
+  ctx.save();ctx.translate(sx,sy);
+  // Halo blanc intense très compact
+  const g=ctx.createRadialGradient(0,0,0,0,0,p.r*viewZoom*4);
+  g.addColorStop(0,'rgba(255,255,255,0.4)');
+  g.addColorStop(0.3,'rgba(200,220,255,0.15)');
+  g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,p.r*viewZoom*4,0,Math.PI*2);ctx.fill();
+  // Corps — point blanc brillant
+  ctx.fillStyle='#ffffff';ctx.shadowColor='#aaccff';ctx.shadowBlur=15+pulse*10;
+  ctx.beginPath();ctx.arc(0,0,p.r*viewZoom,0,Math.PI*2);ctx.fill();
+  // Jets rotatifs très rapides
+  ctx.rotate(p.jetAngle);
+  [1,-1].forEach(dir=>{
+    const jg=ctx.createLinearGradient(0,0,0,dir*120*viewZoom);
+    jg.addColorStop(0,'rgba(200,220,255,0.9)');jg.addColorStop(1,'rgba(100,150,255,0)');
+    ctx.strokeStyle=jg;ctx.lineWidth=(1.5+pulse)*viewZoom;
+    ctx.shadowColor='#aaccff';ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,dir*120*viewZoom);ctx.stroke();
+  });
+  ctx.restore();
+  // Distance warning
+  const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+  if(dist<400){
+    ctx.save();ctx.globalAlpha=Math.min(1,(400-dist)/200);
+    ctx.fillStyle='#aaccff';ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText(`ÉTOILE À NEUTRONS · ${Math.floor(dist)}u`,sx,sy-p.r*viewZoom-14);
+    ctx.restore();
+  }
+}
+
+// ── Ondes gravitationnelles ───────────────────
+// Émises par deux objets massifs proches l'un de l'autre
+let gravWaves=[];
+
+function updateGravWaves(dt){
+  // Détecter paires d'objets massifs proches
+  const massiveBodies=[];
+  for(const p of planets) massiveBodies.push({x:p.x,y:p.y,mass:BODY_MASSES[p.type.massKey]||120});
+  for(const ph of phenomena) massiveBodies.push({x:ph.x,y:ph.y,mass:ph.mass||BODY_MASSES.pulsar});
+
+  // Émettre des ondes si deux corps massifs sont proches
+  for(let i=0;i<massiveBodies.length;i++){
+    for(let j=i+1;j<massiveBodies.length;j++){
+      const a=massiveBodies[i],b=massiveBodies[j];
+      const sep=Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);
+      if(sep<600&&a.mass>100&&b.mass>100){
+        // Émettre une onde depuis le milieu
+        if(Math.random()<0.02*dt*60){
+          const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+          gravWaves.push({x:cx,y:cy,r:0,maxR:800,alpha:0.4,speed:2.5,mass:(a.mass+b.mass)*0.001});
+        }
+      }
+    }
+  }
+
+  // Mettre à jour les ondes
+  for(const w of gravWaves){
+    w.r+=w.speed*dt*60;
+    w.alpha=Math.max(0,w.alpha*(1-dt*0.3));
+    // Perturbation sur le vaisseau quand l'onde le traverse
+    const dist=Math.sqrt((ship.x-w.x)**2+(ship.y-w.y)**2);
+    if(Math.abs(dist-w.r)<15*viewZoom){
+      const strength=w.mass*w.alpha*0.3;
+      ship.vx+=(Math.random()-0.5)*strength;
+      ship.vy+=(Math.random()-0.5)*strength;
+    }
+  }
+  gravWaves=gravWaves.filter(w=>w.alpha>0.01&&w.r<w.maxR);
+}
+
+function drawGravWaves(){
+  for(const w of gravWaves){
+    const [sx,sy]=worldToScreen(w.x,w.y);
+    ctx.save();
+    ctx.strokeStyle=`rgba(180,140,255,${w.alpha*0.35})`;
+    ctx.lineWidth=1;
+    ctx.setLineDash([4,6]);
+    ctx.beginPath();ctx.arc(sx,sy,w.r*viewZoom,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+}
+
+
 let torpedoes=[];
 let torpedoCharge=0; // 0-1
 let torpedoReady=true;
@@ -2647,15 +3160,15 @@ function initMDW(){
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
   mdwEl.style.cssText=`
-    position:fixed;bottom:72px;right:12px;
+    position:fixed;bottom:135px;right:12px;
     pointer-events:none;z-index:15;text-align:right;
-    opacity:0;transition:opacity 0.5s;max-width:200px;
+    opacity:0;transition:opacity 0.5s;max-width:190px;
   `;
   mdwEl.innerHTML=`
     <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW-7</div>
-    <div id="mdw-text" style="font-size:8px;color:#e8a030;letter-spacing:0.5px;
+    <div id="mdw-text" style="font-size:11px;color:#e8a030;letter-spacing:0.3px;
       background:rgba(9,4,0,0.92);border:1px solid rgba(200,120,32,0.25);
-      border-right:2px solid #c07820;padding:5px 10px;
+      border-right:2px solid #c07820;padding:6px 12px;
       line-height:1.6;font-family:'Share Tech Mono',monospace;
       text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
   `;
@@ -2892,14 +3405,15 @@ function spawnPhenomenon(){
 function updatePhenomena(dt){
   if(!window._gravFields)window._gravFields=[];
   for(const p of phenomena){
-    p.pulse+=dt;p.update(p,dt);
+    p.pulse+=dt;
+    // Étoile à neutrons — système séparé
+    if(p.name==='ÉTOILE À NEUTRONS'){updateNeutronStar(p,dt);continue;}
+    p.update(p,dt);
     const massKey=p.name==='PULSAR'?'pulsar':p.name==='TROU NOIR'?'blackhole':p.name==='MAGNÉTAR'?'magnetar':'eruption';
     const mass=BODY_MASSES[massKey];
     if(massKey!=='blackhole')applyGravity(dt,p.x,p.y,mass,p.r+10);
-    // Gravité sur objets mobiles
     for(const d of debris) applyGravityOnObject(dt,d,p.x,p.y,mass*0.5,p.r+5);
     for(const c of comets) applyGravityOnObject(dt,c,p.x,p.y,mass*0.7,p.r+5);
-    // Tracking champ pour rendu
     const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     const range=gravityRange(mass);
     if(dist<range) window._gravFields.push({x:p.x,y:p.y,mass,range,dist,color:p.color,r:p.r||15});
@@ -2918,6 +3432,8 @@ function checkDead(){
 
 function showGameOver(){
   state='dead';screen.classList.remove('hidden');
+  titleShipX=35;titleShipY=32;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+  if(!titleLoopRunning)titleLoop();
   stopAmbient();
   const dc=DIFF_CONFIG[selectedDiff];
   hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
@@ -3059,6 +3575,12 @@ function drawPhenomena(ts){
     const [sx,sy]=worldToScreen(p.x,p.y);
     const pulse=(Math.sin(p.pulse*2)+1)*0.5;
     ctx.save();
+
+    if(p.name==='ÉTOILE À NEUTRONS'){
+      ctx.restore();
+      drawNeutronStar(p);
+      continue;
+    }
 
     if(p.name==='PULSAR'){
       // Corps central
@@ -3595,7 +4117,7 @@ function gameLoop(ts){
       if(state==='playing'){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         checkLore();
@@ -3611,10 +4133,10 @@ function gameLoop(ts){
         checkDead();
       }
       drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
-      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawPlanets();
+      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawTradePosts();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawTradePosts();drawEnemies();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
@@ -3665,11 +4187,16 @@ canvas.addEventListener('mousedown',handlePointerDown);
 canvas.addEventListener('mousemove',e=>{if(touchActive)handlePointerMove(e);});
 canvas.addEventListener('mouseup',handlePointerUp);
 
-document.getElementById('btn-start').addEventListener('click',()=>{initAudio();startGame();});
+document.getElementById('btn-start').addEventListener('click',()=>{
+  initAudio();
+  launchSequence(()=>startGame());
+});
 
 lastTime=performance.now();
-loadGame(); // Charger la sauvegarde
-initStars();requestAnimationFrame(gameLoop);
+loadGame();
+initStars();
+titleLoop(); // Démarrer l'animation du vaisseau titre
+requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
