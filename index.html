@@ -128,13 +128,13 @@
   /* EFFETS COSMOLOGIQUES */
   #cosmo-overlay{position:fixed;inset:0;pointer-events:none;z-index:45;opacity:0;transition:opacity 1s;}
 
-  /* TITRE — V inline avec OID DRIFT */
-  #title-row{display:flex;align-items:center;justify-content:center;gap:2px;line-height:1;}
-  #title-canvas{display:block;vertical-align:middle;position:relative;top:4px;}
-  #title-oid{font-family:'VT323',monospace;font-size:clamp(48px,12vw,80px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:4px;line-height:1;}
+  /* TITRE — vaisseau centré au-dessus du texte */
+  #title-ship-wrap{display:flex;justify-content:center;margin-bottom:8px;opacity:0.85;}
+  #title-canvas{display:block;}
+  #title-voidrift{font-family:'VT323',monospace;font-size:clamp(48px,14vw,88px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:6px;line-height:1;text-align:center;}
 
-  /* FADE TRANSITION */
-  #launch-fade{position:fixed;inset:0;background:#000902;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.8s;}
+  /* FONDU ENCHAÎNÉ */
+  #launch-fade{position:fixed;inset:0;background:#000902;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.6s ease-in-out;}
   .csp-credit{font-size:7px;letter-spacing:3px;color:rgba(0,255,65,0.25);text-align:center;margin-top:8px;text-transform:uppercase;}
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   .blink{animation:blink 1s infinite;}
@@ -201,33 +201,11 @@
     <div class="t-charge" id="torpedo-charge">PRÊTE</div>
   </div>
   <div id="passengers"></div>
-  <div id="gauges">
-    <div class="gauge-wrap">
-      <div class="gauge-label">🫁 OXYGEN</div>
-      <div class="gauge-bar"><div class="gauge-fill" id="bar-o2" style="width:100%"></div></div>
-      <div class="gauge-val" id="val-o2">100%</div>
-    </div>
-    <div class="gauge-wrap">
-      <div class="gauge-label">⚡ ENERGY</div>
-      <div class="gauge-bar"><div class="gauge-fill" id="bar-en" style="width:100%"></div></div>
-      <div class="gauge-val" id="val-en">100%</div>
-    </div>
-    <div class="gauge-wrap">
-      <div class="gauge-label">🛡 HULL</div>
-      <div class="gauge-bar"><div class="gauge-fill" id="bar-hp" style="width:100%"></div></div>
-      <div class="gauge-val" id="val-hp">100%</div>
-    </div>
-  </div>
-</div>
-
 <!-- Pop jour discret -->
 <div id="day-pop">
   <div class="dp-num" id="dp-num">JOUR 2</div>
   <div class="dp-sub">▸ LE VIDE CONTINUE</div>
 </div>
-  <div id="top-bar">
-    <div id="title-block">
-      <div class="game-title">VOID DRIFT</div>
       <div class="sub">SURVIVAL PROTOCOL v4.0</div>
       <div class="diff-badge" id="diff-badge"></div>
     </div>
@@ -287,12 +265,17 @@
   <div id="passengers"></div>
   <div id="gauges">
     <div class="gauge-wrap">
-      <div class="gauge-label">🫁 OXYGEN</div>
+      <div class="gauge-label">🫁 O₂</div>
       <div class="gauge-bar"><div class="gauge-fill" id="bar-o2" style="width:100%"></div></div>
       <div class="gauge-val" id="val-o2">100%</div>
     </div>
     <div class="gauge-wrap">
-      <div class="gauge-label">⚡ ENERGY</div>
+      <div class="gauge-label">🚀 PROP</div>
+      <div class="gauge-bar"><div class="gauge-fill" id="bar-prop" style="width:100%;background:#ff8040;box-shadow:0 0 6px #ff8040;"></div></div>
+      <div class="gauge-val" id="val-prop" style="color:#ff8040">100%</div>
+    </div>
+    <div class="gauge-wrap">
+      <div class="gauge-label">⚡ NRJ</div>
       <div class="gauge-bar"><div class="gauge-fill" id="bar-en" style="width:100%"></div></div>
       <div class="gauge-val" id="val-en">100%</div>
     </div>
@@ -304,17 +287,13 @@
   </div>
 </div>
 
-    <div class="dt-sub">LE VIDE CONTINUE</div>
-  </div>
-</div>
-
 <div id="launch-fade"></div>
 
 <div id="screen">
-  <div id="title-row">
+  <div id="title-ship-wrap">
     <canvas id="title-canvas" width="70" height="70"></canvas>
-    <div id="title-oid">OID DRIFT</div>
   </div>
+  <div id="title-voidrift">VOID DRIFT</div>
   <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
   <div class="controls-hint">TAPEZ POUR PROPULSER · PINCEZ POUR ZOOMER<br>COLLECTEZ · EXPLOREZ · SURVIVEZ</div>
   <div class="diff-row">
@@ -376,18 +355,20 @@ function drawShipAt(c,cx,cy,angle,scale,thrusting=false,thrustPower=0,modules=[]
   c.restore();
 }
 
-let titleShipAngle=Math.PI/2; // pointe vers le BAS = forme un V
-let titleShipX=35,titleShipY=32;
+let titleShipAngle=Math.PI/2; // pointe vers le bas = V
+let titleShipX=35,titleShipY=58; // départ bas du canvas
 let titleShipVx=0,titleShipVy=0;
 let titleAnimating=false,titlePulse=0;
 
 function drawTitleShip(){
   if(!tctx||!titleCanvas)return;
   tctx.clearRect(0,0,70,70);
-  titlePulse+=0.05;
-  const wobble=titleAnimating?0:Math.sin(titlePulse)*0.04;
+  titlePulse+=0.04;
+  const wobble=titleAnimating?0:Math.sin(titlePulse)*0.06;
   const mods=typeof installedModules!=='undefined'?installedModules:[];
-  drawShipAt(tctx,titleShipX,titleShipY,titleShipAngle+wobble,1.3,titleAnimating,titleAnimating?0.8:0,mods);
+  tctx.globalAlpha=titleAnimating?1:0.9;
+  drawShipAt(tctx,titleShipX,titleShipY,titleShipAngle+wobble,1.4,titleAnimating,titleAnimating?0.9:0,mods);
+  tctx.globalAlpha=1;
 }
 
 let titleLoopRunning=false;
@@ -401,22 +382,44 @@ function titleLoop(){
 function launchSequence(callback){
   titleAnimating=true;
   let t=0;
-  // Le vaisseau pointe vers le bas (angle=PI/2), propulsion = vers le haut
+  // Distance à parcourir : de y=58 à y=35 (centre du canvas = centre écran = position jeu)
+  const startY=58,targetY=35;
+  const totalDist=startY-targetY; // 23px en canvas
+  // Durée totale : 0.9s pour atteindre le centre, puis fade
+  const duration=0.9;
+
   const step=()=>{
-    t+=0.016;
-    const thrust=Math.min(1,t*0.8);
-    // Propulsion vers le haut
-    titleShipVy-=0.05*thrust;
-    titleShipX+=titleShipVx;titleShipY+=titleShipVy;
+    t+=0.018;
+    const progress=Math.min(1,t/duration);
+    // Easing ease-in (accélération progressive)
+    const eased=progress*progress;
+    titleShipY=startY-(eased*totalDist);
+    // Vitesse instantanée (dérivée de l'easing)
+    titleShipVy=-(2*progress/duration)*totalDist*0.018;
     drawTitleShip();
-    if(t>0.8){launchFade.style.opacity=Math.min(1,(t-0.8)/0.6);}
-    if(t<1.4){requestAnimationFrame(step);}
-    else{
-      titleShipX=35;titleShipY=32;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+
+    // Fondu au noir — commence à 60% du trajet
+    if(progress>0.6){
+      launchFade.style.opacity=Math.min(1,(progress-0.6)/0.4);
+    }
+
+    if(progress<1){
+      requestAnimationFrame(step);
+    }else{
+      // Le vaisseau a atteint le centre — démarrer le jeu
+      // Transmettre la vitesse au vaisseau joueur (converti en unités monde)
+      const worldVy=titleShipVy*2; // scale canvas→monde
+      callback(worldVy);
+      // Fondu sortant
       setTimeout(()=>{
-        callback();
-        setTimeout(()=>{launchFade.style.opacity='0';},300);
-      },100);
+        launchFade.style.transition='opacity 0.7s ease-out';
+        launchFade.style.opacity='0';
+        setTimeout(()=>{
+          launchFade.style.transition='opacity 0.6s ease-in-out';
+          // Reset position titre pour le prochain game over
+          titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+        },800);
+      },50);
     }
   };
   step();
@@ -1083,6 +1086,45 @@ const JOURNAL_ENTRIES={
   30:"Un mois. Le vaisseau et moi avons appris à dériver ensemble.",
 };
 
+// Tutorial MDW — séquence au premier lancement
+const MDW_TUTORIAL=[
+  {delay:4,  text:"Systèmes en ligne. Je suis MDW-7. Je m'occupe du vaisseau. Vous vous occupez de survivre."},
+  {delay:12, text:"Les capsules lumineuses contiennent de l'oxygène, de l'énergie, des matériaux. Collectez-les."},
+  {delay:22, text:"Restez en mouvement. Le vide est plus sûr que l'immobilité. Les débris ne dorment pas."},
+  {delay:35, text:"Signal radar : les points verts sont des capsules. Les rouges sont des débris. Je vous dis ce que je peux."},
+  {delay:55, text:"Une dernière chose. Je ne sais pas combien de temps nous avons dérivé avant que vous vous réveilliez. Moi, je m'en souviens. Mais ce n'est pas le moment."},
+];
+
+let tutorialDone=false;
+
+function startTutorial(){
+  if(tutorialDone)return;
+  tutorialDone=true;
+  MDW_TUTORIAL.forEach(t=>{
+    setTimeout(()=>{
+      if(state==='playing'&&mdwActive){
+        mdwSpeak(t.text,true);
+      }
+    },t.delay*1000);
+  });
+}
+
+// Narration phase 2 — transmissions adressées directement
+const PHASE2_TRANSMISSIONS=[
+  "...ORYN. Si tu reçois ça, c'est que tu as traversé le premier trou de ver. Je t'en supplie. Continue. [ÉMETTEUR : INCONNU]",
+  "...KAL-9... non, ORYN maintenant. Tu dois savoir que le Signal n'est pas une sortie. C'est un miroir. [FIN TRANSMISSION]",
+  "...j'ai été toi. Au secteur 3. J'ai compris quelque chose. Note ceci : le catalogue. Tout est dans le catalogue. [BRUIT]",
+  "...la boucle a un auteur. Ce n'est pas une erreur. Quelqu'un l'a voulue. Quelqu'un qui te ressemble. [SIGNAL PERDU]",
+];
+
+function triggerPhase2Transmission(){
+  if(sectorCount<1)return;
+  const msg=PHASE2_TRANSMISSIONS[Math.floor(Math.random()*PHASE2_TRANSMISSIONS.length)];
+  writeGlitchText(msg,'📡 TRANSMISSION DIRECTE');
+  logEvent('📡 TRANSMISSION — TON NOM DEDANS','danger');
+  if(mdwActive)setTimeout(()=>mdwSpeak('Cette transmission vous est adressée personnellement. Je ne sais pas comment c\'est possible.',true),2000);
+}
+
 function triggerJournal(day){
   const entry=JOURNAL_ENTRIES[day];
   if(!entry||journalShownDays.has(day))return;
@@ -1091,6 +1133,10 @@ function triggerJournal(day){
   journalEl.classList.add('active');
   journalDay.textContent=`JOUR ${String(day).padStart(3,'0')} — JOURNAL`;
   journalText.textContent='';
+  // Tutorial MDW au jour 1
+  if(day===1&&!tutorialDone){
+    setTimeout(()=>startTutorial(),3000);
+  }
 }
 function updateJournal(dt){
   if(!journalActive)return;
@@ -1403,7 +1449,8 @@ function startGame(){
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
   score=0;gameTime=0;difficulty=1;
-  oxygen=Math.min(100,maxOxygen);energy=100;hull=100;
+  oxygen=Math.min(100,maxOxygen);energy=100;hull=100;propellant=maxPropellant;
+  tutorialDone=false; // tutorial à chaque premier run ou si pas encore vu
   combo=0;comboTimer=0;comboHideTimer=0;
   bossTimer=60;bossActive=false;bossWarningShown=false;
   survivalDay=1;dayTimer=0;inDayTransition=false;
@@ -1414,6 +1461,8 @@ function startGame(){
   enemies=[];enemyTorpedoes=[];gravWaves=[];
   passengersEl.innerHTML='';window._radarBonus=0;
   spawnTimer=0;capsuleTimer=0;eventTimer=0;activeEvent=null;
+  currentZone='void';zoneTimer=30+Math.random()*20;zoneDensity=0;
+  enemyEventTimer=120+Math.random()*180;
   touchTarget=null;touchActive=false;
   viewZoom=1;pinchStartDist=null;
   currentMission=null;missionCounter=0;missionDone=false;
@@ -1503,10 +1552,11 @@ function spawnInitialDebris(){for(let i=0;i<6;i++)spawnDebris(false);}
 
 // ── Capsules ─────────────────────────────────
 const CAPSULE_TYPES=[
-  {type:'o2',color:'#00ff41',label:'O₂',effect:()=>{oxygen=Math.min(100,oxygen+30);logEvent('+30 OXYGEN','ok');}},
-  {type:'energy',color:'#ffaa00',label:'⚡',effect:()=>{energy=Math.min(100,energy+35);logEvent('+35 ENERGY','ok');}},
-  {type:'repair',color:'#ff6060',label:'🛡',effect:()=>{hull=Math.min(100,hull+25);logEvent('+25 HULL REPAIR','ok');}},
-  {type:'boost',color:'#60ffff',label:'2×',effect:()=>{score+=500;logEvent('+500 SCORE BOOST!','warn');}},
+  {type:'o2',       color:'#00ff41', label:'O₂', effect:()=>{oxygen=Math.min(maxOxygen,oxygen+30);logEvent('+30 OXYGEN','ok');}},
+  {type:'energy',   color:'#ffaa00', label:'⚡',  effect:()=>{energy=Math.min(100,energy+35);logEvent('+35 ENERGY','ok');}},
+  {type:'repair',   color:'#ff6060', label:'🛡',  effect:()=>{hull=Math.min(100,hull+25);logEvent('+25 HULL REPAIR','ok');}},
+  {type:'boost',    color:'#60ffff', label:'2×',  effect:()=>{score+=500;logEvent('+500 SCORE BOOST!','warn');}},
+  {type:'propellant',color:'#ff8040',label:'🚀',  effect:()=>{propellant=Math.min(maxPropellant,propellant+40);logEvent('+40 PROPERGOL','ok');}},
 ];
 function spawnCapsule(){
   const margin=60,side=Math.floor(Math.random()*4),hw=W/2+margin,hh=H/2+margin;let x,y;
@@ -1521,10 +1571,11 @@ function spawnCapsule(){
 
 // ── Events ───────────────────────────────────
 const EVENTS=[
-  {name:'METEOR STORM',desc:'TEMPÊTE DE MÉTÉORITES',color:'#ff2020',onStart:()=>{for(let i=0;i<8;i++)spawnDebris(true);},onTick:(dt)=>{if(Math.random()<0.02*dt*60)spawnDebris(true);},duration:8},
-  {name:'POWER FAILURE',desc:'PANNE MOTEUR',color:'#ffaa00',onStart:()=>{logEvent('⚡ PANNE MOTEUR','danger');},onTick:(dt)=>{energy=Math.max(0,energy-4*drainMult*dt);},duration:6},
-  {name:'O2 LEAK',desc:"FUITE D'OXYGÈNE",color:'#00ff41',onStart:()=>{logEvent('🫁 FUITE O₂','danger');},onTick:(dt)=>{oxygen=Math.max(0,oxygen-6*drainMult*dt);},duration:7},
-  {name:'GRAVITY WAVE',desc:'ONDE GRAVITATIONNELLE',color:'#c060ff',onStart:()=>{ship.vx+=(Math.random()-0.5)*1.2;ship.vy+=(Math.random()-0.5)*1.2;logEvent('〰 ONDE GRAVIT.','warn');},onTick:()=>{},duration:1},
+  {name:'METEOR STORM',  desc:'TEMPÊTE DE MÉTÉORITES',color:'#ff2020',onStart:()=>{for(let i=0;i<8;i++)spawnDebris(true);},onTick:(dt)=>{if(Math.random()<0.02*dt*60)spawnDebris(true);},duration:8},
+  {name:'POWER FAILURE', desc:'PANNE MOTEUR',         color:'#ffaa00',onStart:()=>{logEvent('⚡ PANNE MOTEUR','danger');},onTick:(dt)=>{energy=Math.max(0,energy-4*drainMult*dt);},duration:6},
+  {name:'O2 LEAK',       desc:"FUITE D'OXYGÈNE",      color:'#00ff41',onStart:()=>{logEvent('🫁 FUITE O₂','danger');},onTick:(dt)=>{oxygen=Math.max(0,oxygen-6*drainMult*dt);},duration:7},
+  {name:'PROP LEAK',     desc:'FUITE PROPERGOL',       color:'#ff8040',onStart:()=>{logEvent('🚀 FUITE PROPERGOL','danger');},onTick:(dt)=>{propellant=Math.max(0,propellant-8*drainMult*dt);},duration:6},
+  {name:'GRAVITY WAVE',  desc:'ONDE GRAVITATIONNELLE', color:'#c060ff',onStart:()=>{ship.vx+=(Math.random()-0.5)*1.2;ship.vy+=(Math.random()-0.5)*1.2;logEvent('〰 ONDE GRAVIT.','warn');},onTick:()=>{},duration:1},
 ];
 
 // ── Particles ────────────────────────────────
@@ -1557,33 +1608,38 @@ function addCombo(){
 function resetCombo(){combo=0;comboTimer=0;comboDisplay.classList.remove('visible');}
 
 // ── Physics ──────────────────────────────────
-const THRUST_FORCE=0.008,DRAG=0.0015,O2_DRAIN=0.5,ENERGY_THRUST_COST=4;
+const THRUST_FORCE=0.008,DRAG=0.0015,O2_DRAIN=0.5,ENERGY_THRUST_COST=2;
+const PROPELLANT_THRUST_COST=3;
+let propellant=100,maxPropellant=100;
 
 function worldToScreen(x,y){return[(x-camX)*viewZoom+W/2,(y-camY)*viewZoom+H/2];}
 function screenToWorld(sx,sy){return[(sx-W/2)/viewZoom+camX,(sy-H/2)/viewZoom+camY];}
 
 function updateShip(dt){
-  // Recharge solaire passive — toujours un peu d'énergie
   energy=Math.min(100,energy+0.8*dt);
-
   if(touchActive&&touchTarget){
     const [wx,wy]=screenToWorld(touchTarget.x,touchTarget.y);
     const dx=wx-ship.x,dy=wy-ship.y,dist=Math.sqrt(dx*dx+dy*dy);
     if(dist>20){
       const nx=dx/dist,ny=dy/dist;
-      // Propulsion d'urgence même à zéro — très réduite, particules orangées
-      const thrustMult=energy>0?1:0.25;
-      ship.vx+=nx*THRUST_FORCE*thrustMult*dt*60;
-      ship.vy+=ny*THRUST_FORCE*thrustMult*dt*60;
+      const hasProp=propellant>0;
+      const thrustMult=hasProp?1:0.2;
+      const thrustForce=THRUST_FORCE*(installedModules.includes('thruster')?1.4:1);
+      ship.vx+=nx*thrustForce*thrustMult*dt*60;
+      ship.vy+=ny*thrustForce*thrustMult*dt*60;
       ship.angle=Math.atan2(ny,nx);ship.thrusting=true;ship.thrustPower=Math.min(1,dist/100);
-      if(energy>0)energy=Math.max(0,energy-ENERGY_THRUST_COST*dt*ship.thrustPower);
+      if(hasProp){
+        propellant=Math.max(0,propellant-PROPELLANT_THRUST_COST*dt*ship.thrustPower);
+      }else{
+        energy=Math.max(0,energy-ENERGY_THRUST_COST*2*dt*ship.thrustPower);
+      }
       if(Math.random()<0.4){
         const ex=ship.x+Math.cos(ship.angle+Math.PI)*10,ey=ship.y+Math.sin(ship.angle+Math.PI)*10;
         particles.push({x:ex,y:ey,
           vx:Math.cos(ship.angle+Math.PI)*(1+Math.random())+ship.vx*0.3,
           vy:Math.sin(ship.angle+Math.PI)*(1+Math.random())+ship.vy*0.3,
           life:1,decay:0.07+Math.random()*0.05,r:2+Math.random()*2,
-          color:energy>0?'#00ff41':'#ff6020'});
+          color:hasProp?'#00ff41':'#ff6020'});
       }
     }else{ship.thrusting=false;ship.thrustPower=0;}
   }else{ship.thrusting=false;ship.thrustPower=0;}
@@ -1596,9 +1652,11 @@ function updateShip(dt){
 function updateResources(dt){
   const dilDt=dt*timeDilation;
   const recyclerBonus=getModuleBonus('o2drain');
-  const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus;
+  // Équilibrage — les 2 premiers jours sont plus cléments
+  const earlyBonus=survivalDay<=2?0.6:1.0;
+  const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus;
   oxygen=Math.max(0,oxygen-o2Rate*dilDt);
-  if(oxygen<=0)hull=Math.max(0,hull-5*drainMult*dilDt);
+  if(oxygen<=0)hull=Math.max(0,hull-5*drainMult*earlyBonus*dilDt);
   alarmCooldown-=dt;
   if(alarmCooldown<=0&&(oxygen<20||energy<15||hull<20)){playAlarm();alarmCooldown=1.5;}
   applyModuleEffects(dt);
@@ -1962,6 +2020,7 @@ const RARE_EVENTS=[
   {name:'void',          minDay:4, weight:1, trigger:()=>triggerVoidSector()},
   {name:'anomaly',       minDay:3, weight:2, trigger:()=>spawnAnomalyPlanet()},
   {name:'neutronstar',   minDay:5, weight:1, trigger:()=>addNeutronStar()},
+  {name:'phase2',        minDay:1, weight:2, trigger:()=>triggerPhase2Transmission(), minSector:1},
 ];
 
 // ── BLOC 1 — Phénomènes cosmologiques ─────────
@@ -2209,7 +2268,7 @@ function updateRareEvents(dt){
   if(rareEventTimer<=0){
     rareEventTimer=45+Math.random()*60;
     // Tirer un événement selon le jour
-    const available=RARE_EVENTS.filter(e=>survivalDay>=e.minDay);
+    const available=RARE_EVENTS.filter(e=>survivalDay>=e.minDay&&(e.minSector===undefined||sectorCount>=e.minSector));
     if(available.length>0){
       const total=available.reduce((s,e)=>s+e.weight,0);
       let r=Math.random()*total;
@@ -2232,24 +2291,86 @@ function drawRareRadarEffects(){
   if(radarEcho)drawRadarEcho();
 }
 
+// ── Système de zones spatiales ────────────────
+// Alterne entre zones denses et zones de vide
+let currentZone='void'; // 'void' | 'dense'
+let zoneTimer=30+Math.random()*20; // durée de la zone actuelle
+let zoneDensity=0; // 0=vide 1=dense
+let enemyEventTimer=120+Math.random()*180; // ennemis très rares — 2-5 min entre spawns
+
 function updateSpawning(dt){
   difficulty=1+gameTime/120*0.3;
-  spawnTimer-=dt;if(spawnTimer<=0){spawnDebris(true);spawnTimer=Math.max(2,5-difficulty*0.4);}
-  capsuleTimer-=dt;if(capsuleTimer<=0){spawnCapsule();capsuleTimer=7+Math.random()*5;}
-  if(gameTime>30&&Math.random()<0.003*dt*60&&planets.filter(p=>!p.discovered).length<4)spawnPlanet();
-  if(gameTime>20&&Math.random()<0.001*dt*60&&wrecks.filter(w=>!w.discovered).length<3)spawnWreck();
-  if(gameTime>45&&phenomena.length<3&&Math.random()<0.001*dt*60)spawnPhenomenon();
-  // Ennemis — après jour 7
-  if(survivalDay>=7&&Math.random()<0.0008*dt*60&&enemies.length<4)spawnEnemy();
+
+  // ── Gestion des zones ──
+  zoneTimer-=dt;
+  if(zoneTimer<=0){
+    if(currentZone==='void'){
+      // Passer en zone dense
+      currentZone='dense';
+      zoneDensity=0.8+Math.random()*0.2;
+      zoneTimer=20+Math.random()*25;
+      // Spawn cluster à l'entrée de la zone dense
+      const clusterSize=Math.floor(3+Math.random()*5);
+      for(let i=0;i<clusterSize;i++)setTimeout(()=>spawnDebris(true),i*300);
+      if(Math.random()<0.5)setTimeout(()=>spawnPlanet(),2000);
+      if(gameTime>60&&Math.random()<0.4)setTimeout(()=>spawnPhenomenon(),4000);
+    }else{
+      // Passer en zone vide
+      currentZone='void';
+      zoneDensity=0;
+      zoneTimer=40+Math.random()*40; // les vides durent plus longtemps
+    }
+  }
+
+  // ── Débris — seulement en zone dense ──
+  spawnTimer-=dt;
+  const debrisInterval=currentZone==='dense'?Math.max(1.5,4-difficulty*0.3):Math.max(8,15-difficulty*0.5);
+  if(spawnTimer<=0){
+    if(currentZone==='dense'||Math.random()<0.15){ // 15% chance en zone vide
+      spawnDebris(true);
+    }
+    spawnTimer=debrisInterval+Math.random()*2;
+  }
+
+  // ── Capsules — un peu partout mais espacées ──
+  capsuleTimer-=dt;
+  if(capsuleTimer<=0){
+    spawnCapsule();
+    capsuleTimer=12+Math.random()*8; // plus espacées qu'avant
+  }
+
+  // ── Planètes — sporadiques ──
+  if(gameTime>30&&Math.random()<0.0015*dt*60&&planets.filter(p=>!p.discovered).length<3)spawnPlanet();
+
+  // ── Épaves — rares ──
+  if(gameTime>20&&Math.random()<0.0006*dt*60&&wrecks.filter(w=>!w.discovered).length<2)spawnWreck();
+
+  // ── Phénomènes — rares, max 2 actifs ──
+  if(gameTime>60&&phenomena.length<2&&Math.random()<0.0005*dt*60)spawnPhenomenon();
+
+  // ── Ennemis — très rares après jour 7 ──
+  if(survivalDay>=7){
+    enemyEventTimer-=dt;
+    if(enemyEventTimer<=0&&enemies.length<2){
+      // Seulement en zone dense ou rare hasard
+      if(currentZone==='dense'||Math.random()<0.3){
+        spawnEnemy();
+        logEvent('⚠ CONTACT','danger');
+      }
+      enemyEventTimer=90+Math.random()*150; // 1.5 à 4 min entre chaque
+    }
+  }
+
+  // ── Événements ──
   eventTimer-=dt;
   if(activeEvent){eventDuration-=dt;activeEvent.onTick(dt);if(eventDuration<=0){logEvent(activeEvent.name+' TERMINÉ','ok');activeEvent=null;}}
-  else if(eventTimer<=0&&gameTime>30){
+  else if(eventTimer<=0&&gameTime>45){
     const ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
     activeEvent=ev;eventDuration=ev.duration;ev.onStart();
     logEvent('⚠ '+ev.desc,'danger');playEvent();triggerFlash(ev.color);
-    eventTimer=35+Math.random()*25;
+    eventTimer=50+Math.random()*40;
   }
-  if(eventTimer<=0&&!activeEvent)eventTimer=30+Math.random()*20;
+  if(eventTimer<=0&&!activeEvent)eventTimer=40+Math.random()*30;
 }
 
 // ── Vaisseaux ennemis ─────────────────────────
@@ -3432,7 +3553,7 @@ function checkDead(){
 
 function showGameOver(){
   state='dead';screen.classList.remove('hidden');
-  titleShipX=35;titleShipY=32;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+  titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
   if(!titleLoopRunning)titleLoop();
   stopAmbient();
   const dc=DIFF_CONFIG[selectedDiff];
@@ -4090,13 +4211,66 @@ function drawRadar(){
 function updateHUD(){
   document.getElementById('day-display').textContent=String(survivalDay).padStart(3,'0');
   journalDay.textContent=`JOUR ${String(survivalDay).padStart(3,'0')} — ${Math.floor(dayTimer/60).toString().padStart(2,'0')}:${Math.floor(dayTimer%60).toString().padStart(2,'0')}`;
-  const bars=[{id:'o2',val:oxygen},{id:'en',val:energy},{id:'hp',val:hull}];
+  // Jauges O2, Prop, Energie, Hull
+  const bars=[
+    {id:'o2',  val:oxygen/maxOxygen*100},
+    {id:'prop',val:propellant/maxPropellant*100},
+    {id:'en',  val:energy},
+    {id:'hp',  val:hull},
+  ];
   for(const b of bars){
-    const fill=document.getElementById('bar-'+b.id),val=document.getElementById('val-'+b.id);
+    const fill=document.getElementById('bar-'+b.id);
+    const val=document.getElementById('val-'+b.id);
+    if(!fill||!val)continue;
     fill.style.width=b.val+'%';
-    fill.className='gauge-fill'+(b.val<20?' crit':b.val<40?' warn':'');
+    if(b.id!=='prop')fill.className='gauge-fill'+(b.val<20?' crit':b.val<40?' warn':'');
     val.textContent=Math.ceil(b.val)+'%';
   }
+  // Indicateur vitesse orbitale — si proche d'une planète
+  updateOrbitalIndicator();
+}
+
+function updateOrbitalIndicator(){
+  for(const p of planets){
+    const dx=p.x-ship.x,dy=p.y-ship.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>gravityRange(BODY_MASSES[p.type.massKey]||120)||dist<p.r+20)continue;
+    // Vitesse orbitale circulaire = √(G*M/r)
+    const mass=BODY_MASSES[p.type.massKey]||120;
+    const vOrbit=Math.sqrt(G_CONST*mass/dist)*60; // ×60 pour notre échelle dt
+    const vShip=Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy)*60;
+    const ratio=vShip/vOrbit;
+    // Seulement afficher si assez proche
+    if(dist<gravityRange(mass)*0.6){
+      let status='';
+      if(ratio>0.85&&ratio<1.15){
+        status='ORBITE STABLE';
+        if(mdwActive&&Math.random()<0.001)mdwSpeak('Vitesse orbitale atteinte. Orbite circulaire possible.',true);
+      } else if(ratio>1.3){
+        status='TROP RAPIDE';
+      } else if(ratio<0.6){
+        status='TROP LENT';
+      }
+      if(status){
+        logEvent&&false; // pas de spam dans l'event log
+        // Afficher sur le canvas via floating text
+        if(!ship._orbitMsg||ship._orbitMsg!==status){
+          ship._orbitMsg=status;
+          ship._orbitMsgTimer=2;
+        }
+      }
+    }
+    break; // une planète à la fois
+  }
+  if(ship._orbitMsgTimer>0){
+    ship._orbitMsgTimer-=0.016;
+    const [sx,sy]=worldToScreen(ship.x,ship.y);
+    ctx.save();
+    ctx.fillStyle=ship._orbitMsg==='ORBITE STABLE'?'#00ff41':'#ffaa00';
+    ctx.font=`8px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=0;
+    ctx.fillText(`⊙ ${ship._orbitMsg}`,sx,sy-28);
+    ctx.restore();
+  }else{ship._orbitMsg=null;}
 }
 
 // ── Main loop ────────────────────────────────
@@ -4189,7 +4363,12 @@ canvas.addEventListener('mouseup',handlePointerUp);
 
 document.getElementById('btn-start').addEventListener('click',()=>{
   initAudio();
-  launchSequence(()=>startGame());
+  launchSequence((worldVy)=>{
+    startGame();
+    // Le vaisseau hérite de la vitesse du décollage titre
+    ship.vy=worldVy||0;
+    ship.angle=-Math.PI/2; // pointe vers le haut au départ
+  });
 });
 
 lastTime=performance.now();
