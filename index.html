@@ -933,7 +933,7 @@ const DIFF_CONFIG={
 };
 let selectedDiff='easy';
 let drainMult=1;
-const hiScores={easy:0,hard:0,harder:0};
+let hiScores={easy:0,hard:0,harder:0};
 const planetsFound={easy:0,hard:0,harder:0};
 
 // Difficulty UI
@@ -1386,9 +1386,12 @@ function spawnSecondaryWormhole(){
 
 function updateSecondaryWormholes(dt){
   secondaryWormholeTimer-=dt;
-  if(secondaryWormholeTimer<=0&&secondaryWormholes.length<2&&sectorCount>0){
-    spawnSecondaryWormhole();
-    secondaryWormholeTimer=240+Math.random()*180;
+  // Apparaissent dès le jour 4, rares — pas besoin d'avoir traversé un premier trou de ver
+  if(secondaryWormholeTimer<=0&&secondaryWormholes.length<1&&survivalDay>=4){
+    if(Math.random()<0.3){ // 30% de chance — reste rare
+      spawnSecondaryWormhole();
+    }
+    secondaryWormholeTimer=300+Math.random()*300; // 5-10 min entre chaque tentative
   }
   for(const w of secondaryWormholes){
     w.pulse+=dt*1.5;w.rotAngle+=dt*0.8;w.life-=dt;
@@ -1490,6 +1493,9 @@ function triggerWormhole(){
   wormholeActive=true;
   wormholePhase='closing';
   wormholeNextUniverse=(currentUniverse+1)%UNIVERSES.length;
+  // Protéger les ressources pendant la transition — pas de game over possible
+  hull=Math.max(hull,15);
+  oxygen=Math.max(oxygen,20);
 }
 
 function updateWormhole(dt){
@@ -1521,6 +1527,28 @@ function updateWormhole(dt){
       discovered:false,pulse:Math.random()*Math.PI*2,r:18,
     });
     const u=UNIVERSES[currentUniverse];
+    // Catalogue auto — chaque univers traversé est répertorié
+    const anomalyDesc=u.lore||`Propriétés physiques inconnues.`;
+    addToCatalogue('univers',u.name,anomalyDesc,'🌀');
+    // MDW analyse le nouvel univers
+    const anomalyNotes={
+      0:'Secteur standard. Référence de calibration.',
+      1:'Température stellaire élevée. Planètes brûlantes fréquentes.',
+      2:'Densité de comètes anormale. Températures extrêmes.',
+      3:'Perturbations électromagnétiques. Radar instable.',
+      4:'Luminosité anormale. Origine inconnue.',
+      5:'Aucune étoile active. Univers en fin de cycle.',
+      6:'Inversion gravitationnelle partielle. Phénomène inexpliqué.',
+      7:'Densité stellaire ×1.8. Navigation difficile.',
+      8:'Univers à expansion ralentie. Étoiles en phase terminale.',
+      9:'Émissions radio saturées. Source centrale non identifiée.',
+    };
+    if(mdwActive){
+      setTimeout(()=>{
+        const note=anomalyNotes[currentUniverse]||'Propriétés non répertoriées.';
+        mdwSpeak(`${u.name}. ${note}`,true);
+      },1500);
+    }
     setTimeout(()=>{
       journalFullText=u.lore||`${u.name}. Les étoiles ont changé.`;
       journalCharIdx=0;journalActive=true;journalWriteTimer=0;
@@ -1700,7 +1728,7 @@ function updateJournal(dt){
     journalCharIdx=Math.min(target,journalFullText.length);
     journalText.textContent=journalFullText.slice(0,journalCharIdx);
   }
-  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/25+5){
+  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/25+3){
     journalActive=false;journalEl.classList.remove('active');
   }
 }
@@ -4144,49 +4172,65 @@ const PHENOMENON_TYPES=[
      p.lensAngle+=dt*0.5;
      p.swallowTimer+=dt;
      const currentMass=p.mass||BODY_MASSES.blackhole;
+     // Gravité proportionnelle à la masse — range augmente avec la masse
      const range=gravityRange(currentMass);
 
-     // Gravité sur le vaisseau
+     // Gravité sur le vaisseau — force croît avec la masse
      const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
      if(dist<range&&dist>p.horizonR+12){
-       const f=G_CONST*currentMass/Math.max(dx*dx+dy*dy,200);
+       const f=G_CONST*currentMass*1.5/Math.max(dx*dx+dy*dy,200);
        ship.vx-=dx/dist*f*dt*60;ship.vy-=dy/dist*f*dt*60;
      }
 
-     // Avaler tout ce qui entre dans l'horizon
+     // Attirer activement les débris proches vers le trou noir
      for(const d of debris){
        const ddx=d.x-p.x,ddy=d.y-p.y;
-       if(Math.sqrt(ddx*ddx+ddy*ddy)<p.horizonR){
+       const dd=Math.sqrt(ddx*ddx+ddy*ddy);
+       if(dd<range*1.2&&dd>p.horizonR){
+         const f=G_CONST*currentMass*2/Math.max(ddx*ddx+ddy*ddy,100);
+         d.vx-=ddx/dd*f*dt*60;d.vy-=ddy/dd*f*dt*60;
+       }
+       if(dd<p.horizonR){
          d.dead=true;
-         const gained=d.mass||5;
+         const gained=d.mass||8;
          p.mass+=gained;
-         // Flash violet + onde de choc à chaque absorption
-         spawnParticles(d.x,d.y,'#8820ff',8,1.2);
-         if(gained>3)triggerFlash('#8820ff',0.06);
-         // Onde de choc visible
+         spawnParticles(d.x,d.y,'#8820ff',10,1.5);
+         triggerFlash('#8820ff',0.08);
          p._shockwaves=p._shockwaves||[];
-         p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*4,alpha:0.5});
+         p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*5,alpha:0.6});
+       }
+     }
+     // Avaler comètes et capsules
+     for(const c of comets){
+       const ddx=c.x-p.x,ddy=c.y-p.y,dd=Math.sqrt(ddx*ddx+ddy*ddy);
+       if(dd<p.horizonR){
+         c.dead=true;p.mass+=20;
+         spawnParticles(c.x,c.y,'#8820ff',15,2);
+         triggerFlash('#8820ff',0.12);
+         p._shockwaves=p._shockwaves||[];
+         p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*6,alpha:0.7});
        }
      }
      for(const c of capsules){
        const ddx=c.x-p.x,ddy=c.y-p.y;
        if(Math.sqrt(ddx*ddx+ddy*ddy)<p.horizonR){
-         c.dead=true;p.mass+=3;
+         c.dead=true;p.mass+=5;
          p._shockwaves=p._shockwaves||[];
-         p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*3,alpha:0.3});
+         p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*3,alpha:0.4});
        }
      }
 
-     // Mettre à jour les ondes de choc
+     // Accrétion passive — grossit lentement même sans avaler
+     p.mass+=0.8*dt; // 0.8 unité/seconde — visible sur 3 minutes
+
+     // Ondes de choc
      p._shockwaves=p._shockwaves||[];
-     for(const sw of p._shockwaves){
-       sw.r+=3*dt*60;sw.alpha-=0.015*dt*60;
-     }
+     for(const sw of p._shockwaves){sw.r+=4*dt*60;sw.alpha-=0.012*dt*60;}
      p._shockwaves=p._shockwaves.filter(sw=>sw.alpha>0);
 
-     // Croissance plus visible — facteur augmenté
-     const targetR=22+Math.log(p.mass/2000)*18;
-     p.r+=(Math.max(22,targetR)-p.r)*0.015*dt*60; // était 0.005 — 3× plus rapide
+     // Croissance très visible
+     const targetR=22+Math.log(Math.max(1,p.mass/2000))*20;
+     p.r+=(Math.max(22,targetR)-p.r)*0.02*dt*60;
      p.horizonR=p.r*2.5;
      BODY_MASSES.blackhole=p.mass;
 
@@ -4385,6 +4429,7 @@ function updatePhenomena(dt){
 }
 
 function checkDead(){
+  if(state==='wormhole')return; // jamais de game over pendant la transition
   if(hull<=0||(oxygen<=0&&hull<=0)){
     triggerFlash('#ff2020');spawnParticles(ship.x,ship.y,'#ff2020',30,3);playGameOver();
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
@@ -5378,6 +5423,52 @@ function gameLoop(ts){
 // ── Input ────────────────────────────────────
 function getPinchDist(e){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
 
+// ── Scan phénomène (triple tap) ───────────────
+const PHENOMENON_ANALYSES={
+  'PULSAR':'Étoile à neutrons en rotation rapide. Émission de jets radio périodiques. Période : variable.',
+  'TROU NOIR':'Singularité gravitationnelle. Horizon des événements visible. Masse : croissante.',
+  'MAGNÉTAR':'Étoile à neutrons à champ magnétique extrême. Bursts de radiation périodiques.',
+  'ÉRUPTION SOLAIRE':'Éjection de masse coronale. Particules chargées à haute énergie.',
+  'ÉTOILE À NEUTRONS':'Corps ultra-dense. Rayon estimé 10km. Gravité de surface : maximale.',
+  'PLANÈTE ROGUE':'Corps planétaire sans étoile hôte. Structure artificielle détectée à la surface.',
+  'STRANGE MATTER':'Matière hyperstable. Contamine tout ce qu\'elle touche. Origine inconnue.',
+};
+
+function scanNearestPhenomenon(){
+  // Trouver le phénomène le plus proche
+  let closest=null,minDist=600;
+  for(const p of phenomena){
+    const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+    if(d<minDist){minDist=d;closest=p;}
+  }
+  // Aussi scanner les planètes proches
+  let closestPlanet=null,minPlanetDist=400;
+  for(const p of planets){
+    if(!p.discovered)continue;
+    const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+    if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
+  }
+
+  if(closest&&minDist<closestPlanet?minPlanetDist:600){
+    const analysis=PHENOMENON_ANALYSES[closest.name]||'Phénomène non répertorié. Données insuffisantes.';
+    const alreadyCatalogued=catalogueEntries.some(e=>e.name===closest.name+' ('+Math.floor(closest.x)+')');
+    if(!alreadyCatalogued){
+      addToCatalogue('phenomene',`${closest.name} (J${survivalDay})`,analysis,
+        closest.name==='TROU NOIR'?'🌀':closest.name==='PULSAR'?'⚡':closest.name==='MAGNÉTAR'?'💥':'◈');
+      logEvent(`📡 SCAN : ${closest.name}`,'planet');
+      if(mdwActive)setTimeout(()=>mdwSpeak(analysis,true),300);
+    } else {
+      if(mdwActive)mdwSpeak('Déjà catalogué.',true);
+    }
+  } else if(closestPlanet){
+    const desc=`Classe ${closestPlanet.type.name}. Découverte jour ${survivalDay}. Secteur ${sectorCount}.`;
+    logEvent(`📡 SCAN : ${closestPlanet.name}`,'planet');
+    if(mdwActive)setTimeout(()=>mdwSpeak(`${closestPlanet.name}. ${closestPlanet.type.name||'Type inconnu'}.`,true),300);
+  } else {
+    if(mdwActive)mdwSpeak('Rien à scanner à cette distance.',true);
+    logEvent('📡 RIEN À PORTÉE','warn');
+  }
+}
 let lastTapTime=0,tapCount=0;
 function handlePointerDown(e){
   e.preventDefault();if(state!=='playing')return;if(!audioCtx)initAudio();
@@ -5387,6 +5478,11 @@ function handlePointerDown(e){
   const now=Date.now();
   if(now-lastTapTime<300){
     tapCount++;
+    if(tapCount>=3){
+      // Triple tap — scanner phénomène le plus proche
+      scanNearestPhenomenon();
+      tapCount=0;lastTapTime=0;return;
+    }
     if(tapCount>=2&&upgrades.torpedo>0){fireTorpedo();tapCount=0;lastTapTime=0;return;}
   }else{tapCount=1;}
   lastTapTime=now;
