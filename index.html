@@ -1533,18 +1533,20 @@ let secondaryWormholeTimer=300; // premier après 5 min
 function spawnSecondaryWormhole(){
   const angle=Math.random()*Math.PI*2;
   const dist=600+Math.random()*600;
+  // TERMINAL (id:15) seulement après 10 secteurs traversés
+  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
+  const target=available[Math.floor(Math.random()*available.length)];
   secondaryWormholes.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
     r:20,pulse:Math.random()*Math.PI*2,
     rotAngle:0,
-    life:120+Math.random()*60, // dure 2-3 minutes
+    life:120+Math.random()*60,
     discovered:false,
-    targetUniverse:Math.floor(Math.random()*UNIVERSES.length),
+    targetUniverse:target.id,
   });
   logEvent('🌀 TROU DE VER DÉTECTÉ','warn');
-  if(typeof mdwActive!=='undefined'&&mdwActive)
-    setTimeout(()=>mdwSpeak('Trou de ver. Non prévu. Destination inconnue.',true),800);
+  if(mdwActive)setTimeout(()=>mdwSpeak('Trou de ver. Non prévu. Destination inconnue.',true),800);
 }
 
 function updateSecondaryWormholes(dt){
@@ -1666,10 +1668,15 @@ function triggerWormhole(){
   wormholeT=0;
   wormholeActive=true;
   wormholePhase='closing';
-  // Univers aléatoire — pas séquentiel
-  let next;
-  do{next=Math.floor(Math.random()*UNIVERSES.length);}while(next===currentUniverse);
-  wormholeNextUniverse=next;
+  // Univers aléatoire — TERMINAL seulement après 10 secteurs
+  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
+  const next=available[Math.floor(Math.random()*available.length)];
+  wormholeNextUniverse=next.id;
+
+  // MDW marque discrètement le passage vers TERMINAL
+  if(next.id===15&&mdwActive){
+    setTimeout(()=>mdwSpeak('Je connais cette fréquence.',true),1000);
+  }
   // Protéger les ressources pendant la transition — pas de game over possible
   hull=Math.max(hull,15);
   oxygen=Math.max(oxygen,20);
@@ -1685,6 +1692,10 @@ function updateWormhole(dt){
     currentUniverse=wormholeNextUniverse;
     sectorCount++;
     applyUniverse(UNIVERSES[currentUniverse]);
+    // MDW marque discrètement le dixième secteur
+    if(sectorCount===10&&mdwActive){
+      setTimeout(()=>mdwSpeak('Dix secteurs. Je ne pensais pas que vous iriez aussi loin.',true),8000);
+    }
     initStars();
     initMolecularClouds();
     // Persistance — reset environnement seulement, pas les ressources
