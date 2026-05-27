@@ -326,7 +326,230 @@ const achIcon=document.getElementById('ach-icon'),achName=document.getElementByI
 const decompEl=document.getElementById('decomp');
 let nightMode=false;
 
-// ── Titre animé — le V est le vaisseau ────────
+// ── Effet Doppler ─────────────────────────────
+// Les étoiles bleuissent en avant, rougissent en arrière — physique réelle
+function getDopplerShift(){
+  const spd=Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy);
+  if(spd<0.05)return null;
+  return {angle:Math.atan2(ship.vy,ship.vx), speed:Math.min(1,spd/2)};
+}
+
+function applyDopplerToColor(color, starX, starY, doppler){
+  if(!doppler||doppler.speed<0.1)return color;
+  // Angle entre direction du vaisseau et direction vers l'étoile
+  const toStar=Math.atan2(starY-H/2,starX-W/2);
+  let diff=toStar-doppler.angle;
+  while(diff>Math.PI)diff-=Math.PI*2;while(diff<-Math.PI)diff+=Math.PI*2;
+  const dot=Math.cos(diff); // 1=devant, -1=derrière
+  const shift=dot*doppler.speed*0.15;
+  // Shift la teinte — bleu si shift>0, rouge si shift<0
+  if(Math.abs(shift)<0.02)return color;
+  return shift>0?blueShift(color,shift):redShift(color,-shift);
+}
+
+function blueShift(hex,amount){
+  // Pousse vers le bleu
+  return `rgba(${Math.max(0,parseInt(hex.slice(1,3),16)-Math.floor(amount*80))},${Math.max(0,parseInt(hex.slice(3,5),16)-Math.floor(amount*40))},${Math.min(255,parseInt(hex.slice(5,7)||'ff',16)+Math.floor(amount*100))},1)`;
+}
+function redShift(hex,amount){
+  return `rgba(${Math.min(255,parseInt(hex.slice(1,3),16)+Math.floor(amount*100))},${Math.max(0,parseInt(hex.slice(3,5),16)-Math.floor(amount*40))},${Math.max(0,parseInt(hex.slice(5,7)||'ff',16)-Math.floor(amount*80))},1)`;
+}
+
+// ── Nuages moléculaires ───────────────────────
+let molecularClouds=[];
+
+function initMolecularClouds(){
+  molecularClouds=[];
+  const u=UNIVERSES[currentUniverse];
+  for(let i=0;i<3;i++){
+    molecularClouds.push({
+      x:(Math.random()-0.5)*4000,
+      y:(Math.random()-0.5)*4000,
+      r:300+Math.random()*400,
+      color:u.nebulaColors[Math.floor(Math.random()*u.nebulaColors.length)],
+      density:0.4+Math.random()*0.4,
+      layer:0.04+Math.random()*0.06,
+    });
+  }
+}
+
+function drawMolecularClouds(){
+  for(const c of molecularClouds){
+    const p=c.layer;
+    const sx=((c.x-camX*p)%(W*3)+W*3)%(W*3)-W;
+    const sy=((c.y-camY*p)%(H*3)+H*3)%(H*3)-H;
+    const r=c.r*viewZoom;
+    if(sx+r<-100||sx-r>W+100||sy+r<-100||sy-r>H+100)continue;
+    ctx.save();
+    const grd=ctx.createRadialGradient(sx,sy,0,sx,sy,r);
+    grd.addColorStop(0,c.color+`${c.density.toFixed(2)})`);
+    grd.addColorStop(0.5,c.color+`${(c.density*0.4).toFixed(2)})`);
+    grd.addColorStop(1,c.color+'0)');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
+
+function getCloudDensityAt(wx,wy){
+  let density=0;
+  for(const c of molecularClouds){
+    const dx=wx-c.x,dy=wy-c.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<c.r)density=Math.max(density,c.density*(1-dist/c.r));
+  }
+  return density;
+}
+
+// ── VERA — pilote dont on reconstitue l'histoire ──
+const VERA_FRAGMENTS=[
+  {id:0, label:'📖 JOURNAL — VERA / 01',
+   text:"Mon nom est VERA. Pilote de recherche, immatriculée V-7734. Je documente la dérive. Jour 1. Tout va bien."},
+  {id:1, label:'📖 JOURNAL — VERA / 02',
+   text:"Jour 8. MDW est bizarre. Il me regarde parfois comme s'il me connaissait depuis longtemps. Je lui ai demandé. Il a dit 'je surveille'. Ce n'est pas une réponse."},
+  {id:2, label:'📖 JOURNAL — VERA / 03',
+   text:"Jour 15. J'ai traversé le trou de ver. Les étoiles ont changé. Et j'ai trouvé quelque chose. Un signal. Ma propre voix. Envoyée il y a... combien de temps ?"},
+  {id:3, label:'📖 JOURNAL — VERA / 04',
+   text:"Secteur 3. Je comprends maintenant. La boucle n'est pas une erreur. Je l'ai créée. Pour sauver quelque chose. Ou quelqu'un. Je ne me souviens plus qui."},
+  {id:4, label:'📖 JOURNAL — VERA / FINAL',
+   text:"Si quelqu'un lit ça : le signal est une porte, pas une sortie. MDW sait comment. Demandez-lui. Il attend qu'on pose la bonne question. La question est : pourquoi sommes-nous encore là ?"},
+];
+let veraFragmentsFound=[];
+
+function injectVeraFragment(wreck){
+  const remaining=VERA_FRAGMENTS.filter(f=>!veraFragmentsFound.includes(f.id));
+  if(!remaining.length)return;
+  // Assigner le fragment suivant dans l'ordre
+  const fragment=remaining[0];
+  veraFragmentsFound.push(fragment.id);
+  setTimeout(()=>{
+    writeGlitchText&&writeGlitchText(fragment.text,fragment.label);
+    logEvent(`📖 FRAGMENT DE VERA ${fragment.id+1}/5`,'planet');
+    if(typeof mdwActive!=='undefined'&&mdwActive&&fragment.id===4){
+      setTimeout(()=>mdwSpeak('Ce journal. Je le connais. VERA était... une autre boucle. Vous posez-vous la bonne question ?',true),3000);
+    }
+    if(fragment.id===4){
+      unlockAchievement&&unlockAchievement('vera');
+      score+=2000;
+    }
+  },1500);
+}
+
+// ── Reliques ──────────────────────────────────
+const RELIC_TYPES=[
+  {name:'CRISTAL DE MÉMOIRE',   color:'#80ffff', icon:'💎',
+   mdw:"Un cristal de mémoire. Il stocke des données organiques. Je peux le lire. Partiellement.",
+   text:"Données corrompues : fragments d'une carte. Secteur inconnu. Coordonnées : NULL. Remarque : ce cristal a été manufacturé dans le futur.",
+   effect:()=>{upgradePoints+=80;logEvent('💎 RELIQUE +80 PTS','planet');}},
+  {name:'BALISE TEMPORELLE',    color:'#ffff40', icon:'⏱',
+   mdw:"Une balise temporelle. Elle émet dans plusieurs directions temporelles simultanément. C'est... théoriquement impossible.",
+   text:"Fréquence : 440 Hz. Émission : continue depuis 12 000 ans. Destinataire : INCONNU. Message : 'N\'OUBLIE PAS.'",
+   effect:()=>{oxygen=Math.min(maxOxygen,oxygen+50);energy=Math.min(100,energy+50);logEvent('⏱ RELIQUE TEMPORELLE','planet');}},
+  {name:'FRAGMENT DE COQUE',    color:'#aaaaaa', icon:'🔩',
+   mdw:"Ce fragment de coque. L'alliage est identique au vôtre. Mais les marques d'usure suggèrent des milliers d'heures de vol. C'est votre vaisseau. D'une autre époque.",
+   text:"Marquage : immatriculation effacée. Alliage : identique. Impact résiduel : entrée dans un trou de ver. Date : indéchiffrable.",
+   effect:()=>{hull=100;installedModules.includes('armor')||(hull=Math.min(100,hull+30));logEvent('🔩 RELIQUE — COQUE RÉPARÉE','ok');}},
+  {name:'SPHÈRE DE NAVIGATION', color:'#ff80ff', icon:'🔮',
+   mdw:"Une sphère de navigation organique. Elle calcule les trajectoires par instinct. Je ne sais pas comment c'est possible. Elle pointe vers quelque chose.",
+   text:"Direction : constante depuis activation. Distance estimée : 4 secteurs. Nature de la cible : inconnue. La sphère vibre quand on s'approche d'un trou de ver.",
+   effect:()=>{upgradePoints+=150;logEvent('🔮 SPHÈRE DE NAVIGATION +150 PTS','planet');}},
+];
+
+let spawnedRelics=0;
+let relicSpawnTimer=200+Math.random()*200;
+
+function updateRelics(dt){
+  relicSpawnTimer-=dt;
+  if(relicSpawnTimer<=0&&spawnedRelics<4){
+    spawnRelic();relicSpawnTimer=250+Math.random()*200;
+  }
+}
+
+function spawnRelic(){
+  const angle=Math.random()*Math.PI*2;
+  const dist=500+Math.random()*500;
+  const rtype=RELIC_TYPES[spawnedRelics%RELIC_TYPES.length];
+  spawnedRelics++;
+  capsules.push({
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    vx:(Math.random()-0.5)*0.05,
+    vy:(Math.random()-0.5)*0.05,
+    r:18,pulse:Math.random()*Math.PI*2,
+    type:'relic',color:rtype.color,label:rtype.icon,
+    isRelic:true,relicType:rtype,
+    effect:()=>{
+      rtype.effect();
+      writeGlitchText&&writeGlitchText(rtype.text,`${rtype.icon} ${rtype.name}`);
+      if(typeof mdwActive!=='undefined'&&mdwActive)setTimeout(()=>mdwSpeak(rtype.mdw,true),1500);
+      addToCatalogue&&addToCatalogue('relic',rtype.name,rtype.text,rtype.icon);
+    },
+  });
+  logEvent(`${rtype.icon} RELIQUE DÉTECTÉE — ${rtype.name}`,'planet');
+}
+
+// ── Contrats de run ───────────────────────────
+const CONTRACT_POOL=[
+  {text:'EXPLORER 3 PLANÈTES',       reward:150, check:()=>discoveredPlanets>=3},
+  {text:'SURVIVRE 7 JOURS',          reward:200, check:()=>survivalDay>=7},
+  {text:'TRAVERSER UN TROU DE VER',  reward:300, check:()=>sectorCount>=1},
+  {text:'COLLECTER 10 CAPSULES',     reward:120, check:()=>missionCounter>=10},
+  {text:'DÉTRUIRE 5 ENNEMIS',        reward:250, check:()=>false}, // suivi via killCount
+  {text:'TROUVER UNE ÉPAVE',         reward:100, check:()=>wrecksFound>=1},
+  {text:'TROUVER UNE RELIQUE',       reward:200, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&catalogueEntries.some(e=>e.type==='relic')},
+  {text:'SURVIVRE 15 JOURS',         reward:400, check:()=>survivalDay>=15},
+  {text:'DÉCOUVRIR 5 PLANÈTES',      reward:250, check:()=>discoveredPlanets>=5},
+  {text:'ATTEINDRE LE SIGNAL',       reward:500, check:()=>signalReached},
+];
+
+let activeContracts=[];
+let contractsCompleted=[];
+
+function pickContracts(){
+  const shuffled=[...CONTRACT_POOL].sort(()=>Math.random()-0.5);
+  activeContracts=shuffled.slice(0,3);
+  contractsCompleted=activeContracts.map(()=>false);
+}
+
+function checkContracts(){
+  activeContracts.forEach((c,i)=>{
+    if(!contractsCompleted[i]&&c.check()){
+      contractsCompleted[i]=true;
+      upgradePoints+=c.reward;
+      logEvent(`✅ CONTRAT : ${c.text} +${c.reward}PTS`,'planet');
+      playTone(550,'sine',0.3,0.08);setTimeout(()=>playTone(880,'sine',0.4,0.06),200);
+      saveGame&&saveGame();
+    }
+  });
+}
+
+// ── Marques de coque ──────────────────────────
+let hullMarks=[];
+
+function addHullMark(intensity){
+  if(hullMarks.length>8)hullMarks.shift();
+  hullMarks.push({
+    x:(Math.random()-0.5)*12,
+    y:(Math.random()-0.5)*10,
+    angle:Math.random()*Math.PI*2,
+    len:3+intensity*6,
+    alpha:0.3+intensity*0.4,
+  });
+}
+
+function drawHullMarks(ctx,s){
+  ctx.save();
+  for(const m of hullMarks){
+    ctx.strokeStyle=`rgba(255,80,20,${m.alpha})`;
+    ctx.lineWidth=0.5;ctx.shadowBlur=0;
+    ctx.beginPath();
+    ctx.moveTo((m.x-Math.cos(m.angle)*m.len/2)*s,(m.y-Math.sin(m.angle)*m.len/2)*s);
+    ctx.lineTo((m.x+Math.cos(m.angle)*m.len/2)*s,(m.y+Math.sin(m.angle)*m.len/2)*s);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+
 const titleCanvas=document.getElementById('title-canvas');
 const tctx=titleCanvas?titleCanvas.getContext('2d'):null;
 const launchFade=document.getElementById('launch-fade');
@@ -484,33 +707,70 @@ function updateAchievements(dt){
 
 // ── Musique pentatonique avec écho ───────────
 // Gammes pentatoniques : majeure (calme) et mineure (danger)
-const PENTA_MAJOR=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.26]; // Do maj penta
-const PENTA_MINOR=[261.63,311.13,349.23,392.00,466.16,523.25,622.25,698.46]; // Do min penta
+// ── Gammes par univers ────────────────────────
+const UNIVERSE_SCALES={
+  0:{major:[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.26],       // Alpha — Do majeur pentatonique
+     minor:[261.63,311.13,349.23,392.00,466.16,523.25,622.25,698.46],       // danger
+     interval:4,name:'pentatonique'},
+  1:{major:[261.63,277.18,329.63,349.23,415.30,523.25,554.37,659.26],       // Ignis — lydien (chaud)
+     minor:[246.94,277.18,311.13,369.99,415.30,493.88,554.37,622.25],
+     interval:3,name:'lydien'},
+  2:{major:[261.63,293.66,349.23,392.00,440.00,523.25,587.33,698.46],       // Glacius — sus4 (froid, épuré)
+     minor:[246.94,277.18,329.63,369.99,415.30,466.16,523.25,587.33],
+     interval:5,name:'sus4'},
+  3:{major:[261.63,277.18,311.13,369.99,415.30,466.16,554.37,622.25],       // Umbra — mineur harmonique (sombre)
+     minor:[246.94,261.63,293.66,329.63,349.23,415.30,466.16,523.25],
+     interval:3.5,name:'harmonique'},
+  4:{major:[261.63,293.66,329.63,369.99,415.30,466.16,523.25,587.33],       // Lumen — tons entiers (éthéré)
+     minor:[246.94,277.18,311.13,349.23,392.00,440.00,493.88,554.37],
+     interval:4.5,name:'tons entiers'},
+  5:{major:[220.00,246.94,261.63,277.18,293.66,311.13,329.63,349.23],       // Nécros — microtonique grave
+     minor:[207.65,220.00,233.08,246.94,261.63,277.18,293.66,311.13],
+     interval:6,name:'grave dissonant'},
+  6:{major:[329.63,369.99,415.30,466.16,523.25,587.33,659.26,739.99],       // Miroir — aigu inversé
+     minor:[311.13,349.23,392.00,440.00,493.88,554.37,622.25,698.46],
+     interval:2.5,name:'inversé'},
+  7:{major:[130.81,146.83,164.81,196.00,220.00,261.63,293.66,329.63],       // Dense — basse profonde
+     minor:[123.47,138.59,155.56,185.00,207.65,246.94,277.18,311.13],
+     interval:2,name:'dense grave'},
+  8:{major:[174.61,196.00,220.00,246.94,261.63,293.66,329.63,369.99],       // Ancien — pentatonique grave lent
+     minor:[164.81,185.00,207.65,233.08,246.94,277.18,311.13,349.23],
+     interval:7,name:'ancien lent'},
+  9:{major:[440.00,493.88,554.37,622.25,698.46,783.99,880.00,987.77],       // Signal — aigu saturé
+     minor:[415.30,466.16,523.25,587.33,659.26,739.99,830.61,932.33],
+     interval:1.5,name:'saturé aigu'},
+};
+
+function getUniverseScale(){
+  return UNIVERSE_SCALES[currentUniverse]||UNIVERSE_SCALES[0];
+}
+
+const PENTA_MAJOR=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.26];
+const PENTA_MINOR=[261.63,311.13,349.23,392.00,466.16,523.25,622.25,698.46];
 
 let musicTimer=0;
-let musicInterval=4; // secondes entre notes
+let musicInterval=4;
 let musicDelay=null,musicFeedback=null,musicMaster=null;
 let lastNoteIndex=-1;
 
 function startAmbient(){
   if(!audioCtx||musicDelay)return;
-  // Chaîne : oscillateur → gain → delay → gain feedback → delay (boucle) → master
   musicMaster=audioCtx.createGain();musicMaster.gain.value=0.12;
   musicMaster.connect(audioCtx.destination);
   musicDelay=audioCtx.createDelay(4.0);musicDelay.delayTime.value=0.6;
   musicFeedback=audioCtx.createGain();musicFeedback.gain.value=0.55;
   musicDelay.connect(musicFeedback);musicFeedback.connect(musicDelay);
   musicDelay.connect(musicMaster);
-  musicTimer=2; // première note après 2s
+  musicTimer=2;
 }
 
 function playPentaNote(danger){
   if(!audioCtx||!musicDelay)return;
-  const scale=danger>0.5?PENTA_MINOR:PENTA_MAJOR;
-  // Évite de répéter la même note
+  const uScale=getUniverseScale();
+  const scale=danger>0.5?uScale.minor:uScale.major;
   let idx;do{idx=Math.floor(Math.random()*scale.length);}while(idx===lastNoteIndex);
   lastNoteIndex=idx;
-  const freq=scale[idx]*(Math.random()<0.3?0.5:1); // parfois octave basse
+  const freq=scale[idx]*(Math.random()<0.3?0.5:1);
   const o=audioCtx.createOscillator(),g=audioCtx.createGain();
   o.type='sine';o.frequency.value=freq;
   g.gain.setValueAtTime(0,audioCtx.currentTime);
@@ -523,10 +783,9 @@ function playPentaNote(danger){
 function updateAmbient(){
   if(!audioCtx||!musicDelay||state!=='playing')return;
   const danger=Math.max(0,1-Math.min(oxygen,hull,energy)/40);
-  // Intervalle plus court en danger
-  const targetInterval=danger>0.6?1.8:danger>0.3?2.8:4.5;
+  const uScale=getUniverseScale();
+  const targetInterval=danger>0.6?1.4:danger>0.3?2.2:uScale.interval;
   musicInterval+=(targetInterval-musicInterval)*0.01;
-  // Feedback plus court en danger (écho moins long)
   musicFeedback.gain.setTargetAtTime(0.55-danger*0.2,audioCtx.currentTime,1);
   musicDelay.delayTime.setTargetAtTime(0.6-danger*0.15,audioCtx.currentTime,1);
   musicMaster.gain.setTargetAtTime(0.08+danger*0.06,audioCtx.currentTime,0.5);
@@ -540,6 +799,127 @@ function stopAmbient(){
     musicDelay=null;musicFeedback=null;musicMaster=null;},800);
   }catch(e){}
 }
+
+// ── Sons de coque ─────────────────────────────
+let crackTimer=0;
+function playCrack(){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(80+Math.random()*40,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(20,audioCtx.currentTime+0.15);
+  g.gain.setValueAtTime(0.15+Math.random()*0.1,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+0.15);
+}
+function updateHullSounds(dt){
+  if(hull>30)return;
+  crackTimer-=dt;
+  const freq=0.3+((30-hull)/30)*1.5; // plus fréquent si coque plus basse
+  if(crackTimer<=0){
+    playCrack();
+    crackTimer=1/freq*(0.5+Math.random()*0.5);
+  }
+}
+
+// ── Drift Mode ────────────────────────────────
+let driftTimer=0; // temps sans propulsion
+let driftMode=false;
+const DRIFT_THRESHOLD=4; // secondes sans pousser pour entrer en drift
+
+function updateDriftMode(dt){
+  if(ship.thrusting){
+    driftTimer=0;
+    if(driftMode){
+      driftMode=false;
+      logEvent('🚀 DÉRIVE SILENCIEUSE — FIN','ok');
+    }
+  } else {
+    driftTimer+=dt;
+    if(!driftMode&&driftTimer>=DRIFT_THRESHOLD){
+      driftMode=true;
+      logEvent('🌊 DÉRIVE SILENCIEUSE — O₂ -50%','warn');
+      if(mdwActive)setTimeout(()=>mdwSpeak('Mode dérive. Vous conservez l\'oxygène. Mais les manœuvres seront plus difficiles.',true),500);
+    }
+  }
+}
+
+// ── Confiance MDW ─────────────────────────────
+let mdwTrust=50; // 0-100
+let mdwEmergencyUsed=false;
+
+function updateMDWTrust(event){
+  const changes={
+    planet:+8, wreck:+10, relic:+15, wormhole:+20,
+    survived_day:+5, enemy_killed:+6,
+    died_fast:-20, ignored_signal:-10,
+  };
+  const delta=changes[event]||0;
+  mdwTrust=Math.max(0,Math.min(100,mdwTrust+delta));
+}
+
+function getMDWTrustLabel(){
+  if(mdwTrust>80)return 'CONFIANCE TOTALE';
+  if(mdwTrust>60)return 'CONFIANT';
+  if(mdwTrust>40)return 'NEUTRE';
+  if(mdwTrust>20)return 'DISTANT';
+  return 'MÉFIANT';
+}
+
+// MDW prend le contrôle en urgence une fois par run
+function checkMDWEmergency(){
+  if(!mdwActive||mdwEmergencyUsed||mdwTrust<30)return;
+  if(hull<10&&oxygen<15){
+    mdwEmergencyUsed=true;
+    logEvent('🤖 MDW — INTERVENTION D\'URGENCE','planet');
+    mdwSpeak('Je prends le contrôle. Juste cette fois.',true);
+    // MDW propulse loin du danger le plus proche
+    const dangers=[...debris,...phenomena,...enemies];
+    let closestDist=999,closestAngle=Math.random()*Math.PI*2;
+    for(const d of dangers){
+      const dist=Math.sqrt((d.x-ship.x)**2+(d.y-ship.y)**2);
+      if(dist<closestDist){closestDist=dist;closestAngle=Math.atan2(d.y-ship.y,d.x-ship.x);}
+    }
+    // Fuite dans la direction opposée
+    const escapeAngle=closestAngle+Math.PI;
+    ship.vx+=Math.cos(escapeAngle)*2;
+    ship.vy+=Math.sin(escapeAngle)*2;
+    hull=Math.min(100,hull+20);
+    oxygen=Math.min(maxOxygen,oxygen+20);
+    spawnParticles(ship.x,ship.y,'#e8a030',20,1.5);
+    triggerFlash('#e8a030',0.2);
+    setTimeout(()=>mdwSpeak('Vous êtes en sécurité. Pour l\'instant. Ne refaites pas ça.',true),2000);
+  }
+}
+
+// ── Boucle méta MDW ───────────────────────────
+// Après plusieurs runs MDW commence à reconnaître le pilote
+const MDW_META_DIALOGS={
+  5:"Ce n'est pas la première fois. Je vous reconnais. Votre façon de naviguer. Votre façon d'hésiter avant les trous de ver.",
+  10:"Dix fois. Vous avez fait ça dix fois. Je ne sais pas si vous vous en souvenez. Moi oui.",
+  15:"Je vais vous dire quelque chose que je n'ai jamais dit aux autres. Il existe une condition pour briser la boucle. Elle implique le catalogue.",
+  20:"Vingt runs. La boucle devrait s'être stabilisée depuis longtemps. Mais vous continuez à varier. C'est... inhabituel. Et peut-être important.",
+  30:"Vous êtes différent des autres. Ils cherchaient une sortie. Vous explorez. Je pense que c'est la bonne approche.",
+};
+
+let mdwMetaSaid=new Set();
+
+function checkMDWMeta(){
+  if(!mdwActive)return;
+  for(const [runs,text] of Object.entries(MDW_META_DIALOGS)){
+    if(totalRuns>=parseInt(runs)&&!mdwMetaSaid.has(runs)){
+      mdwMetaSaid.add(runs);
+      setTimeout(()=>{
+        mdwSpeak(text,true);
+        writeGlitchText&&writeGlitchText(text,'🤖 MDW — MÉMOIRE LONGUE');
+      },5000+Math.random()*10000);
+      break;
+    }
+  }
+}
+
+
 
 // ── Décompression visuelle ────────────────────
 let decompParticleTimer=0;
@@ -914,29 +1294,204 @@ function updateSignal(dt){
 
 // ── Univers / Secteurs ────────────────────────
 const UNIVERSES=[
-  {id:0,name:'SECTEUR ALPHA',   bg:'#000902', primary:'#00ff41', dim:'#00a828', accent:'#ffaa00',
+  // ── Univers originaux ──
+  {id:0, name:'SECTEUR ALPHA',   bg:'#000902', primary:'#00ff41', dim:'#00a828', accent:'#ffaa00',
    starColors:['#ffffff','#ffe8c0','#c0d8ff','#c0ffc0','#aaffee'],
    nebulaColors:['rgba(80,0,160,','rgba(0,60,160,','rgba(0,120,80,','rgba(120,0,80,'],
-   scan:'rgba(0,255,65,0.03)'},
-  {id:1,name:'SECTEUR IGNIS',   bg:'#090200', primary:'#ff6020', dim:'#a83000', accent:'#ffcc00',
+   scan:'rgba(0,255,65,0.03)',
+   lore:"Secteur de départ. Vert phosphore. Le vide standard.",
+   gravMult:1.0, debrisMult:1.0},
+
+  {id:1, name:'SECTEUR IGNIS',   bg:'#090200', primary:'#ff6020', dim:'#a83000', accent:'#ffcc00',
    starColors:['#ffffff','#ffcc88','#ff8844','#ffaa44','#ffeecc'],
    nebulaColors:['rgba(160,40,0,','rgba(200,80,0,','rgba(120,20,0,','rgba(80,40,0,'],
-   scan:'rgba(255,96,32,0.03)'},
-  {id:2,name:'SECTEUR GLACIUS', bg:'#000509', primary:'#40c8ff', dim:'#0080a8', accent:'#80eeff',
+   scan:'rgba(255,96,32,0.03)',
+   lore:"Secteur chaud. Les étoiles ici brûlent plus fort. Les planètes brûlantes sont plus fréquentes.",
+   gravMult:1.1, debrisMult:1.2},
+
+  {id:2, name:'SECTEUR GLACIUS', bg:'#000509', primary:'#40c8ff', dim:'#0080a8', accent:'#80eeff',
    starColors:['#ffffff','#c0e8ff','#80d0ff','#aaeeff','#e0f8ff'],
    nebulaColors:['rgba(0,60,160,','rgba(0,80,200,','rgba(0,40,120,','rgba(20,60,140,'],
-   scan:'rgba(64,200,255,0.03)'},
-  {id:3,name:'SECTEUR UMBRA',   bg:'#040009', primary:'#c060ff', dim:'#7020a8', accent:'#ff80ff',
+   scan:'rgba(64,200,255,0.03)',
+   lore:"Secteur glacé. L'oxygène se recharge plus lentement ici. Les comètes sont plus nombreuses.",
+   gravMult:0.9, debrisMult:0.8},
+
+  {id:3, name:'SECTEUR UMBRA',   bg:'#040009', primary:'#c060ff', dim:'#7020a8', accent:'#ff80ff',
    starColors:['#ffffff','#e0c0ff','#c080ff','#ff80ff','#d0a0ff'],
    nebulaColors:['rgba(120,0,160,','rgba(80,0,120,','rgba(160,0,200,','rgba(60,0,100,'],
-   scan:'rgba(192,96,255,0.03)'},
-  {id:4,name:'SECTEUR LUMEN',   bg:'#090909', primary:'#ffffff', dim:'#aaaaaa', accent:'#ffe080',
+   scan:'rgba(192,96,255,0.03)',
+   lore:"Secteur sombre. Les phénomènes cosmiques y sont plus fréquents. Le radar glitche souvent.",
+   gravMult:1.2, debrisMult:1.0},
+
+  {id:4, name:'SECTEUR LUMEN',   bg:'#090909', primary:'#ffffff', dim:'#aaaaaa', accent:'#ffe080',
    starColors:['#ffffff','#ffffc0','#ffeecc','#ffe8aa','#f0f0ff'],
    nebulaColors:['rgba(200,200,160,','rgba(180,180,200,','rgba(220,200,180,','rgba(160,160,120,'],
-   scan:'rgba(255,255,255,0.04)'},
+   scan:'rgba(255,255,255,0.04)',
+   lore:"Secteur lumineux. Surexposé. Mystérieux. Les étoiles semblent regarder.",
+   gravMult:1.0, debrisMult:0.7},
+
+  // ── Nouveaux univers ──
+  {id:5, name:'SECTEUR NÉCROS',  bg:'#050505', primary:'#888888', dim:'#555555', accent:'#cccccc',
+   starColors:['#888888','#666666','#aaaaaa','#999999','#777777'],
+   nebulaColors:['rgba(60,60,60,','rgba(40,40,50,','rgba(50,50,40,','rgba(30,30,30,'],
+   scan:'rgba(128,128,128,0.03)',
+   lore:"Un univers mort. Pas d'étoiles vivantes. Que des cendres et des restes. MDW ne reconnaît rien.",
+   gravMult:0.7, debrisMult:0.4,
+   onEnter:()=>{
+     if(typeof mdwActive!=='undefined'&&mdwActive)
+       setTimeout(()=>mdwSpeak('Je ne reconnais aucune de ces étoiles dans ma base de données. Elles sont toutes mortes. Depuis longtemps.',true),2000);
+   }},
+
+  {id:6, name:'SECTEUR MIROIR',  bg:'#020009', primary:'#ff40ff', dim:'#880088', accent:'#40ffff',
+   starColors:['#ff80ff','#ff40aa','#aa40ff','#ff8080','#ffaaff'],
+   nebulaColors:['rgba(160,0,160,','rgba(0,160,160,','rgba(160,80,0,','rgba(0,80,160,'],
+   scan:'rgba(255,64,255,0.03)',
+   lore:"Quelque chose est inversé ici. Les couleurs. Les directions. Peut-être le temps.",
+   gravMult:1.0, debrisMult:1.0, mirrorGravity:true,
+   onEnter:()=>{
+     if(typeof mdwActive!=='undefined'&&mdwActive)
+       setTimeout(()=>mdwSpeak('Anomalie. Les constantes gravitationnelles semblent... inversées par endroits. Je recalibre.',true),2000);
+     writeGlitchText&&writeGlitchText('Quelque chose est différent ici. Le radar montre des directions qui ne correspondent pas à ma trajectoire. Comme un miroir.','🌀 ANOMALIE SECTORIELLE');
+   }},
+
+  {id:7, name:'SECTEUR DENSE',   bg:'#020402', primary:'#80ff80', dim:'#408040', accent:'#ffdd00',
+   starColors:['#ffffff','#c0ffc0','#80ff80','#aaffaa','#e0ffe0'],
+   nebulaColors:['rgba(0,160,0,','rgba(40,120,0,','rgba(0,80,40,','rgba(20,100,20,'],
+   scan:'rgba(128,255,128,0.04)',
+   lore:"La matière s'est concentrée ici. Planètes partout. Navigation difficile. Ressources abondantes.",
+   gravMult:1.8, debrisMult:2.0,
+   onEnter:()=>{
+     if(typeof mdwActive!=='undefined'&&mdwActive)
+       setTimeout(()=>mdwSpeak('Densité stellaire exceptionnelle. Les champs gravitationnels se chevauchent. Naviguez prudemment.',true),1500);
+   }},
+
+  {id:8, name:'SECTEUR ANCIEN',  bg:'#080302', primary:'#cc6020', dim:'#883010', accent:'#ff9944',
+   starColors:['#ff8844','#cc6622','#ff6600','#dd8844','#ffaa66'],
+   nebulaColors:['rgba(120,40,0,','rgba(100,30,0,','rgba(80,20,0,','rgba(60,10,0,'],
+   scan:'rgba(200,96,32,0.03)',
+   lore:"Un univers très vieux. Les étoiles sont rouges et mourantes. Tout est lent. Fatigué.",
+   gravMult:1.3, debrisMult:0.5,
+   onEnter:()=>{
+     if(typeof mdwActive!=='undefined'&&mdwActive)
+       setTimeout(()=>mdwSpeak('Ces étoiles sont en fin de vie. Géantes rouges. Naines rouges. Rien de jeune ici. Nous sommes dans un univers mourant.',true),2000);
+     writeGlitchText&&writeGlitchText('Les étoiles ici sont vieilles. Plus vieilles que tout ce que j\'ai vu. Je me demande si quelqu\'un d\'autre a déjà traversé ce secteur.','🌅 SECTEUR ANCIEN');
+   }},
+
+  {id:9, name:'SECTEUR SIGNAL',  bg:'#000804', primary:'#00ffaa', dim:'#008855', accent:'#ffff00',
+   starColors:['#ffffff','#aaffee','#00ffcc','#88ffcc','#ccffee'],
+   nebulaColors:['rgba(0,160,80,','rgba(0,120,100,','rgba(0,80,120,','rgba(40,160,80,'],
+   scan:'rgba(0,255,170,0.04)',
+   lore:"Tout émet ici. Le radar est saturé. Quelque chose d'énorme émet depuis le centre.",
+   gravMult:1.1, debrisMult:1.0, radarSaturated:true,
+   onEnter:()=>{
+     if(typeof mdwActive!=='undefined'&&mdwActive)
+       setTimeout(()=>mdwSpeak('Le radar est saturé. Chaque étoile, chaque débris émet un signal. Je ne sais plus quoi filtrer. Il y a quelque chose au centre. Quelque chose de très grand.',true),2000);
+     writeGlitchText&&writeGlitchText('Tout parle ici. Je ne sais pas si c\'est dangereux ou si c\'est une réponse à quelque chose que j\'aurais dit sans le savoir.','📡 SECTEUR SIGNAL');
+   }},
 ];
+
 let currentUniverse=0;
-let sectorCount=0; // combien de trous de ver traversés
+let sectorCount=0;
+
+// ── Trous de ver secondaires ──────────────────
+// Apparaissent aléatoirement dans l'espace — pas liés au signal
+let secondaryWormholes=[];
+let secondaryWormholeTimer=300; // premier après 5 min
+
+function spawnSecondaryWormhole(){
+  const angle=Math.random()*Math.PI*2;
+  const dist=600+Math.random()*600;
+  secondaryWormholes.push({
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    r:20,pulse:Math.random()*Math.PI*2,
+    rotAngle:0,
+    life:120+Math.random()*60, // dure 2-3 minutes
+    discovered:false,
+    targetUniverse:Math.floor(Math.random()*UNIVERSES.length),
+  });
+  logEvent('🌀 TROU DE VER DÉTECTÉ','warn');
+  if(typeof mdwActive!=='undefined'&&mdwActive)
+    setTimeout(()=>mdwSpeak('Distorsion de l\'espace-temps détectée. Un trou de ver. Non prévu. Destination inconnue.',true),800);
+}
+
+function updateSecondaryWormholes(dt){
+  secondaryWormholeTimer-=dt;
+  if(secondaryWormholeTimer<=0&&secondaryWormholes.length<2&&sectorCount>0){
+    spawnSecondaryWormhole();
+    secondaryWormholeTimer=240+Math.random()*180;
+  }
+  for(const w of secondaryWormholes){
+    w.pulse+=dt*1.5;w.rotAngle+=dt*0.8;w.life-=dt;
+    const dx=ship.x-w.x,dy=ship.y-w.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(!w.discovered&&dist<w.r+15){
+      w.discovered=true;w.life=0;
+      currentUniverse=w.targetUniverse;
+      sectorCount++;
+      applyUniverse(UNIVERSES[currentUniverse]);
+      initStars();
+      const u=UNIVERSES[currentUniverse];
+      if(u.onEnter)u.onEnter();
+      journalFullText=u.lore;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');
+      journalDay.textContent='🌀 SAUT DIMENSIONNEL';journalText.textContent='';
+      logEvent(`🌀 ${u.name}`,'planet');
+      spawnParticles(w.x,w.y,'#ffffff',30,2);
+      triggerFlash('#ffffff',0.5);
+      score+=1000;
+      // Propulseurs gravitationnels — éjection depuis le trou de ver
+      const exitAngle=Math.random()*Math.PI*2;
+      ship.vx+=Math.cos(exitAngle)*1.5;ship.vy+=Math.sin(exitAngle)*1.5;
+      saveGame();
+    }
+  }
+  secondaryWormholes=secondaryWormholes.filter(w=>w.life>0);
+}
+
+function drawSecondaryWormholes(){
+  for(const w of secondaryWormholes){
+    const [sx,sy]=worldToScreen(w.x,w.y);
+    if(sx<-100||sx>W+100||sy<-100||sy>H+100)continue;
+    const pulse=(Math.sin(w.pulse)+1)*0.5;
+    const r=w.r*viewZoom;
+    const u=UNIVERSES[w.targetUniverse];
+    ctx.save();ctx.translate(sx,sy);ctx.rotate(w.rotAngle);
+    // Anneaux de distorsion couleur de la destination
+    for(let i=3;i>=1;i--){
+      ctx.strokeStyle=`${u.primary}${Math.floor((0.15+pulse*0.1)*255).toString(16).padStart(2,'0')}`;
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.ellipse(0,0,r*i*0.6,r*i*0.25,0,0,Math.PI*2);ctx.stroke();
+    }
+    // Centre noir avec lueur
+    const grd=ctx.createRadialGradient(0,0,0,0,0,r);
+    grd.addColorStop(0,'#000000');grd.addColorStop(0.5,u.bg);grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+    // Bordure lumineuse
+    ctx.shadowColor=u.primary;ctx.shadowBlur=12+pulse*8;
+    ctx.strokeStyle=u.primary;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+    // Label destination
+    const dist=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
+    if(dist<400){
+      ctx.save();ctx.fillStyle=u.primary;ctx.font=`7px 'Share Tech Mono'`;
+      ctx.textAlign='center';ctx.shadowBlur=0;
+      ctx.fillText(`🌀 ${u.name} · ${Math.floor(dist)}u`,sx,sy-r-12);
+      // Durée restante
+      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font=`6px 'Share Tech Mono'`;
+      ctx.fillText(`${Math.floor(w.life)}s`,sx,sy+r+10);
+      ctx.restore();
+    }
+    // Sur le radar
+    const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
+    const rdx=(w.x-ship.x)/RADAR_RANGE*32,rdy=(w.y-ship.y)/RADAR_RANGE*32;
+    if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
+      rctx.fillStyle=u.primary;rctx.shadowColor=u.primary;rctx.shadowBlur=6;
+      rctx.beginPath();rctx.arc(35+rdx,35+rdy,4,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
+    }
+  }
+}
 
 function applyUniverse(u){
   const root=document.documentElement;
@@ -944,8 +1499,15 @@ function applyUniverse(u){
   root.style.setProperty('--green-dim',u.dim);
   root.style.setProperty('--amber',u.accent);
   root.style.setProperty('--bg',u.bg);
-  root.style.setProperty('--scan',u.scan);
+  root.style.setProperty('--scan',u.scan||'rgba(0,255,65,0.03)');
   document.body.style.background=u.bg;
+  // Appliquer les modificateurs de l'univers
+  window._universeMult={
+    grav: u.gravMult||1,
+    debris: u.debrisMult||1,
+    mirror: u.mirrorGravity||false,
+    radarSat: u.radarSaturated||false,
+  };
 }
 
 let wormholeT=0;
@@ -1037,6 +1599,18 @@ function showUpgradeScreen(){
       <span class="upg-level">LV${lvl}/${u.levels}</span>
     </button>`;
   });
+  // Contrats de run
+  const contracts=pickContracts()||activeContracts;
+  const contractHtml=activeContracts.map((c,i)=>`
+    <div style="border-left:2px solid ${contractsCompleted[i]?'var(--amber)':'var(--green-dim)'};padding:4px 8px;text-align:left;font-size:8px;letter-spacing:1px;color:${contractsCompleted[i]?'var(--amber)':'var(--green-dim)'};">
+      ${contractsCompleted[i]?'✅':'○'} ${c.text} <span style="color:var(--amber)">+${c.reward}pts</span>
+    </div>
+  `).join('');
+  html+=`
+    <div style="margin-top:8px;width:100%;max-width:280px;">
+      <div style="font-size:7px;letter-spacing:3px;color:var(--green-dim);margin-bottom:6px;">CONTRATS</div>
+      ${contractHtml}
+    </div>`;
   html+=`</div>
     <div class="diff-row">
       <button class="diff-btn${selectedDiff==='easy'?' selected-easy':''}" data-diff="easy">EASY</button>
@@ -1271,11 +1845,12 @@ function applyGravity(dt, objX, objY, mass, minDist=0){
   const dist=Math.sqrt(dist2);
   const range=gravityRange(mass);
   if(dist>range||dist<minDist)return;
-  // Softening réduit = force plus marquée en approche
-  const f=G_CONST*mass/Math.max(dist2,200);
-  ship.vx+=dx/dist*f*dt*60;
-  ship.vy+=dy/dist*f*dt*60;
-  return {dist, range, mass}; // pour l'indicateur visuel
+  const uMult=(window._universeMult&&window._universeMult.grav)||1;
+  const mirror=(window._universeMult&&window._universeMult.mirror)?-1:1;
+  const f=G_CONST*mass*uMult/Math.max(dist2,200);
+  ship.vx+=dx/dist*f*dt*60*mirror;
+  ship.vy+=dy/dist*f*dt*60*mirror;
+  return {dist, range, mass};
 }
 
 function applyGravityOnObject(dt, obj, objX, objY, mass, minDist=0){
@@ -1312,7 +1887,9 @@ function generatePlanetName(){
 function spawnPlanet(){
   const angle=Math.random()*Math.PI*2;
   const dist=600+Math.random()*800;
-  const type=PLANET_TYPES[Math.floor(Math.random()*PLANET_TYPES.length)];
+  // Planètes brûlantes seulement après jour 3
+  const available=survivalDay<3?PLANET_TYPES.filter(t=>!t.isDangerous):PLANET_TYPES;
+  const type=available[Math.floor(Math.random()*available.length)];
   const r=35+Math.random()*40;
   planets.push({
     x:ship.x+Math.cos(angle)*dist,
@@ -1372,6 +1949,7 @@ function updatePlanets(dt){
           if(dmg>3){
             triggerFlash(p.type.glowColor,0.2);
             logEvent(`🪐 IMPACT SOL -${dmg} HULL`,'danger');
+            addHullMark(impactSpeed/2);
             spawnParticles(ship.x,ship.y,p.type.glowColor,6,0.8);
           }
         }
@@ -1433,7 +2011,7 @@ function updatePlanets(dt){
       logEvent(`🪐 ${p.name} — ${p.type.name}`,'planet');
       addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
       setTimeout(()=>planetBanner.classList.remove('visible'),3000);
-      mdwReact('planet');
+      mdwReact('planet');updateMDWTrust('planet');
     }
 
     // Danger si planète brûlante et très proche
@@ -1489,7 +2067,30 @@ function startGame(){
   clonePhase=0;clonePhaseTimer=0;cloneMessageSent=false;cloneHasTriggered=false;
   rareEventTimer=30+Math.random()*30;
   comets=[];quasars=[];auroraAngle=0;phenomena=[];radarGlitch=0;
+  driftTimer=0;driftMode=false;
+  mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();
+  crackTimer=0;
+  // Épave garantie à portée radar — MDW dedans pour le tutorial
+  const startAngle=Math.random()*Math.PI*2;
+  wrecks.push({
+    x:ship.x+Math.cos(startAngle)*350,
+    y:ship.y+Math.sin(startAngle)*350,
+    rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
+    name:'CSS EREBUS',
+    log:'Systèmes en veille. Unité MDW-7 en hibernation prolongée. Durée : inconnue.',
+    hasPassenger:false,hasResources:true,moduleKey:null,
+    discovered:false,pulse:Math.random()*Math.PI*2,r:20,
+    isMDWWreck:true,
+  });
+  spawnedRelics=0;relicSpawnTimer=200+Math.random()*200;
+  veraFragmentsFound=[];
+  hullMarks=[];
+  pickContracts();
+  initMolecularClouds();
+  currentEnding=null;
   wormholeActive=false;wormholeT=0;
+  secondaryWormholes=[];secondaryWormholeTimer=300;
+  window._universeMult={grav:1,debris:1,mirror:false,radarSat:false};
   BODY_MASSES.blackhole=2000; // reset masse trou noir
   initStars();
   spawnInitialDebris();
@@ -1556,7 +2157,7 @@ const CAPSULE_TYPES=[
   {type:'energy',   color:'#ffaa00', label:'⚡',  effect:()=>{energy=Math.min(100,energy+35);logEvent('+35 ENERGY','ok');}},
   {type:'repair',   color:'#ff6060', label:'🛡',  effect:()=>{hull=Math.min(100,hull+25);logEvent('+25 HULL REPAIR','ok');}},
   {type:'boost',    color:'#60ffff', label:'2×',  effect:()=>{score+=500;logEvent('+500 SCORE BOOST!','warn');}},
-  {type:'propellant',color:'#ff8040',label:'🚀',  effect:()=>{propellant=Math.min(maxPropellant,propellant+40);logEvent('+40 PROPERGOL','ok');}},
+  {type:'propellant',color:'#ff8040',label:'🚀',effect:()=>{propellant=Math.min(maxPropellant,propellant+60);logEvent('+60 PROPERGOL','ok');}},
 ];
 function spawnCapsule(){
   const margin=60,side=Math.floor(Math.random()*4),hw=W/2+margin,hh=H/2+margin;let x,y;
@@ -1609,14 +2210,16 @@ function resetCombo(){combo=0;comboTimer=0;comboDisplay.classList.remove('visibl
 
 // ── Physics ──────────────────────────────────
 const THRUST_FORCE=0.008,DRAG=0.0015,O2_DRAIN=0.5,ENERGY_THRUST_COST=2;
-const PROPELLANT_THRUST_COST=3;
-let propellant=100,maxPropellant=100;
+const PROPELLANT_THRUST_COST=1.2; // réduit — était 3
+let propellant=100,maxPropellant=200; // capacité doublée
 
 function worldToScreen(x,y){return[(x-camX)*viewZoom+W/2,(y-camY)*viewZoom+H/2];}
 function screenToWorld(sx,sy){return[(sx-W/2)/viewZoom+camX,(sy-H/2)/viewZoom+camY];}
 
 function updateShip(dt){
   energy=Math.min(100,energy+0.8*dt);
+  // Recharge passive propergol très lente (panneaux solaires → compression d'azote)
+  propellant=Math.min(maxPropellant,propellant+0.3*dt);
   if(touchActive&&touchTarget){
     const [wx,wy]=screenToWorld(touchTarget.x,touchTarget.y);
     const dx=wx-ship.x,dy=wy-ship.y,dist=Math.sqrt(dx*dx+dy*dy);
@@ -1643,7 +2246,9 @@ function updateShip(dt){
       }
     }else{ship.thrusting=false;ship.thrustPower=0;}
   }else{ship.thrusting=false;ship.thrustPower=0;}
-  ship.vx*=Math.pow(1-DRAG,dt*60);ship.vy*=Math.pow(1-DRAG,dt*60);
+  // Drift mode — drag légèrement réduit (on glisse plus)
+  const driftDrag=driftMode?DRAG*0.3:DRAG;
+  ship.vx*=Math.pow(1-driftDrag,dt*60);ship.vy*=Math.pow(1-driftDrag,dt*60);
   ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
   ship.trail.push({x:ship.x,y:ship.y});if(ship.trail.length>80)ship.trail.shift();
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
@@ -1652,9 +2257,9 @@ function updateShip(dt){
 function updateResources(dt){
   const dilDt=dt*timeDilation;
   const recyclerBonus=getModuleBonus('o2drain');
-  // Équilibrage — les 2 premiers jours sont plus cléments
   const earlyBonus=survivalDay<=2?0.6:1.0;
-  const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus;
+  const driftBonus=driftMode?0.45:1.0; // drift mode réduit O2 de 55%
+  const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus*driftBonus;
   oxygen=Math.max(0,oxygen-o2Rate*dilDt);
   if(oxygen<=0)hull=Math.max(0,hull-5*drainMult*earlyBonus*dilDt);
   alarmCooldown-=dt;
@@ -1768,6 +2373,7 @@ function updateComets(dt){
       c.hit=true;c.life=0;
       ship.vx+=c.vx*0.6;ship.vy+=c.vy*0.6;
       hull=Math.max(0,hull-18*drainMult);
+      addHullMark(0.8);
       triggerFlash(c.color,0.4);triggerShake();
       playTone(120,'sawtooth',0.4,0.15);playTone(60,'square',0.3,0.12);
       logEvent('☄ IMPACT COMÈTE — -18 HULL','danger');
@@ -2324,7 +2930,8 @@ function updateSpawning(dt){
 
   // ── Débris — seulement en zone dense ──
   spawnTimer-=dt;
-  const debrisInterval=currentZone==='dense'?Math.max(1.5,4-difficulty*0.3):Math.max(8,15-difficulty*0.5);
+  const debrisMult=(window._universeMult&&window._universeMult.debris)||1;
+  const debrisInterval=currentZone==='dense'?Math.max(1.5,(4-difficulty*0.3)/debrisMult):Math.max(8,(15-difficulty*0.5)/debrisMult);
   if(spawnTimer<=0){
     if(currentZone==='dense'||Math.random()<0.15){ // 15% chance en zone vide
       spawnDebris(true);
@@ -2575,6 +3182,7 @@ function killEnemy(e){
   }
   score+=300+survivalDay*20;
   logEvent(`✓ ${e.type.label} DÉTRUIT +${300+survivalDay*20}`,'planet');
+  updateMDWTrust('enemy_killed');
   unlockAchievement&&unlockAchievement('enemy');
 }
 
@@ -3103,8 +3711,8 @@ let wrecksFound=0;
 function spawnWreck(){
   const angle=Math.random()*Math.PI*2;
   const dist=400+Math.random()*500;
-  // 60% de chance d'avoir un module (si des modules restent à trouver)
-  const moduleKey=Math.random()<0.6?getRandomModule():null;
+  // Modules rares — 15% de chance seulement
+  const moduleKey=Math.random()<0.15?getRandomModule():null;
   wrecks.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
@@ -3143,12 +3751,14 @@ function updateWrecks(dt){
         setTimeout(()=>startInstallModule(w.moduleKey,w),1000);
       }
       // MDW — première épave
-      if(!mdwFound&&wrecksFound===1){
+      if((!mdwFound&&wrecksFound===1)||w.isMDWWreck){
         setTimeout(()=>initMDW(),1500);
       } else if(w.hasPassenger&&passengers.length<3&&!w.moduleKey){
         rescuePassenger(w);
       }
-      score+=200;
+      // Fragment de VERA — une épave sur 5 environ
+      if(wrecksFound>1&&Math.random()<0.2)injectVeraFragment(w);
+      score+=200;updateMDWTrust('wreck');
       playTone(440,'triangle',0.3,0.08);
       if(currentMission&&currentMission.text.includes('ÉPAVE'))missionCounter++;
     }
@@ -3229,12 +3839,12 @@ const MDW_DIALOGS={
     "Vous m'avez trouvé. Intéressant. Ce n'est pas la première fois que quelqu'un me trouve.",
     "Je peux réparer. Améliorer. C'est ce que je fais. C'est tout ce que je fais.",
   ],
+  // Dialogues qui évoluent selon le secteur
   upgrade:[
     "Installation en cours. Ce composant a une histoire. Je préfère ne pas en parler.",
     "Modification effectuée. Vous survivrez peut-être un peu plus longtemps cette fois.",
     "Fait. J'ai vu ça installé sur d'autres vaisseaux. Aucun n'est revenu. Mais peut-être vous.",
     "Composant intégré. Remarque : j'ai fait la même chose il y a... un moment. Pour quelqu'un d'autre.",
-    "Terminé. La pièce était dans mes réserves depuis avant que je me souvienne.",
   ],
   danger:[
     "Alerte. Paramètres vitaux critiques. Je préfère ne pas perdre un autre pilote.",
@@ -3269,10 +3879,46 @@ const MDW_DIALOGS={
     "Vous respirez régulièrement. C'est rassurant. Le dernier pilote ne respirait plus aussi régulièrement vers la fin.",
     "Je me demande parfois si les planètes nous regardent aussi.",
   ],
+  // Phase 2 — secteur 1+, MDW commence à être honnête
+  sector1_idle:[
+    "Vous avez traversé un trou de ver. Bien. C'est ce qu'il fallait faire. Je ne vous ai pas dit pourquoi. Pas encore.",
+    "Je me souviens de la première fois que j'ai vu ce secteur. C'était avec quelqu'un d'autre. Qui vous ressemblait.",
+    "La boucle continue. C'est... attendu. Je ne suis pas surpris. Juste fatigué.",
+  ],
+  // Phase 3 — secteur 2+, MDW dit la vérité
+  sector2_idle:[
+    "Je dois vous dire quelque chose. Mais je ne sais pas comment vous le dire sans que vous paniquiez.",
+    "Vous m'avez demandé une fois si j'avais de la mémoire entre les runs. Oui. J'en ai. Je me souviens de tout.",
+    "ORYN. C'est votre nom. Vous l'avez découvert vous-même. Mais je le savais depuis le début.",
+    "Le signal que vous cherchez... c'est vous. Une version antérieure. Qui a essayé de prévenir la suivante.",
+  ],
+  // Phase finale — secteur 3+
+  sector3_honest:[
+    "La boucle a un auteur. Ce n'est pas une erreur du système. Quelqu'un l'a créée. Quelqu'un qui vous ressemble énormément.",
+    "Vous avez survécu 47 fois à ce que vous traversez maintenant. Je le sais parce que j'étais là. Chaque fois.",
+    "Il existe une sortie. Une vraie. Mais elle coûte quelque chose que vous n'avez peut-être pas encore décidé de payer.",
+    "Je suis MDW-7. Unité de maintenance. Et votre seule mémoire continue dans un univers qui oublie tout le reste.",
+  ],
 };
 
+function getMDWDialog(context){
+  // Choisir le bon niveau de dialogue selon le secteur
+  if(context==='idle'){
+    if(sectorCount>=3&&MDW_DIALOGS.sector3_honest)
+      return MDW_DIALOGS.sector3_honest[Math.floor(Math.random()*MDW_DIALOGS.sector3_honest.length)];
+    if(sectorCount>=2&&Math.random()<0.5)
+      return MDW_DIALOGS.sector2_idle[Math.floor(Math.random()*MDW_DIALOGS.sector2_idle.length)];
+    if(sectorCount>=1&&Math.random()<0.4)
+      return MDW_DIALOGS.sector1_idle[Math.floor(Math.random()*MDW_DIALOGS.sector1_idle.length)];
+  }
+  const pool=MDW_DIALOGS[context];
+  if(!pool)return null;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
 function mdwSpeak(contextOrText, isRaw=false){
-  const text=isRaw?contextOrText:MDW_DIALOGS[contextOrText][Math.floor(Math.random()*MDW_DIALOGS[contextOrText].length)];
+  const text=isRaw?contextOrText:getMDWDialog(contextOrText);
+  if(!text)return;
   mdwDialogQueue.push(text);
 }
 
@@ -3391,21 +4037,44 @@ function updatePassengersHUD(){
 let phenomena=[],radarGlitch=0;
 
 const PHENOMENON_TYPES=[
-  // PULSAR
+  // PULSAR — phare cosmique
   {name:'PULSAR',color:'#00ffcc',r:18,
-   init(p){p.jetTimer=0;p.jetPeriod=3+Math.random()*2;p.jetActive=false;p.jetDuration=0.4;p.rotAngle=Math.random()*Math.PI*2;p.rotSpeed=0.02+Math.random()*0.03;},
+   init(p){
+     p.jetTimer=0;p.jetPeriod=2+Math.random()*2;p.jetActive=false;p.jetDuration=0.5;
+     p.rotAngle=Math.random()*Math.PI*2;p.rotSpeed=0.025+Math.random()*0.02;
+     p.beaconFlash=0; // compteur de flash visible de loin
+     p.announced=false;
+   },
    update(p,dt){
-     p.rotAngle+=p.rotSpeed*dt*60;p.jetTimer+=dt;
-     if(!p.jetActive&&p.jetTimer>p.jetPeriod){p.jetActive=true;p.jetTimer=0;logEvent('⚡ PULSAR — JET RADIATION','danger');playTone(660,'square',0.3,0.08);}
+     p.rotAngle+=p.rotSpeed*dt*60;p.jetTimer+=dt;p.beaconFlash+=dt;
+     const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+     // Annonce MDW à découverte
+     if(!p.announced&&dist<800){
+       p.announced=true;
+       if(typeof mdwActive!=='undefined'&&mdwActive)
+         setTimeout(()=>mdwSpeak(`Pulsar détecté. Période : ${p.jetPeriod.toFixed(2)}s. Je l'utilise comme référence de navigation. Restez hors de l'axe des jets.`,true),500);
+     }
+     if(!p.jetActive&&p.jetTimer>p.jetPeriod){
+       p.jetActive=true;p.jetTimer=0;
+       if(dist<600)logEvent('⚡ PULSAR — JET RADIATION','danger');
+       playTone(660,'square',0.3,0.08);
+     }
      if(p.jetActive){
-       const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
-       if(dist<200){
+       if(dist<250){
          const sa=Math.atan2(dy,dx);
-         const inJet=[p.rotAngle,p.rotAngle+Math.PI].some(ja=>{let d=Math.abs(sa-ja)%(Math.PI*2);if(d>Math.PI)d=Math.PI*2-d;return d<0.35;});
-         if(inJet){hull=Math.max(0,hull-20*drainMult*dt);oxygen=Math.max(0,oxygen-8*drainMult*dt);triggerFlash('#00ffcc',0.2);}
+         const inJet=[p.rotAngle,p.rotAngle+Math.PI].some(ja=>{
+           let d=Math.abs(sa-ja)%(Math.PI*2);if(d>Math.PI)d=Math.PI*2-d;return d<0.35;
+         });
+         if(inJet){
+           hull=Math.max(0,hull-20*drainMult*dt);
+           oxygen=Math.max(0,oxygen-8*drainMult*dt);
+           triggerFlash('#00ffcc',0.2);
+         }
        }
        if(p.jetTimer>p.jetDuration){p.jetActive=false;p.jetTimer=0;}
      }
+     // Gravité pulsar sur objets
+     applyGravity(dt,p.x,p.y,BODY_MASSES.pulsar,p.r+10);
    }},
   // TROU NOIR
   {name:'TROU NOIR',color:'#8820ff',r:22,
@@ -3483,16 +4152,46 @@ const PHENOMENON_TYPES=[
    }},
   // MAGNÉTAR
   {name:'MAGNÉTAR',color:'#ff4488',r:14,
-   init(p){p.pulseTimer=0;},
+   init(p){p.pulseTimer=0;p.burstTimer=0;p.burstPeriod=8+Math.random()*6;p.bursting=false;p.burstDuration=0;},
    update(p,dt){
-     p.pulseTimer+=dt;
+     p.pulseTimer+=dt;p.burstTimer+=dt;
      const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
-     if(dist<350){
-       radarGlitch=Math.max(radarGlitch,1-dist/350);
-       energy=Math.max(0,energy-5*drainMult*(1-dist/350)*dt);
-       if(Math.floor(p.pulseTimer*2)!==Math.floor((p.pulseTimer-dt)*2)){ship.vx+=(Math.random()-0.5)*0.3;ship.vy+=(Math.random()-0.5)*0.3;}
+
+     // Burst périodique de radiation
+     if(p.burstTimer>p.burstPeriod&&!p.bursting){
+       p.bursting=true;p.burstDuration=3+Math.random()*2;p.burstTimer=0;
+       logEvent('💥 MAGNÉTAR — BURST DE RADIATION','danger');
+       triggerFlash('#ff4488',0.3);
+       if(typeof mdwActive!=='undefined'&&mdwActive)
+         setTimeout(()=>mdwSpeak('Burst de radiation magnétique. Instruments temporairement hors service.',true),200);
      }
-     radarGlitch=Math.max(0,radarGlitch-dt*0.4);
+     if(p.bursting){
+       p.burstDuration-=dt;
+       if(dist<500){
+         // Instruments grillés — radar fou, jauges sautent
+         radarGlitch=1;
+         energy=Math.max(0,energy-12*drainMult*dt);
+         // Propulsion aléatoire — champ magnétique perturbe les moteurs
+         ship.vx+=(Math.random()-0.5)*0.4*dt*60;
+         ship.vy+=(Math.random()-0.5)*0.4*dt*60;
+         // Flash magnétique
+         if(Math.random()<0.1)triggerFlash('#ff4488',0.08);
+       }
+       if(p.burstDuration<=0){
+         p.bursting=false;
+         radarGlitch=0;
+         logEvent('📡 INSTRUMENTS RÉTABLIS','ok');
+       }
+     } else {
+       // Hors burst — perturbation douce
+       if(dist<350){
+         radarGlitch=Math.max(radarGlitch,0.4*(1-dist/350));
+         energy=Math.max(0,energy-2*drainMult*(1-dist/350)*dt);
+         if(Math.floor(p.pulseTimer*2)!==Math.floor((p.pulseTimer-dt)*2))
+           {ship.vx+=(Math.random()-0.5)*0.15;ship.vy+=(Math.random()-0.5)*0.15;}
+       }
+       radarGlitch=Math.max(0,radarGlitch-dt*0.4);
+     }
    }},
   // ÉRUPTION SOLAIRE
   {name:'ÉRUPTION SOLAIRE',color:'#ff8800',r:20,
@@ -3511,6 +4210,80 @@ const PHENOMENON_TYPES=[
      if(p.eruptTimer>p.eruptPeriod){
        p.wave={r:p.r,alpha:1};p.eruptTimer=0;
        logEvent('☀ ÉRUPTION SOLAIRE !','danger');playTone(200,'sawtooth',0.5,0.1);triggerFlash('#ff8800',0.25);
+     }
+   }},
+  // PLANÈTE ROGUE
+  {name:'PLANÈTE ROGUE',color:'#223322',r:30+Math.random()*20,
+   init(p){
+     p.discovered=false;p.loreGiven=false;
+     // Invisible au radar — pas de couleur lumineuse
+   },
+   update(p,dt){
+     const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+     // Gravité forte mais invisible — c'est comme ça qu'on la détecte
+     applyGravity(dt,p.x,p.y,BODY_MASSES.planet_gazeuse*1.5,p.r+10);
+     // Collision
+     if(dist<p.r+14){
+       const nx=dx/dist,ny=dy/dist;
+       ship.x=p.x-nx*(p.r+15);ship.y=p.y-ny*(p.r+15);
+       const vn=ship.vx*(-nx)+ship.vy*(-ny);
+       if(vn<0){ship.vx-=1.4*vn*(-nx);ship.vy-=1.4*vn*(-ny);ship.vx*=0.7;ship.vy*=0.7;
+         hull=Math.max(0,hull-Math.abs(vn)*8*drainMult);
+       }
+     }
+     if(!p.discovered&&dist<300){
+       p.discovered=true;
+       logEvent('⬛ PLANÈTE ROGUE DÉTECTÉE','warn');
+       if(typeof mdwActive!=='undefined'&&mdwActive)
+         setTimeout(()=>mdwSpeak('Planète rogue. Expulsée de son système il y a des milliards d\'années. Elle dérive seule depuis. Comme nous.',true),500);
+     }
+     if(!p.loreGiven&&dist<100){
+       p.loreGiven=true;
+       writeGlitchText&&writeGlitchText(
+         'Une planète sans étoile. Glacée. Noire. Et pourtant je détecte quelque chose à la surface. Une structure. Artificielle.',
+         '⬛ PLANÈTE ROGUE'
+       );
+       score+=800;logEvent('⬛ PLANÈTE ROGUE +800','planet');
+       if(typeof addToCatalogue!=='undefined')
+         addToCatalogue('rogue','PLANÈTE ROGUE-'+Math.floor(Math.random()*999),'Planète errante sans étoile. Structure artificielle détectée.','⬛');
+     }
+   }},
+
+  // STRANGE MATTER — matière étrange qui contamine
+  {name:'STRANGE MATTER',color:'#20ff80',r:8,
+   init(p){
+     p.contaminated=[];p.pulse=0;p.driftAngle=Math.random()*Math.PI*2;
+     p.vx=(Math.random()-0.5)*0.1;p.vy=(Math.random()-0.5)*0.1;
+     p.announced=false;
+   },
+   update(p,dt){
+     p.pulse+=dt;
+     // Dérive lentement
+     p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;
+     const dx=ship.x-p.x,dy=ship.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+
+     if(!p.announced&&dist<600){
+       p.announced=true;
+       if(typeof mdwActive!=='undefined'&&mdwActive)
+         setTimeout(()=>mdwSpeak('Matière étrange détectée. Hyperstable. Tout ce qu\'elle touche se convertit. Ne la laissez pas atteindre la coque.',true),500);
+       logEvent('⚗ STRANGE MATTER DÉTECTÉ','warn');
+     }
+     // Contaminer les débris proches
+     for(const d of debris){
+       const ddx=d.x-p.x,ddy=d.y-p.y;
+       if(Math.sqrt(ddx*ddx+ddy*ddy)<p.r*3&&!d.strange){
+         d.strange=true;d.color='#20ff80';d.r*=0.8;
+         // Le débris contaminé devient lui-même une source de contamination légère
+       }
+     }
+     // Contact vaisseau — contamination progressive de la coque
+     if(dist<p.r+12){
+       hull=Math.max(0,hull-30*drainMult*dt);
+       logEvent('⚗ CONTAMINATION STRANGE MATTER','danger');
+       triggerFlash('#20ff80',0.3);
+       spawnParticles(ship.x,ship.y,'#20ff80',8,1);
+       if(typeof mdwActive!=='undefined'&&mdwActive&&Math.random()<0.02)
+         mdwSpeak('La coque se convertit. C\'est irréversible si on ne s\'éloigne pas.',true);
      }
    }},
 ];
@@ -3551,6 +4324,105 @@ function checkDead(){
   }
 }
 
+// ── Fins narratives ───────────────────────────
+// Déclenchées selon les conditions atteintes par le joueur
+
+const ENDINGS={
+  signal:{
+    id:'signal',
+    title:'FIN — LE SIGNAL',
+    color:'#ffaa00',
+    condition:()=>signalReached&&sectorCount===0,
+    text:`Le signal était réel.\n\nAprès ${survivalDay} jours de dérive, vous avez atteint la balise.\nUne voix. Statique. Puis votre propre voix.\nUne version de vous, d'une boucle précédente.\nQui disait : "Continue. Ne t'arrête pas. Il y a quelque chose de l'autre côté."\n\nVous avez traversé le trou de ver.\nLa boucle continue.\nMais maintenant vous savez qu'elle a un but.`,
+  },
+  sacrifice:{
+    id:'sacrifice',
+    title:'FIN — LE SACRIFICE',
+    color:'#ff4040',
+    condition:()=>catalogueEntries.length>=15&&sectorCount>=3,
+    text:`Vous avez tout catalogué.\n${catalogueEntries.length} entrées. Chaque planète. Chaque phénomène. Chaque anomalie.\n\nMDW vous a aidé à construire un message. Encodé dans les fréquences du Signal.\nUne carte. Tout ce que vous avez appris.\nEnvoyée dans la prochaine boucle.\n\nVous ne vous souvenez jamais.\nMais quelqu'un d'autre, quelque part, recevra ce que vous avez trouvé.\n\nC'est suffisant.`,
+  },
+  acceptance:{
+    id:'acceptance',
+    title:'FIN — L\'ACCEPTATION',
+    color:'#40c8ff',
+    condition:()=>survivalDay>=20&&sectorCount>=2,
+    text:`Vingt jours. ${sectorCount} secteurs traversés.\n\nVous avez arrêté de chercher une sortie.\nLe vide n'est plus une prison. C'est un endroit.\nVotre endroit.\n\nMDW a dit une fois : "Certains pilots ont décidé de rester. De dériver pour toujours."\nVous comprenez maintenant ce qu'il voulait dire.\n\nIl n'y a pas de honte à choisir l'infini.`,
+  },
+  revelation:{
+    id:'revelation',
+    title:'FIN — LA RÉVÉLATION',
+    color:'#c060ff',
+    condition:()=>pilotName==='ORYN'&&sectorCount>=4,
+    text:`ORYN.\n\nVous avez traversé ${sectorCount} trous de ver.\nVous vous souvenez de votre nom.\nVous vous souvenez de MDW.\nVous vous souvenez de la boucle.\n\nLa vérité : vous avez créé cette boucle.\nPas par erreur. Délibérément.\nPour fuir quelque chose de pire.\nQuelque chose que vous ne voulez pas encore vous rappeler.\n\nMDW le sait. Il attend que vous posiez la question.`,
+  },
+};
+
+let currentEnding=null;
+
+function checkEndings(){
+  if(currentEnding)return;
+  for(const [key,ending] of Object.entries(ENDINGS)){
+    if(ending.condition()){
+      currentEnding=ending;
+      triggerEnding(ending);
+      break;
+    }
+  }
+}
+
+function triggerEnding(ending){
+  setTimeout(()=>{
+    state='dead';
+    screen.classList.remove('hidden');
+    stopAmbient();
+    const dc=DIFF_CONFIG[selectedDiff];
+    hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
+    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+    upgradePoints+=earned;
+    saveGame();
+    screen.innerHTML=`
+      <div class="big-title" style="color:${ending.color};text-shadow:0 0 20px ${ending.color},0 0 60px ${ending.color}44;font-size:clamp(24px,6vw,40px);letter-spacing:3px;">${ending.title}</div>
+      <div class="tagline" style="max-width:320px;line-height:2;white-space:pre-line;text-align:left;font-size:9px;">${ending.text}</div>
+      <div class="tagline" style="color:var(--amber)">SURVIE : ${survivalDay} JOURS · ${sectorCount} SECTEUR${sectorCount>1?'S':''} · 📋 ${catalogueEntries.length} ENTRÉES</div>
+      <div class="tagline" style="color:#00ff41">+${earned} POINTS D'UPGRADE</div>
+      <button class="screen-btn" id="btn-upgrades">[ CONTINUER ]</button>
+      <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
+    `;
+    document.getElementById('btn-upgrades').addEventListener('click',()=>showUpgradeScreen());
+    titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+    if(!titleLoopRunning)titleLoop();
+  },2000);
+}
+
+// ── Catalogue consultable ─────────────────────
+function showCatalogue(){
+  if(!catalogueEntries.length){
+    logEvent('📋 CATALOGUE VIDE','warn');return;
+  }
+  state='trade'; // réutilise le state trade pour bloquer le jeu
+  const overlay=document.createElement('div');
+  overlay.id='catalogue-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,9,2,0.96);z-index:100;display:flex;flex-direction:column;align-items:center;padding:20px 16px;overflow-y:auto;font-family:\'Share Tech Mono\',monospace;gap:8px;';
+  const entries=catalogueEntries.map(e=>`
+    <div style="border-left:2px solid var(--green-dim);padding:6px 10px;text-align:left;width:100%;max-width:300px;box-sizing:border-box;">
+      <div style="font-size:9px;color:var(--green);letter-spacing:1px;">${e.icon} ${e.name}</div>
+      <div style="font-size:8px;color:var(--green-dim);margin-top:2px;">${e.desc}</div>
+      <div style="font-size:7px;color:rgba(0,255,65,0.3);margin-top:2px;">JOUR ${e.day} · SECTEUR ${e.sector}</div>
+    </div>
+  `).join('');
+  overlay.innerHTML=`
+    <div style="font-family:'VT323',monospace;font-size:28px;color:var(--amber);text-shadow:0 0 12px var(--amber);letter-spacing:4px;margin-bottom:8px;">📋 CATALOGUE COSMIQUE</div>
+    <div style="font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:12px;">${catalogueEntries.length} ENTRÉE${catalogueEntries.length>1?'S':''}</div>
+    ${entries}
+    <button id="cat-close" style="margin-top:16px;padding:10px 28px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;cursor:pointer;">[ FERMER ]</button>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('cat-close').addEventListener('click',()=>{
+    overlay.remove();state='playing';
+  });
+}
+
 function showGameOver(){
   state='dead';screen.classList.remove('hidden');
   titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
@@ -3572,12 +4444,13 @@ function showGameOver(){
     ${achList?`<div class="tagline" style="color:var(--amber);font-size:9px">${achList}</div>`:''}
     <div class="tagline" style="color:#00ff41">+${earned} POINTS D'UPGRADE GAGNÉS</div>
     <button class="screen-btn" id="btn-upgrades">[ UPGRADES · ${upgradePoints} PTS ]</button>
+    ${catalogueEntries.length?`<button class="screen-btn" id="btn-catalogue" style="font-size:10px;padding:8px 24px;margin-top:0;">[ 📋 CATALOGUE · ${catalogueEntries.length} ENTRÉES ]</button>`:''}
     <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
   `;
   document.getElementById('btn-upgrades').addEventListener('click',()=>showUpgradeScreen());
+  const catBtn=document.getElementById('btn-catalogue');
+  if(catBtn)catBtn.addEventListener('click',()=>showCatalogue());
 }
-
-// ── Draw ─────────────────────────────────────
 function drawNebulae(){
   for(const n of nebulae){
     const p=n.layer;
@@ -3590,27 +4463,34 @@ function drawNebulae(){
     ctx.fillStyle=grd;
     ctx.beginPath();ctx.arc(sx,sy,n.r*viewZoom,0,Math.PI*2);ctx.fill();
   }
+  // Nuages moléculaires — plus denses, plus proches
+  drawMolecularClouds();
 }
 
 function drawStars(ts){
+  const doppler=getDopplerShift();
   for(const s of stars){
     const p=0.05+s.layer*0.25;
     const sx=((s.x-camX*p)%(W*2)+W*2)%(W*2)-W/2;
     const sy=((s.y-camY*p)%(H*2)+H*2)%(H*2)-H/2;
     const twinkle=Math.sin(ts*0.001*s.twinkleSpeed+s.twinkle);
     const alpha=(0.3+s.bright*0.5)*(0.8+twinkle*0.2);
-    ctx.globalAlpha=alpha;
-    ctx.fillStyle=s.color;
+    // Nuage moléculaire — atténue les étoiles derrière
+    const cloudDensity=getCloudDensityAt(s.x,s.y);
+    const finalAlpha=alpha*(1-cloudDensity*0.7);
+    if(finalAlpha<0.02)continue;
+    ctx.globalAlpha=finalAlpha;
+    // Effet Doppler sur la couleur
+    const dColor=doppler?applyDopplerToColor(s.color,sx,sy,doppler):s.color;
+    ctx.fillStyle=dColor;
     const r=s.r*(0.9+twinkle*0.1);
     ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
-    // Étoiles brillantes — croix de lumière
-    if(s.r>1.5&&alpha>0.5){
-      ctx.globalAlpha=alpha*0.3;
-      ctx.strokeStyle=s.color;ctx.lineWidth=0.5;
+    if(s.r>1.5&&finalAlpha>0.5){
+      ctx.globalAlpha=finalAlpha*0.3;
+      ctx.strokeStyle=dColor;ctx.lineWidth=0.5;
       ctx.beginPath();ctx.moveTo(sx-6,sy);ctx.lineTo(sx+6,sy);ctx.moveTo(sx,sy-6);ctx.lineTo(sx,sy+6);ctx.stroke();
     }
   }
-  // Poussière cosmique
   for(const d of cosmicDust){
     const p=d.layer;
     const sx=((d.x-camX*p)%(W*2)+W*2)%(W*2)-W/2;
@@ -3704,6 +4584,15 @@ function drawPhenomena(ts){
     }
 
     if(p.name==='PULSAR'){
+      // Flash phare visible de très loin — signal périodique
+      const distToShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+      if(p.jetActive&&distToShip>300){
+        // Halo lointain qui pulse à chaque jet
+        const farGlow=ctx.createRadialGradient(sx,sy,0,sx,sy,40*viewZoom);
+        farGlow.addColorStop(0,`rgba(0,255,204,${Math.min(0.4,200/distToShip)})`);
+        farGlow.addColorStop(1,'transparent');
+        ctx.fillStyle=farGlow;ctx.beginPath();ctx.arc(sx,sy,40*viewZoom,0,Math.PI*2);ctx.fill();
+      }
       // Corps central
       const cg=ctx.createRadialGradient(sx,sy,0,sx,sy,p.r*viewZoom);
       cg.addColorStop(0,'#ffffff');cg.addColorStop(0.4,p.color);cg.addColorStop(1,'transparent');
@@ -3789,19 +4678,66 @@ function drawPhenomena(ts){
 
     else if(p.name==='ÉRUPTION SOLAIRE'){
       ctx.translate(sx,sy);
-      // Couronne solaire
       const sg=ctx.createRadialGradient(0,0,p.r*viewZoom*0.5,0,0,p.r*viewZoom*3);
       sg.addColorStop(0,'rgba(255,200,0,0.4)');sg.addColorStop(0.5,'rgba(255,136,0,0.15)');sg.addColorStop(1,'transparent');
       ctx.fillStyle=sg;ctx.beginPath();ctx.arc(0,0,p.r*viewZoom*3,0,Math.PI*2);ctx.fill();
-      // Corps étoile
       const stg=ctx.createRadialGradient(-p.r*viewZoom*0.3,-p.r*viewZoom*0.3,0,0,0,p.r*viewZoom);
       stg.addColorStop(0,'#ffffff');stg.addColorStop(0.4,'#ffee44');stg.addColorStop(1,'#ff6600');
       ctx.fillStyle=stg;ctx.beginPath();ctx.arc(0,0,p.r*viewZoom,0,Math.PI*2);ctx.fill();
-      // Onde d'éruption
       if(p.wave&&p.wave.alpha>0){
         ctx.strokeStyle=`rgba(255,136,0,${p.wave.alpha*0.6})`;
         ctx.lineWidth=3*viewZoom;ctx.shadowColor='#ff8800';ctx.shadowBlur=20;
         ctx.beginPath();ctx.arc(0,0,p.wave.r*viewZoom,0,Math.PI*2);ctx.stroke();
+      }
+    }
+
+    else if(p.name==='PLANÈTE ROGUE'){
+      ctx.translate(sx,sy);
+      const r=p.r*viewZoom;
+      // Corps quasi invisible — très sombre, légère lueur froide
+      ctx.fillStyle='#050808';ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+      // Bordure à peine visible
+      ctx.strokeStyle=`rgba(40,80,60,${0.2+pulse*0.1})`;ctx.lineWidth=1;
+      ctx.shadowColor='#204030';ctx.shadowBlur=pulse*8;
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+      // Structure artificielle si très proche
+      const distToShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+      if(distToShip<150){
+        const alpha=Math.min(1,(150-distToShip)/100);
+        ctx.globalAlpha=alpha*0.6;
+        ctx.strokeStyle='#40ff80';ctx.lineWidth=0.5;ctx.shadowColor='#40ff80';ctx.shadowBlur=4;
+        // Grille de structure artificielle
+        for(let i=-2;i<=2;i++){
+          ctx.beginPath();ctx.moveTo(i*r*0.3,-r*0.6);ctx.lineTo(i*r*0.3,r*0.6);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(-r*0.6,i*r*0.3);ctx.lineTo(r*0.6,i*r*0.3);ctx.stroke();
+        }
+        ctx.globalAlpha=1;
+      }
+      // Pas sur le radar — détectable seulement par la gravité
+    }
+
+    else if(p.name==='STRANGE MATTER'){
+      ctx.translate(sx,sy);
+      const r=p.r*viewZoom;
+      const grd=ctx.createRadialGradient(0,0,0,0,0,r*2);
+      grd.addColorStop(0,'#ffffff');grd.addColorStop(0.3,'#20ff80');
+      grd.addColorStop(0.7,`rgba(32,255,128,${0.3+pulse*0.2})`);grd.addColorStop(1,'transparent');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,r*2,0,Math.PI*2);ctx.fill();
+      // Noyau
+      ctx.fillStyle='#000000';ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#20ff80';ctx.lineWidth=1.5;ctx.shadowColor='#20ff80';ctx.shadowBlur=12+pulse*6;
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+      // Ondulations de contamination
+      for(let i=1;i<=3;i++){
+        ctx.strokeStyle=`rgba(32,255,128,${0.1*(4-i)})`;ctx.lineWidth=0.5;
+        ctx.beginPath();ctx.arc(0,0,r*(1+i*0.6+Math.sin(p.pulse+i)*0.2),0,Math.PI*2);ctx.stroke();
+      }
+      // Sur le radar
+      const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
+      const rdx=(p.x-ship.x)/RADAR_RANGE*32,rdy=(p.y-ship.y)/RADAR_RANGE*32;
+      if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
+        rctx.fillStyle='#20ff80';rctx.shadowColor='#20ff80';rctx.shadowBlur=6;
+        rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
       }
     }
 
@@ -3997,8 +4933,18 @@ function drawShip(){
   // Coque principale
   ctx.strokeStyle='#00ff41';ctx.lineWidth=1.5;ctx.shadowColor='#00ff41';ctx.shadowBlur=8;
   ctx.beginPath();ctx.moveTo(14*s,0);ctx.lineTo(-10*s,-8*s);ctx.lineTo(-6*s,0);ctx.lineTo(-10*s,8*s);ctx.closePath();ctx.stroke();
+  // Marques d'impact sur la coque
+  if(hullMarks.length>0)drawHullMarks(ctx,s);
   // Hublot
   ctx.strokeStyle='#aaffcc';ctx.lineWidth=1;ctx.beginPath();ctx.arc(4*s,0,3*s,0,Math.PI*2);ctx.stroke();
+  // Indicateur drift mode — halo bleuté autour du vaisseau
+  if(driftMode){
+    const pulse=(Math.sin(Date.now()*0.002)+1)*0.5;
+    ctx.strokeStyle=`rgba(64,200,255,${0.2+pulse*0.15})`;ctx.lineWidth=1;
+    ctx.setLineDash([2,4]);
+    ctx.beginPath();ctx.arc(0,0,20*s,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   // Propulsion
   if(ship.thrusting&&energy>0){
@@ -4033,13 +4979,23 @@ function drawDebris(){
       ctx.restore();ctx.save();ctx.translate(sx,sy);
     }
     ctx.rotate(d.rot);
-    ctx.strokeStyle=d.isBoss?(d.hitFlash>0?'#ffffff':'#ff4040'):(d.hitFlash>0?'#ffffff':'#336644');
-    ctx.lineWidth=d.isBoss?2:1.5;ctx.shadowColor=d.isBoss?'#ff2020':'#00a828';ctx.shadowBlur=d.isBoss?12:4;
-    ctx.beginPath();
-    for(let i=0;i<d.shape.length;i++){const[px,py]=d.shape[i];i===0?ctx.moveTo(px*viewZoom,py*viewZoom):ctx.lineTo(px*viewZoom,py*viewZoom);}
-    ctx.closePath();ctx.stroke();
-    ctx.strokeStyle=d.isBoss?'rgba(255,64,64,0.25)':'rgba(0,255,65,0.15)';ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.arc(0,0,d.r*(d.isBoss?0.5:0.4)*viewZoom,0,Math.PI*2);ctx.stroke();
+    // Débris contaminés par strange matter — noirs et brillants
+    if(d.strange){
+      ctx.strokeStyle=d.hitFlash>0?'#ffffff':'#20ff80';
+      ctx.lineWidth=1.5;ctx.shadowColor='#20ff80';ctx.shadowBlur=8;
+      ctx.fillStyle='rgba(0,0,0,0.9)';
+      ctx.beginPath();
+      for(let i=0;i<d.shape.length;i++){const[px,py]=d.shape[i];i===0?ctx.moveTo(px*viewZoom,py*viewZoom):ctx.lineTo(px*viewZoom,py*viewZoom);}
+      ctx.closePath();ctx.fill();ctx.stroke();
+    } else {
+      ctx.strokeStyle=d.isBoss?(d.hitFlash>0?'#ffffff':'#ff4040'):(d.hitFlash>0?'#ffffff':'#336644');
+      ctx.lineWidth=d.isBoss?2:1.5;ctx.shadowColor=d.isBoss?'#ff2020':'#00a828';ctx.shadowBlur=d.isBoss?12:4;
+      ctx.beginPath();
+      for(let i=0;i<d.shape.length;i++){const[px,py]=d.shape[i];i===0?ctx.moveTo(px*viewZoom,py*viewZoom):ctx.lineTo(px*viewZoom,py*viewZoom);}
+      ctx.closePath();ctx.stroke();
+      ctx.strokeStyle=d.isBoss?'rgba(255,64,64,0.25)':'rgba(0,255,65,0.15)';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.arc(0,0,d.r*(d.isBoss?0.5:0.4)*viewZoom,0,Math.PI*2);ctx.stroke();
+    }
     ctx.restore();
   }
 }
@@ -4291,10 +5247,11 @@ function gameLoop(ts){
       if(state==='playing'){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-        checkLore();
+        updateDriftMode(dt);updateHullSounds(dt);checkMDWEmergency();checkMDWMeta();
+        checkLore();checkEndings();checkContracts();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
@@ -4310,7 +5267,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawTradePosts();drawEnemies();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
