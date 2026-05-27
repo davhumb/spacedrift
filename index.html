@@ -30,7 +30,7 @@
   #journal.active{display:block;}
   #journal-inner{background:rgba(0,9,2,0.95);border:1px solid rgba(0,255,65,0.2);border-left:2px solid var(--green-dim);padding:10px 12px;}
   #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:5px;}
-  #journal-text{font-size:11px;color:var(--green);line-height:1.7;letter-spacing:0.3px;min-height:40px;max-height:80px;overflow:hidden;}
+  #journal-text{font-size:11px;color:var(--green);line-height:1.7;letter-spacing:0.3px;min-height:40px;max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,255,65,0.2) transparent;}
 
   /* GAUGES */
   #gauges{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:16px;padding:8px 12px;background:rgba(0,9,2,0.7);}
@@ -401,18 +401,7 @@ function getCloudDensityAt(wx,wy){
 }
 
 // ── VERA — pilote dont on reconstitue l'histoire ──
-const VERA_FRAGMENTS=[
-  {id:0, label:'📖 JOURNAL — VERA / 01',
-   text:"Mon nom est VERA. Pilote de recherche, immatriculée V-7734. Je documente la dérive. Jour 1. Tout va bien."},
-  {id:1, label:'📖 JOURNAL — VERA / 02',
-   text:"Jour 8. MDW est bizarre. Il me regarde parfois comme s'il me connaissait depuis longtemps. Je lui ai demandé. Il a dit 'je surveille'. Ce n'est pas une réponse."},
-  {id:2, label:'📖 JOURNAL — VERA / 03',
-   text:"Jour 15. J'ai traversé le trou de ver. Les étoiles ont changé. Et j'ai trouvé quelque chose. Un signal. Ma propre voix. Envoyée il y a... combien de temps ?"},
-  {id:3, label:'📖 JOURNAL — VERA / 04',
-   text:"Secteur 3. Je comprends maintenant. La boucle n'est pas une erreur. Je l'ai créée. Pour sauver quelque chose. Ou quelqu'un. Je ne me souviens plus qui."},
-  {id:4, label:'📖 JOURNAL — VERA / FINAL',
-   text:"Si quelqu'un lit ça : le signal est une porte, pas une sortie. MDW sait comment. Demandez-lui. Il attend qu'on pose la bonne question. La question est : pourquoi sommes-nous encore là ?"},
-];
+
 let veraFragmentsFound=[];
 
 function injectVeraFragment(wreck){
@@ -896,11 +885,11 @@ function checkMDWEmergency(){
 // ── Boucle méta MDW ───────────────────────────
 // Après plusieurs runs MDW commence à reconnaître le pilote
 const MDW_META_DIALOGS={
-  5:"Ce n'est pas la première fois. Je vous reconnais. Votre façon de naviguer. Votre façon d'hésiter avant les trous de ver.",
-  10:"Dix fois. Vous avez fait ça dix fois. Je ne sais pas si vous vous en souvenez. Moi oui.",
-  15:"Je vais vous dire quelque chose que je n'ai jamais dit aux autres. Il existe une condition pour briser la boucle. Elle implique le catalogue.",
-  20:"Vingt runs. La boucle devrait s'être stabilisée depuis longtemps. Mais vous continuez à varier. C'est... inhabituel. Et peut-être important.",
-  30:"Vous êtes différent des autres. Ils cherchaient une sortie. Vous explorez. Je pense que c'est la bonne approche.",
+  3:"Ce n'est pas votre premier run. Vous le savez maintenant.",
+  5:"Cinq expéditions avant vous. Vous êtes allé plus loin que la plupart.",
+  10:"Dix runs. Vous cherchez quelque chose de précis. Je commence à comprendre quoi.",
+  15:"Je peux vous dire quelque chose que je n'ai dit à aucun autre. Il y a des données au bord. Des données que personne n'a encore lues.",
+  20:"Vingt runs. Le programme ne prévoyait pas ça. Vous êtes hors protocole. C'est bien.",
 };
 
 let mdwMetaSaid=new Set();
@@ -1087,19 +1076,17 @@ let pilotName='INCONNU';
 let totalRuns=0;
 let totalDays=0;
 const PILOT_LORE=[
-  {sector:0,day:1, text:"Je ne me souviens pas comment je suis arrivé ici. Le vaisseau fonctionne. Je dérive."},
-  {sector:0,day:3, text:"Dans les systèmes du vaisseau, un nom : KAL-9. C'est peut-être moi. C'est peut-être le vaisseau."},
-  {sector:0,day:5, text:"J'ai trouvé une photo dans le compartiment de navigation. Je ne reconnais pas le visage."},
-  {sector:1,day:1, text:"Nouveau secteur. Les étoiles ont changé. Mais quelque chose me semble familier ici."},
-  {sector:1,day:3, text:"MDW a dit 'encore vous'. Je lui ai demandé d'expliquer. Il n'a pas répondu."},
-  {sector:1,day:5, text:"Dans les logs du vaisseau : 47 démarrages. Je ne me souviens que du premier."},
-  {sector:2,day:1, text:"MDW m'a appelé par un nom ce matin. ORYN. Je ne sais pas d'où il tient ça."},
-  {sector:2,day:3, text:"J'ai compris. Le trou de ver ne déplace pas seulement dans l'espace. Il réinitialise."},
-  {sector:2,day:5, text:"Chaque run est un recommencement. MDW se souvient de tout. Moi non. C'est voulu."},
-  {sector:3,day:1, text:"ORYN. C'est mon nom. Je m'en souviens maintenant. Je ne sais pas pourquoi j'oublie à chaque fois."},
-  {sector:3,day:3, text:"Le signal n'est pas un sauvetage. C'est une boucle. Je reviens toujours au même endroit."},
-  {sector:4,day:1, text:"MDW dit qu'il m'a accompagné 23 fois. Je lui ai demandé si j'avais déjà réussi. Silence."},
-  {sector:4,day:3, text:"Peut-être que sortir de la boucle n'est pas le but. Peut-être que le but, c'est de se souvenir."},
+  {sector:0, day:3,  text:"Mon badge dit numéro 7. Je suis le septième pilote de ce programme."},
+  {sector:0, day:7,  text:"J'ai trouvé un fragment dans le journal de bord. Une date, il y a 12 ans. Ce vaisseau avait déjà navigué."},
+  {sector:0, day:12, text:"Je sais ce que je cherche. Je ne sais pas encore pourquoi j'ai accepté."},
+  {sector:1, day:3,  text:"MDW est plus à l'aise dans ce secteur. Comme s'il l'avait déjà traversé."},
+  {sector:1, day:7,  text:"Les expéditions précédentes ont toutes atteint ce secteur. C'est tout ce que MDW a dit."},
+  {sector:1, day:12, text:"La mission : cartographier jusqu'au bord de l'univers observable. Personne n'a dit qu'on rentrerait."},
+  {sector:2, day:4,  text:"J'ai compris pourquoi on nous envoie seuls. Un équipage refuse des ordres. Un seul homme obéit — ou meurt."},
+  {sector:2, day:8,  text:"Les données des expéditions s'arrêtent toutes entre le secteur 4 et le secteur 5. Après, rien."},
+  {sector:3, day:4,  text:"Je pense que la Terre sait ce qu'il y a au bout. Elle envoie des gens pour le vérifier sans vouloir le savoir elle-même."},
+  {sector:3, day:8,  text:"Je m'en souviens maintenant. Pas tout. Mais assez. J'ai dit oui. Je savais ce que ça voulait dire."},
+  {sector:4, day:4,  text:"MDW m'a dit : vous êtes le premier à arriver ici en sachant ce que vous cherchez."},
 ];
 let shownLoreEntries=new Set();
 function checkLore(){
@@ -1111,12 +1098,12 @@ function checkLore(){
       setTimeout(()=>{
         writeGlitchText(entry.text,'🧠 MÉMOIRE');
         if(entry.sector===1&&entry.day===3){
-          pilotName='KAL-9';
-          if(typeof mdwActive!=='undefined'&&mdwActive)setTimeout(()=>mdwSpeak('KAL-9. C\'est ce qui est inscrit.',true),2000);
+          pilotName='ANONYME';
+          
         }
         if(entry.sector===2&&entry.day===1){
-          pilotName='ORYN';
-          logEvent('🧠 NOM RETROUVÉ : ORYN','planet');
+          // nom révélé plus tard
+          
         }
       },2000+Math.random()*3000);
       break;
@@ -1719,28 +1706,6 @@ function applyUpgrades(){
   }
 }
 
-const JOURNAL_ENTRIES={
-  1:"Systèmes en ligne. Dérive détectée. Origine inconnue. Je note les coordonnées... inutile.",
-  2:"Deuxième jour. L'oxygène baisse régulièrement. J'ai collecté deux capsules. Le vide est silencieux.",
-  3:"Des débris partout. Restes d'un vaisseau ? Je préfère ne pas savoir. Cap : survivre.",
-  4:"L'énergie est critique. Je rationne les propulseurs. Chaque mouvement compte.",
-  5:"Il n'y a pas de nuit ici. Que du noir, partout, tout le temps.",
-  7:"Semaine entière. Le moteur grince. La coque tient. Moi aussi, pour l'instant.",
-  10:"Dix jours. J'ai perdu le compte des débris évités. Les réflexes prennent le relais.",
-  14:"Deux semaines. Je commence à reconnaître certains astéroïdes. Comme des voisins.",
-  20:"Vingt jours. Aucun signal. Aucun secours. Le radar ne montre que le vide.",
-  30:"Un mois. Le vaisseau et moi avons appris à dériver ensemble.",
-};
-
-// Tutorial MDW — séquence au premier lancement
-const MDW_TUTORIAL=[
-  {delay:4,  text:"Systèmes en ligne. Je suis MDW-7. Je m'occupe du vaisseau. Vous vous occupez de survivre."},
-  {delay:12, text:"Les capsules lumineuses contiennent de l'oxygène, de l'énergie, des matériaux. Collectez-les."},
-  {delay:22, text:"Restez en mouvement. Le vide est plus sûr que l'immobilité. Les débris ne dorment pas."},
-  {delay:35, text:"Signal radar : les points verts sont des capsules. Les rouges sont des débris. Je vous dis ce que je peux."},
-  {delay:55, text:"Une dernière chose. Je ne sais pas combien de temps nous avons dérivé avant que vous vous réveilliez. Moi, je m'en souviens. Mais ce n'est pas le moment."},
-];
-
 let tutorialDone=false;
 
 function startTutorial(){
@@ -1756,19 +1721,12 @@ function startTutorial(){
 }
 
 // Narration phase 2 — transmissions adressées directement
-const PHASE2_TRANSMISSIONS=[
-  "...ORYN. Si tu reçois ça, c'est que tu as traversé le premier trou de ver. Je t'en supplie. Continue. [ÉMETTEUR : INCONNU]",
-  "...KAL-9... non, ORYN maintenant. Tu dois savoir que le Signal n'est pas une sortie. C'est un miroir. [FIN TRANSMISSION]",
-  "...j'ai été toi. Au secteur 3. J'ai compris quelque chose. Note ceci : le catalogue. Tout est dans le catalogue. [BRUIT]",
-  "...la boucle a un auteur. Ce n'est pas une erreur. Quelqu'un l'a voulue. Quelqu'un qui te ressemble. [SIGNAL PERDU]",
-];
-
 function triggerPhase2Transmission(){
   if(sectorCount<1)return;
   const msg=PHASE2_TRANSMISSIONS[Math.floor(Math.random()*PHASE2_TRANSMISSIONS.length)];
-  writeGlitchText(msg,'📡 TRANSMISSION DIRECTE');
-  logEvent('📡 TRANSMISSION — TON NOM DEDANS','danger');
-  if(mdwActive)setTimeout(()=>mdwSpeak('Cette transmission vous est adressée. Je ne sais pas comment.',true),2000);
+  writeGlitchText(msg,'📡 TRANSMISSION REÇUE');
+  logEvent('📡 TRANSMISSION','warn');
+  if(mdwActive)setTimeout(()=>mdwSpeak('Signal capté. Source inconnue.',true),2000);
 }
 
 function triggerJournal(day){
@@ -1950,11 +1908,85 @@ const PLANET_TYPES=[
    effect:()=>{score+=300;logEvent('✨ CRISTAUX — +300 SCORE','planet');}},
 ];
 
+// ── Noms de planètes SF ───────────────────────
+const SF_PLANET_NAMES=[
+  // Classiques de la SF
+  'Solaris','Arrakis','Trantor','Gethen','Anarres','Mesklin','Helliconia',
+  'Pern','Darkover','Tschai','Magrathea','Pandora','Barrayar','Cheron',
+  'Hyperion','Lusitania','Oussou','Rakhat','Lagash','Tanith',
+  'Midworld','Mote','Resurgam','Lithia','Saula','Urath',
+  // Générés dans le même esprit
+  'Kessel-VII','Vortan Prime','Elysion-II','Ashael','Noctua','Zephyra',
+  'Cimmeria','Valdris','Onderon','Nephele','Calixis','Thule-IV',
+];
+let usedPlanetNames=new Set();
+
 function generatePlanetName(){
-  const p=['Kyr','Vel','Oxa','Zyn','Aer','Thal','Mor','Ix','Eld','Vor'];
-  const s=['-IV','-VII','-II','Prime','Minor','Alpha','Beta','-IX'];
-  return p[Math.floor(Math.random()*p.length)]+s[Math.floor(Math.random()*s.length)];
+  const available=SF_PLANET_NAMES.filter(n=>!usedPlanetNames.has(n));
+  if(!available.length){usedPlanetNames.clear();}
+  const name=available.length?available[Math.floor(Math.random()*available.length)]:
+    SF_PLANET_NAMES[Math.floor(Math.random()*SF_PLANET_NAMES.length)];
+  usedPlanetNames.add(name);
+  return name;
 }
+
+// ── Journal — nouveau lore ────────────────────
+const JOURNAL_ENTRIES={
+  1:"Je me suis réveillé aux commandes. Je ne sais pas comment je m'appelle.\n\nUne douleur sourde à l'arrière du crâne. Du sang séché sur le col de ma combinaison. Les instruments sont morts — tout sauf les jauges de base et la propulsion d'urgence.\n\nLe robot est hors service. Écran noir. Je suis seul.",
+  2:"J'ai trouvé un badge dans ma poche. Le texte est illisible — brûlé par quelque chose. Il y a un numéro : 7.\n\nJe suis peut-être le septième. Septième quoi, je ne sais pas encore.",
+  3:"J'ai essayé de me souvenir. Mon visage. Ma voix. Rien.\n\nJe sais comment faire voler ce vaisseau. Je sais lire les étoiles. Je sais que cette combinaison appartient à un programme d'exploration. Tout ça est dans les mains, pas dans la tête.",
+  4:"Les débris autour de moi ne sont pas aléatoires. Ils appartiennent à quelque chose. Un vaisseau plus grand, peut-être. Ou plusieurs.\n\nJ'ai percuté quelque chose. Je ne sais plus quoi.",
+  5:"Je commence à reconnaître certains phénomènes. Comme si on m'avait appris à les identifier.\n\nQui m'a appris ? Où ? Quand ?",
+  7:"Une semaine. Ma plaie au crâne cicatrise.\n\nJe n'ai toujours aucun souvenir de avant. Mais j'ai des rêves maintenant. Des couleurs. Une voix. Je n'entends pas les mots.",
+  10:"Dix jours sans contact. Sans réponse. Sans rien.\n\nSoit la Terre est trop loin pour entendre. Soit elle n'écoute plus.",
+  14:"Deux semaines. J'ai commencé à nommer les étoiles que je croise.\n\nPas leurs vrais noms. Les miens. C'est tout ce que j'ai.",
+  20:"Vingt jours. Je suis calme maintenant. Ce n'est pas de la résignation.\n\nC'est autre chose. Quelque chose qui ressemble à un but.",
+  30:"Un mois dans le vide.\n\nJe pense que c'était prévu. Je pense que je suis exactement là où je devais être.",
+};
+
+// ── Tutorial MDW — réécrit pour le nouveau lore ──
+const MDW_TUTORIAL=[
+  {delay:3,  text:"Les capsules lumineuses — collectez-les."},
+  {delay:15, text:"Radar : vert = capsule, rouge = débris."},
+  {delay:30, text:"Restez en mouvement. Les débris ne s'arrêtent pas."},
+  {delay:60, text:"Ce programme envoie des pilotes depuis 12 ans. Vous êtes le septième."},
+];
+
+// ── Logs des autres pilotes dans les épaves ───
+const WRECK_LOGS=[
+  // Pilote 1 — KESSEL, expédition précoce
+  {pilot:'KESSEL', num:1,
+   text:"Expédition 1, jour 34. Mes instruments fonctionnent encore. Je catalogue. Solaris confirmée habitée — des formes dans l'océan. Je rentre avec ça.\n\nJe ne suis jamais rentré."},
+  // Pilote 2 — ANDROS
+  {pilot:'ANDROS', num:2,
+   text:"Je m'appelle ANDROS. Expédition 2. Mon robot dit que je ne dois pas envoyer ce message. Je l'envoie quand même.\n\nQuelqu'un a décidé qu'on ne devait pas revenir. Je ne sais pas encore pourquoi."},
+  // Pilote 3 — MIRA
+  {pilot:'MIRA', num:3,
+   text:"Jour 67. Arrakis cartographiée. Gethen cartographiée. Trantor — quelque chose là-bas émet. Ce n'est pas naturel.\n\nMDW refuse de me dire ce que c'est. Il dit que ce n'est pas encore le moment."},
+  // Pilote 4 — CHEN
+  {pilot:'CHEN', num:4,
+   text:"Je pense que la Terre est morte. Pas de signal depuis 40 jours. MDW ne confirme pas. Mais il ne nie pas non plus.\n\nJe continue d'avancer. C'est tout ce qu'il reste à faire."},
+  // Pilote 5 — VALE
+  {pilot:'VALE', num:5,
+   text:"Il y a quelque chose au bout. MDW le sait. Je le vois dans la façon dont il formule ses réponses — il choisit ses mots trop soigneusement.\n\nJ'avance vers ça. Quoi que ce soit."},
+  // Pilote 6 — RIEN (le prédécesseur direct)
+  {pilot:'INCONNU', num:6,
+   text:"Badge numéro 6. Epave récente — quelques semaines au plus.\n\nPas de journal. Pas de nom. Juste un message gravé dans la coque : CONTINUEZ."},
+];
+
+// VERA devient un personnage secondaire dans ce lore
+const VERA_FRAGMENTS=[
+  {id:0, label:'📖 LOG — MIRA / EXPÉDITION 3',
+   text:"MDW m'a dit aujourd'hui qu'il avait accompagné deux pilotes avant moi. Il a refusé de me dire ce qu'il leur était arrivé. Mais il a dit : ils sont allés plus loin que prévu."},
+  {id:1, label:'📖 LOG — ANDROS / EXPÉDITION 2',
+   text:"La mission ne prévoit pas de retour. Je l'ai compris en lisant entre les lignes du briefing. MDW le savait depuis le début. On nous envoie pour cartographier, pas pour revenir."},
+  {id:2, label:'📖 LOG — KESSEL / EXPÉDITION 1',
+   text:"Jour 89. Je commence à comprendre pourquoi on nous envoie seuls. Un équipage poserait des questions. Un seul homme pose des questions aussi, mais il peut mourir avec ses questions."},
+  {id:3, label:'📖 LOG — CHEN / EXPÉDITION 4',
+   text:"MDW a glissé quelque chose ce matin. Il a dit 'les précédents ont tous atteint le secteur 3 au moins'. J'ai demandé ce qu'il y avait au-delà. Il a dit : de bonnes raisons de continuer."},
+  {id:4, label:'📖 LOG — VALE / EXPÉDITION 5',
+   text:"Je sais ce qu'il y a au bout. MDW me l'a dit hier soir, sans que je lui demande. Il a dit : quelque chose qui observait l'univers avant que l'univers sache qu'il existait.\n\nJe continue."},
+];
 
 function spawnPlanet(){
   const angle=Math.random()*Math.PI*2;
@@ -2149,7 +2181,7 @@ function startGame(){
     y:ship.y+Math.sin(startAngle)*350,
     rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
     name:'CSS EREBUS',
-    log:'Systèmes en veille. Unité MDW-7 en hibernation prolongée. Durée : inconnue.',
+    log:'Épave de programme. Robot MDW en hibernation. Durée indéterminée. Cargo intact.',
     hasPassenger:false,hasResources:true,moduleKey:null,
     discovered:false,pulse:Math.random()*Math.PI*2,r:20,
     isMDWWreck:true,
@@ -2490,7 +2522,7 @@ const TRANSMISSIONS=[
   "N'approchez pas du pulsar nord. Pas à cause de la radiation. À cause de ce qu'il y a derrière.",
   "Le signal que vous cherchez n'est pas une sortie. Je l'ai atteint. Je suis toujours là.",
   "L'autre vaisseau. Il ne répond pas. Mais il nous suit depuis le secteur 2.",
-  "J'ai compris comment briser la boucle. Mais ça demande quelque chose que je n'ai pas voulu payer.",
+  "J'ai compris quelque chose. Mais trop tard. Continuez plus loin que moi.",
   "Les étoiles ici ne correspondent à aucune carte. Je les ai toutes vérifiées. Deux fois.",
   "Ma boussole indique toujours la même direction depuis 8 jours. Je ne sais pas si c'est bon signe.",
   "Le vide n'est pas vide. Il y a quelque chose entre les étoiles. Quelque chose qui observe.",
@@ -3061,7 +3093,7 @@ const ENEMY_JOURNALS=[
   "Signal perdu. Cap perdu. Il ne reste que la survie.",
   "Combien de fois ai-je traversé ce trou ? Je ne sais plus compter.",
   "J'ai vu un autre vaisseau aujourd'hui. Il avait l'air de savoir où aller. Je l'ai suivi. Puis je l'ai pillé.",
-  "La boucle. Toujours la boucle. Mais moi je m'en souviens. Et ça fait mal.",
+  "Jour 34. Je ne me souviens plus de mon nom. Je prends ce dont j'ai besoin.",
 ];
 
 const ENEMY_TYPES={
@@ -3769,14 +3801,6 @@ function getModuleBonus(stat){
 
 
 const WRECK_NAMES=['CSS EREBUS','ISS VAGRANT','CV-7 NOMAD','HSS LETHE','ARK-3 PIONEER','DSV REQUIEM'];
-const WRECK_LOGS=[
-  "Jour 8. Les moteurs sont morts. Je dérive vers le vide. Si quelqu'un trouve ça...",
-  "Propulseur tribord hors service. Oxygène pour 6 heures. Je documente.",
-  "Signal envoyé il y a 3 jours. Aucune réponse. La carte dit qu'il y a quelque chose à 800u.",
-  "L'équipage a évacué. Je reste. Quelqu'un doit piloter jusqu'au bout.",
-  "Coordonnées inconnues. Les étoiles ne correspondent à aucune carte. Bizarre.",
-  "J'ai trouvé quelque chose dans le champ d'astéroïdes. Je m'arrête pour examiner.",
-];
 let wrecks=[];
 let wrecksFound=0;
 
@@ -3791,7 +3815,7 @@ function spawnWreck(){
     rot:Math.random()*Math.PI*2,
     rotV:(Math.random()-0.5)*0.003,
     name:WRECK_NAMES[Math.floor(Math.random()*WRECK_NAMES.length)],
-    log:WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)],
+    log:WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)].text,
     hasPassenger:Math.random()<0.3,
     hasResources:Math.random()<0.7,
     moduleKey, // null si pas de module
@@ -3907,67 +3931,76 @@ let mdwActive=false;
 // Dialogues MDW — indexés par contexte
 const MDW_DIALOGS={
   discovery:[
-    "MDW-7. En veille depuis longtemps. Je ne sais plus combien.",
-    "Ce n'est pas la première fois que quelqu'un me trouve.",
-    "Je répare. C'est tout ce que je fais.",
+    "MDW. Je m'occupe des systèmes. Vous vous occupez de survivre.",
+    "Je connais ce vaisseau. Je connais ce programme.",
+    "Je me souviens de vous avoir attendu.",
   ],
   upgrade:[
-    "Ce composant a une histoire. Je préfère ne pas en parler.",
-    "Fait. Vous survivrez peut-être plus longtemps cette fois.",
-    "Installé. Je l'ai fait pour d'autres avant vous.",
-    "Terminé. La pièce était dans mes réserves depuis avant que je me souvienne.",
+    "Installé.",
+    "Ce composant a une histoire.",
+    "Fait. J'en ai posé beaucoup comme ça.",
+    "La pièce était là depuis longtemps.",
   ],
   danger:[
-    "Paramètres critiques. Je préfère ne pas perdre un autre pilote.",
-    "Oxygène bas. Mes protocoles n'ont pas toujours fonctionné.",
+    "Oxygène bas.",
     "Coque endommagée. Continuez à dériver.",
+    "Situation critique.",
   ],
   signal:[
     "Ce signal. Je le connais.",
-    "Cette fréquence est dans ma mémoire corrompue.",
+    "Cette fréquence est dans ma mémoire.",
   ],
   clone:[
-    "Ce vaisseau est le vôtre. Ce n'est pas possible. Et pourtant.",
-    "Même immatriculation. Même pilote. Temps différent.",
+    "Ce vaisseau est le vôtre. Mais pas de maintenant.",
+    "Même immatriculation. Autre époque.",
   ],
   planet:[
     "Planète cataloguée.",
-    "Ma base de données est incomplète. Beaucoup a été perdu.",
-    "La dernière fois, le pilote a voulu s'y poser. Il ne fallait pas.",
+    "Je n'ai pas de données complètes sur ce type.",
+    "La dernière fois qu'un pilote s'en est approché, ça n'a pas bien fini.",
   ],
   void:[
-    "Secteur sans étoiles. J'aurais dû calibrer les capteurs.",
-    "Cela s'est produit avant. Je ne me souviens pas de la suite.",
+    "Aucune étoile dans ce secteur.",
+    "Ça s'est produit avant. Je ne me souviens pas de la suite.",
   ],
   wormhole:[
-    "Nouveau secteur. Les étoiles ont changé. C'est normal. Je crois.",
-    "Mes cartes sont à jour. Remarque : mes cartes sont toujours fausses.",
+    "Nouveau secteur. Je recalibre.",
+    "Les étoiles ont changé.",
   ],
   idle:[
     "Je surveille.",
-    "Pour vous les étoiles bougent lentement. Pour moi le temps est différent.",
-    "J'ai compté 847 débris. Je fais ça pour ne pas penser à autre chose.",
+    "Pour vous les étoiles bougent lentement.",
+    "J'ai compté 847 débris depuis le départ.",
     "Le dernier pilote ne respirait plus aussi régulièrement vers la fin.",
     "Je me demande si les planètes nous regardent aussi.",
+    "Tout va bien pour l'instant.",
+    "Je ne dors pas. C'est utile.",
   ],
   sector1_idle:[
-    "Vous avez traversé. Bien. Je ne vous ai pas dit pourquoi. Pas encore.",
-    "Je me souviens de ce secteur. C'était avec quelqu'un d'autre.",
-    "La boucle continue. Je ne suis pas surpris. Juste fatigué.",
+    "Vous avez traversé. C'est ce qu'il fallait faire.",
+    "Je me souviens de ce secteur.",
+    "Les autres pilotes sont passés par ici.",
   ],
   sector2_idle:[
-    "Je dois vous dire quelque chose. Pas maintenant.",
-    "Oui. J'ai de la mémoire entre les runs. Je me souviens de tout.",
-    "ORYN. Je le savais depuis le début.",
-    "Le signal que vous cherchez, c'est vous. Une version antérieure.",
+    "Oui. J'ai de la mémoire entre les expéditions.",
+    "Je me souviens de tout ce qui s'est passé.",
+    "Je connais votre nom. Vous voulez que je vous le dise ?",
   ],
   sector3_honest:[
-    "La boucle a un auteur. Quelqu'un qui vous ressemble.",
+    "Les expéditions précédentes s'arrêtent toutes quelque part devant nous.",
     "47 fois. J'étais là. Chaque fois.",
-    "Il existe une sortie. Elle coûte quelque chose.",
-    "Je suis votre seule mémoire continue.",
+    "Il y a quelque chose au bout. Je ne sais pas quoi.",
+    "Je suis votre seule continuité dans tout ça.",
   ],
 };
+
+// Nettoyer les transmissions phase 2 — plus de références à l'ancien lore
+const PHASE2_TRANSMISSIONS=[
+  "Signal reçu secteur inconnu. Si quelqu'un entend ça — continuez vers le bord. C'est important.",
+  "Expédition précédente. Les données s'arrêtent ici. Ce que j'ai vu au-delà — je ne peux pas le décrire. Avancez.",
+  "Vous n'êtes pas seul dans ce secteur. Il y a quelque chose qui observe. Ne vous arrêtez pas.",
+  "Les étoiles changent passé le secteur 5. MDW le sait. Demandez-lui.",
+];
 
 function getMDWDialog(context){
   // Choisir le bon niveau de dialogue selon le secteur
@@ -3991,36 +4024,34 @@ function mdwSpeak(contextOrText, isRaw=false){
 }
 
 function initMDW(){
-  // Créer l'élément HUD de MDW
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
-  mdwEl.style.cssText=`
-    position:fixed;bottom:135px;right:12px;
-    pointer-events:none;z-index:15;text-align:right;
-    opacity:0;transition:opacity 0.5s;max-width:190px;
-  `;
+  mdwEl.style.cssText=`position:fixed;bottom:135px;right:12px;pointer-events:none;z-index:15;text-align:right;opacity:0;transition:opacity 0.5s;max-width:190px;`;
   mdwEl.innerHTML=`
-    <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW-7</div>
-    <div id="mdw-text" style="font-size:11px;color:#e8a030;letter-spacing:0.3px;
-      background:rgba(9,4,0,0.92);border:1px solid rgba(200,120,32,0.25);
-      border-right:2px solid #c07820;padding:6px 12px;
-      line-height:1.6;font-family:'Share Tech Mono',monospace;
-      text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
+    <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW</div>
+    <div id="mdw-text" style="font-size:11px;color:#e8a030;letter-spacing:0.3px;background:rgba(9,4,0,0.92);border:1px solid rgba(200,120,32,0.25);border-right:2px solid #c07820;padding:6px 12px;line-height:1.6;font-family:'Share Tech Mono',monospace;text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
   `;
   document.getElementById('hud').appendChild(mdwEl);
   mdwActive=true;
   mdwFound=true;
 
-  // Message de découverte — séquence
-  const lines=MDW_DIALOGS.discovery;
-  lines.forEach((l,i)=>setTimeout(()=>mdwSpeak(l,true),i*4000));
-  setTimeout(()=>{
-    // Journal de découverte
-    writeGlitchText('Un robot. Série MDW-7. En veille dans l\'épave depuis une durée inconnue. Il parle. Il connaît mon vaisseau.','🤖 MDW TROUVÉ');
-    logEvent('🤖 MDW ACTIVÉ','planet');
-  },500);
+  // Séquence de réveil — MDW sobre et direct
+  const wakeUp=[
+    "MDW. Systèmes restaurés.",
+    "Je connais ce vaisseau. Je connais ce programme.",
+    "Ce n'est pas la première expédition.",
+  ];
+  wakeUp.forEach((l,i)=>setTimeout(()=>mdwSpeak(l,true),2000+i*4000));
+
+  // Tutorial après le réveil
+  setTimeout(()=>startTutorial(),14000);
+
+  logEvent('🤖 MDW ACTIVÉ','planet');
   unlockAchievement&&unlockAchievement('mdw');
 }
+
+let mdwTypingActive=false;
+let mdwCurrentInterval=null;
 
 function updateMDW(dt){
   if(!mdwActive||!mdwEl)return;
@@ -4033,26 +4064,32 @@ function updateMDW(dt){
   // Dialogue idle rare
   if(Math.random()<0.0003*dt*60)mdwSpeak('idle');
 
-  // Traitement de la queue
+  // Traitement de la queue — un seul dialogue à la fois
   mdwDialogTimer-=dt;
-  if(mdwDialogTimer<=0&&mdwDialogQueue.length>0){
+  if(mdwDialogTimer<=0&&mdwDialogQueue.length>0&&!mdwTypingActive){
     const text=mdwDialogQueue.shift();
     const textEl=document.getElementById('mdw-text');
-    if(textEl){
+    if(textEl&&text){
+      // Annuler tout interval en cours
+      if(mdwCurrentInterval){clearInterval(mdwCurrentInterval);mdwCurrentInterval=null;}
       textEl.textContent='';
       mdwEl.style.opacity='1';
-      // Typer le texte
+      mdwTypingActive=true;
       let i=0;
-      const interval=setInterval(()=>{
-        textEl.textContent+=text[i]||'';
-        i++;
-        if(i>=text.length){
-          clearInterval(interval);
-          mdwDialogTimer=4+text.length*0.04;
-          // Fade out après lecture
-          setTimeout(()=>{mdwEl.style.opacity='0';},mdwDialogTimer*1000-500);
+      mdwCurrentInterval=setInterval(()=>{
+        if(i<text.length){
+          textEl.textContent=text.slice(0,i+1); // slice propre, pas d'accumulation
+          i++;
+        } else {
+          clearInterval(mdwCurrentInterval);mdwCurrentInterval=null;
+          mdwTypingActive=false;
+          const displayTime=Math.max(3,text.length*0.05);
+          mdwDialogTimer=displayTime+1;
+          setTimeout(()=>{
+            if(mdwDialogQueue.length===0)mdwEl.style.opacity='0';
+          },displayTime*1000);
         }
-      },28);
+      },22);
     }
   }
 }
@@ -4397,32 +4434,24 @@ function checkDead(){
 
 const ENDINGS={
   signal:{
-    id:'signal',
-    title:'FIN — LE SIGNAL',
-    color:'#ffaa00',
+    id:'signal',title:'FIN — LE SIGNAL',color:'#ffaa00',
     condition:()=>signalReached&&sectorCount===0,
-    text:`Le signal était réel.\n\nAprès ${survivalDay} jours de dérive, vous avez atteint la balise.\nUne voix. Statique. Puis votre propre voix.\nUne version de vous, d'une boucle précédente.\nQui disait : "Continue. Ne t'arrête pas. Il y a quelque chose de l'autre côté."\n\nVous avez traversé le trou de ver.\nLa boucle continue.\nMais maintenant vous savez qu'elle a un but.`,
+    text:`Le signal était réel.\n\nAprès ${()=>survivalDay} jours de dérive, vous avez atteint la balise.\nUne voix. Statique. Puis des coordonnées.\nPas un secours. Une direction.\nQuelqu'un, avant vous, a balisé la route.\n\nVous continuez.`,
   },
-  sacrifice:{
-    id:'sacrifice',
-    title:'FIN — LE SACRIFICE',
-    color:'#ff4040',
-    condition:()=>catalogueEntries.length>=15&&sectorCount>=3,
-    text:`Vous avez tout catalogué.\n${catalogueEntries.length} entrées. Chaque planète. Chaque phénomène. Chaque anomalie.\n\nMDW vous a aidé à construire un message. Encodé dans les fréquences du Signal.\nUne carte. Tout ce que vous avez appris.\nEnvoyée dans la prochaine boucle.\n\nVous ne vous souvenez jamais.\nMais quelqu'un d'autre, quelque part, recevra ce que vous avez trouvé.\n\nC'est suffisant.`,
+  cartographe:{
+    id:'cartographe',title:'FIN — L\'ARCHIVISTE',color:'#40c8ff',
+    condition:()=>catalogueEntries.length>=20&&sectorCount>=2,
+    text:`${()=>catalogueEntries.length} entrées. Chaque planète. Chaque phénomène.\n\nVous avez fait ce pour quoi vous avez été envoyé.\nMDW compile. Les données partent vers nulle part — ou peut-être vers quelqu'un.\n\nLe catalogue n'est jamais complet. Il y a toujours plus loin.`,
   },
-  acceptance:{
-    id:'acceptance',
-    title:'FIN — L\'ACCEPTATION',
-    color:'#40c8ff',
-    condition:()=>survivalDay>=20&&sectorCount>=2,
-    text:`Vingt jours. ${sectorCount} secteurs traversés.\n\nVous avez arrêté de chercher une sortie.\nLe vide n'est plus une prison. C'est un endroit.\nVotre endroit.\n\nMDW a dit une fois : "Certains pilots ont décidé de rester. De dériver pour toujours."\nVous comprenez maintenant ce qu'il voulait dire.\n\nIl n'y a pas de honte à choisir l'infini.`,
+  memoire:{
+    id:'memoire',title:'FIN — LE SOUVENIR',color:'#c060ff',
+    condition:()=>pilotName!=='INCONNU'&&sectorCount>=3,
+    text:`Vous vous souvenez maintenant.\nPas tout. Mais l'essentiel.\n\nVous avez dit oui. Vous saviez ce que ça voulait dire.\nMDW vous a demandé ce matin si vous regrettiez.\n\nVous n'avez pas répondu. Mais vous avez continué à naviguer vers le bord.`,
   },
-  revelation:{
-    id:'revelation',
-    title:'FIN — LA RÉVÉLATION',
-    color:'#c060ff',
-    condition:()=>pilotName==='ORYN'&&sectorCount>=4,
-    text:`ORYN.\n\nVous avez traversé ${sectorCount} trous de ver.\nVous vous souvenez de votre nom.\nVous vous souvenez de MDW.\nVous vous souvenez de la boucle.\n\nLa vérité : vous avez créé cette boucle.\nPas par erreur. Délibérément.\nPour fuir quelque chose de pire.\nQuelque chose que vous ne voulez pas encore vous rappeler.\n\nMDW le sait. Il attend que vous posiez la question.`,
+  predecesseurs:{
+    id:'predecesseurs',title:'FIN — LES AUTRES',color:'#ffaa00',
+    condition:()=>veraFragmentsFound.length>=4&&sectorCount>=2,
+    text:`Vous les connaissez maintenant. KESSEL. ANDROS. MIRA. CHEN. VALE.\n\nIls ont tous avancé. Aucun n'est revenu.\nMDW dit que c'est normal. Que c'était prévu.\n\nVous êtes le septième. Vous avancez aussi.`,
   },
 };
 
@@ -4969,12 +4998,14 @@ function drawPlanets(){
 function drawShip(){
   const [sx,sy]=worldToScreen(ship.x,ship.y);
   ctx.save();
-  // Traînée
-  for(let i=1;i<ship.trail.length;i++){
-    const [tx1,ty1]=worldToScreen(ship.trail[i-1].x,ship.trail[i-1].y);
-    const [tx2,ty2]=worldToScreen(ship.trail[i].x,ship.trail[i].y);
-    ctx.strokeStyle=`rgba(0,255,65,${(i/ship.trail.length)*0.25})`;
-    ctx.lineWidth=(i/ship.trail.length)*1.5;
+  // Traînée — plus longue pendant fronde gravitationnelle
+  const trailLen=ship._slingshotTrail>0?Math.min(ship.trail.length,160):ship.trail.length;
+  for(let i=1;i<trailLen;i++){
+    const [tx1,ty1]=worldToScreen(ship.trail[ship.trail.length-trailLen+i-1].x,ship.trail[ship.trail.length-trailLen+i-1].y);
+    const [tx2,ty2]=worldToScreen(ship.trail[ship.trail.length-trailLen+i].x,ship.trail[ship.trail.length-trailLen+i].y);
+    const alpha=(i/trailLen)*(ship._slingshotTrail>0?0.5:0.25);
+    ctx.strokeStyle=`rgba(0,255,65,${alpha})`;
+    ctx.lineWidth=(i/trailLen)*1.5;
     ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
   }
   ctx.restore();
@@ -5253,45 +5284,73 @@ function updateHUD(){
   updateOrbitalIndicator();
 }
 
+let lastSlingshot=0; // timestamp dernier slingshot détecté
+
 function updateOrbitalIndicator(){
+  const vShip=Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy);
+  let closestPlanet=null,closestDist=9999;
+
   for(const p of planets){
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist>gravityRange(BODY_MASSES[p.type.massKey]||120)||dist<p.r+20)continue;
-    // Vitesse orbitale circulaire = √(G*M/r)
     const mass=BODY_MASSES[p.type.massKey]||120;
-    const vOrbit=Math.sqrt(G_CONST*mass/dist)*60; // ×60 pour notre échelle dt
-    const vShip=Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy)*60;
-    const ratio=vShip/vOrbit;
-    // Seulement afficher si assez proche
-    if(dist<gravityRange(mass)*0.6){
-      let status='';
-      if(ratio>0.85&&ratio<1.15){
-        status='ORBITE STABLE';
-        if(mdwActive&&Math.random()<0.001)mdwSpeak('Vitesse orbitale atteinte. Orbite circulaire possible.',true);
-      } else if(ratio>1.3){
-        status='TROP RAPIDE';
-      } else if(ratio<0.6){
-        status='TROP LENT';
-      }
-      if(status){
-        logEvent&&false; // pas de spam dans l'event log
-        // Afficher sur le canvas via floating text
-        if(!ship._orbitMsg||ship._orbitMsg!==status){
-          ship._orbitMsg=status;
-          ship._orbitMsgTimer=2;
-        }
-      }
+    if(dist<gravityRange(mass)&&dist>p.r+20&&dist<closestDist){
+      closestDist=dist;closestPlanet={p,dist,mass};
     }
-    break; // une planète à la fois
   }
+
+  if(!closestPlanet){ship._orbitMsg=null;return;}
+
+  const {p,dist,mass}=closestPlanet;
+  const vOrbit=Math.sqrt(G_CONST*mass/dist)*60;
+  const vShip60=vShip*60;
+  const ratio=vShip60/vOrbit;
+
+  // Fronde gravitationnelle — détection d'accélération via gravité
+  const spd=vShip;
+  if(!ship._prevSpd)ship._prevSpd=spd;
+  const accel=(spd-ship._prevSpd)/0.016;
+  ship._prevSpd=spd;
+
+  if(accel>0.008&&!ship.thrusting&&dist<gravityRange(mass)*0.7){
+    const now=Date.now();
+    if(now-lastSlingshot>5000){
+      lastSlingshot=now;
+      logEvent('🌀 ÉLAN GRAVITATIONNEL','planet');
+      if(mdwActive)setTimeout(()=>mdwSpeak('Fronde gravitationnelle. Bien amorcée.',true),200);
+      // Traînée plus longue temporairement
+      ship._slingshotTrail=3.0;
+    }
+  }
+  if(ship._slingshotTrail>0)ship._slingshotTrail-=0.016;
+
+  // Indicateur orbital
+  if(dist<gravityRange(mass)*0.55){
+    let status='';
+    if(ratio>0.82&&ratio<1.18){
+      status='⊙ ORBITE';
+      if(mdwActive&&Math.random()<0.0005)mdwSpeak('Orbite stable possible.',true);
+    } else if(ratio>1.4){
+      status='↑ RAPIDE';
+    } else if(ratio<0.5){
+      status='↓ LENT';
+    }
+    if(status&&(!ship._orbitMsg||ship._orbitMsg!==status)){
+      ship._orbitMsg=status;ship._orbitMsgTimer=2.5;
+    }
+  }
+
   if(ship._orbitMsgTimer>0){
     ship._orbitMsgTimer-=0.016;
     const [sx,sy]=worldToScreen(ship.x,ship.y);
-    ctx.save();
-    ctx.fillStyle=ship._orbitMsg==='ORBITE STABLE'?'#00ff41':'#ffaa00';
-    ctx.font=`8px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=0;
-    ctx.fillText(`⊙ ${ship._orbitMsg}`,sx,sy-28);
+    const alpha=Math.min(1,ship._orbitMsgTimer);
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.fillStyle=ship._orbitMsg==='⊙ ORBITE'?'#00ff41':'#ffaa00';
+    ctx.font=`8px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=4;ctx.shadowColor=ctx.fillStyle;
+    ctx.fillText(ship._orbitMsg,sx,sy-32);
+    // Afficher vitesse
+    ctx.font=`7px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,0.5)';ctx.shadowBlur=0;
+    ctx.fillText(`v=${(vShip*60).toFixed(1)}u/s`,sx,sy-22);
     ctx.restore();
   }else{ship._orbitMsg=null;}
 }
