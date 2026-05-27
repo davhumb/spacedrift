@@ -703,6 +703,51 @@ function startAmbient(){
   musicTimer=2;
 }
 
+// ── Note musicale au tap ──────────────────────
+// Delay court dédié — séparé du delay ambiant
+let tapDelay=null,tapDelayFeedback=null,tapDelayGain=null;
+let lastTapNoteIdx=-1;
+
+function initTapDelay(){
+  if(!audioCtx||tapDelay)return;
+  tapDelayGain=audioCtx.createGain();tapDelayGain.gain.value=0.18;
+  tapDelay=audioCtx.createDelay(2.0);tapDelay.delayTime.value=0.22;
+  tapDelayFeedback=audioCtx.createGain();tapDelayFeedback.gain.value=0.45;
+  tapDelay.connect(tapDelayFeedback);tapDelayFeedback.connect(tapDelay);
+  tapDelay.connect(tapDelayGain);tapDelayGain.connect(audioCtx.destination);
+}
+
+function playTapNote(count=1){
+  if(!audioCtx)return;
+  initTapDelay();
+  const uScale=getUniverseScale();
+  const danger=Math.max(0,1-Math.min(oxygen,hull,energy)/40);
+  const scale=danger>0.5?uScale.minor:uScale.major;
+
+  for(let n=0;n<count;n++){
+    // Note différente pour chaque tap — évite les répétitions
+    let idx;
+    do{idx=Math.floor(Math.random()*scale.length);}while(idx===lastTapNoteIdx);
+    lastTapNoteIdx=idx;
+    const freq=scale[idx];
+    const when=audioCtx.currentTime+n*0.08; // notes légèrement décalées si double tap
+
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    // Forme d'onde selon l'univers — sine doux, triangle pour certains
+    o.type=currentUniverse===5?'sawtooth':currentUniverse===9?'square':'sine';
+    o.frequency.value=freq;
+    g.gain.setValueAtTime(0,when);
+    g.gain.linearRampToValueAtTime(0.35,when+0.015);
+    g.gain.exponentialRampToValueAtTime(0.001,when+0.8);
+    o.connect(g);
+    g.connect(tapDelay);
+    // Aussi connecter à la chaîne musicale si elle tourne
+    if(musicMaster)g.connect(musicMaster);
+    o.start(when);o.stop(when+0.85);
+  }
+}
+
 function playPentaNote(danger){
   if(!audioCtx||!musicDelay)return;
   const uScale=getUniverseScale();
@@ -735,7 +780,10 @@ function stopAmbient(){
   try{
     musicMaster.gain.setTargetAtTime(0,audioCtx.currentTime,0.5);
     setTimeout(()=>{try{musicDelay.disconnect();musicFeedback.disconnect();musicMaster.disconnect();}catch(e){}
-    musicDelay=null;musicFeedback=null;musicMaster=null;},800);
+    musicDelay=null;musicFeedback=null;musicMaster=null;
+    // Reset tap delay aussi
+    try{if(tapDelay){tapDelay.disconnect();tapDelayFeedback.disconnect();tapDelayGain.disconnect();}tapDelay=null;tapDelayFeedback=null;tapDelayGain=null;}catch(e){}
+    },800);
   }catch(e){}
 }
 
@@ -1971,7 +2019,9 @@ function spawnPlanet(){
   const dist=600+Math.random()*800;
   // Planètes brûlantes seulement après jour 3
   const available=survivalDay<3?PLANET_TYPES.filter(t=>!t.isDangerous):PLANET_TYPES;
+  if(!available.length)return; // sécurité
   const type=available[Math.floor(Math.random()*available.length)];
+  if(!type)return;
   const r=35+Math.random()*40;
   planets.push({
     x:ship.x+Math.cos(angle)*dist,
@@ -1994,6 +2044,7 @@ function updatePlanets(dt){
   window._gravFields=[];
 
   for(const p of planets){
+    if(!p.type)continue; // sécurité — planète mal initialisée
     p.pulse+=dt*0.8;
     p.orbitAngle+=p.orbitSpeed*dt*60;
 
@@ -4959,6 +5010,7 @@ function drawGrid(){
 
 function drawPlanets(){
   for(const p of planets){
+    if(!p.type)continue; // sécurité
     const [sx,sy]=worldToScreen(p.x,p.y);
     // Ne dessine que si dans le champ
     if(sx<-p.r*3||sx>W+p.r*3||sy<-p.r*3||sy>H+p.r*3)continue;
@@ -5479,12 +5531,19 @@ function handlePointerDown(e){
   if(now-lastTapTime<300){
     tapCount++;
     if(tapCount>=3){
-      // Triple tap — scanner phénomène le plus proche
       scanNearestPhenomenon();
       tapCount=0;lastTapTime=0;return;
     }
-    if(tapCount>=2&&upgrades.torpedo>0){fireTorpedo();tapCount=0;lastTapTime=0;return;}
-  }else{tapCount=1;}
+    if(tapCount>=2){
+      // Double tap — 2 notes + torpille si upgrade
+      playTapNote(2);
+      if(upgrades.torpedo>0){fireTorpedo();tapCount=0;lastTapTime=0;return;}
+    }
+  }else{
+    tapCount=1;
+    // Simple tap — 1 note
+    playTapNote(1);
+  }
   lastTapTime=now;
   touchTarget={x,y};touchActive=true;torpedoHeld=false;torpedoHoldTime=0;
   clickRipples.push({x,y,radius:4,life:1});playThrust();
