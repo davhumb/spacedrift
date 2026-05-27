@@ -465,7 +465,6 @@ function checkContracts(){
       contractsCompleted[i]=true;
       upgradePoints+=c.reward;
       logEvent(`✅ CONTRAT : ${c.text} +${c.reward}PTS`,'planet');
-      playTone(550,'sine',0.3,0.08);setTimeout(()=>playTone(880,'sine',0.4,0.06),200);
       saveGame&&saveGame();
     }
   });
@@ -498,6 +497,76 @@ function drawHullMarks(ctx,s){
   ctx.restore();
 }
 
+
+// ── Amarrage planètes ─────────────────────────
+let dockedPlanet=null,dockTimer=0,dockProgress=0;
+const DOCK_SPEED=3,DOCK_DURATION=8;
+
+const PLANET_RESOURCES={
+  'ROCHEUSE':   {label:'MINÉRAUX',    color:'#aaaaaa', effect:()=>{hull=Math.min(100,hull+25);logEvent('🪨 +25 HULL','ok');}},
+  'GAZEUSE':    {label:'HYDROGÈNE',   color:'#80aaff', effect:()=>{propellant=Math.min(maxPropellant,propellant+60);logEvent('💨 +60 PROP','ok');}},
+  'GLACÉE':     {label:'GLACE CO₂',   color:'#aaeeff', effect:()=>{oxygen=Math.min(maxOxygen,oxygen+40);logEvent('🧊 +40 O₂','ok');}},
+  'OCÉAN':      {label:'EAU',         color:'#4488ff', effect:()=>{oxygen=Math.min(maxOxygen,oxygen+30);propellant=Math.min(maxPropellant,propellant+30);logEvent('🌊 +30 O₂ +30 PROP','ok');}},
+  'BRÛLANTE':   {label:'TROP CHAUD',  color:'#ff4400', effect:()=>{hull=Math.max(0,hull-20);logEvent('🔥 -20 HULL','danger');}},
+  'VIOLETTE':   {label:'CRISTAUX',    color:'#cc88ff', effect:()=>{upgradePoints+=80;logEvent('💜 +80 PTS','planet');}},
+  'DÉSERTIQUE': {label:'SILICATES',   color:'#ddaa66', effect:()=>{hull=Math.min(100,hull+15);energy=Math.min(100,energy+20);logEvent('🏜 +15 HULL +20 NRJ','ok');}},
+  'ROGUE':      {label:'ARTEFACT',    color:'#40ff80', effect:()=>{
+    const log=WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)];
+    writeGlitchText&&writeGlitchText(log.text,`📖 LOG — ${log.pilot}`);
+    upgradePoints+=120;logEvent('⬛ +120 PTS','planet');
+  }},
+};
+
+function tryDock(){
+  if(dockedPlanet)return;
+  for(const p of planets){
+    if(!p.type)continue;
+    const dx=p.x-ship.x,dy=p.y-ship.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    if(dist<p.r+30&&speed<DOCK_SPEED){
+      dockedPlanet=p;dockTimer=0;dockProgress=0;
+      const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
+      logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');
+      if(mdwActive)setTimeout(()=>mdwSpeak(`Extraction : ${res.label}.`,true),500);
+      return;
+    }
+  }
+}
+
+function updateDocking(dt){
+  if(!dockedPlanet)return;
+  const dx=dockedPlanet.x-ship.x,dy=dockedPlanet.y-ship.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  if(speed>DOCK_SPEED*2||dist>dockedPlanet.r+60){
+    logEvent('⚓ DÉSARRIMAGE','warn');
+    dockedPlanet=null;dockProgress=0;return;
+  }
+  ship.vx*=Math.pow(0.97,dt*60);ship.vy*=Math.pow(0.97,dt*60);
+  dockTimer+=dt;dockProgress=Math.min(1,dockTimer/DOCK_DURATION);
+  if(dockTimer>=DOCK_DURATION){
+    const res=PLANET_RESOURCES[dockedPlanet.type.name]||PLANET_RESOURCES['ROCHEUSE'];
+    res.effect();
+    addToCatalogue&&addToCatalogue('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}.`,'⚓');
+    score+=400;spawnParticles&&spawnParticles(ship.x,ship.y,res.color,15,1.2);
+    if(mdwActive)setTimeout(()=>mdwSpeak('Extraction terminée.',true),300);
+    dockedPlanet=null;dockProgress=0;dockTimer=0;
+  }
+}
+
+function drawDockingUI(){
+  if(!dockedPlanet)return;
+  const [sx,sy]=worldToScreen(ship.x,ship.y);
+  const res=PLANET_RESOURCES[dockedPlanet.type?.name]||PLANET_RESOURCES['ROCHEUSE'];
+  ctx.save();
+  ctx.fillStyle='rgba(0,9,2,0.85)';ctx.fillRect(sx-52,sy-42,104,18);
+  ctx.fillStyle=res.color;ctx.fillRect(sx-51,sy-41,102*dockProgress,16);
+  ctx.strokeStyle=res.color;ctx.lineWidth=1;ctx.strokeRect(sx-52,sy-42,104,18);
+  ctx.fillStyle='#ffffff';ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=0;
+  ctx.fillText(`⚓ ${res.label} ${Math.floor(dockProgress*100)}%`,sx,sy-29);
+  ctx.restore();
+}
 
 const titleCanvas=document.getElementById('title-canvas');
 const tctx=titleCanvas?titleCanvas.getContext('2d'):null;
@@ -658,7 +727,6 @@ function unlockAchievement(id){
   const a=ACHIEVEMENTS.find(x=>x.id===id);
   if(!a)return;
   achQueue.push(a);
-  playTone(550,'sine',0.2,0.08);setTimeout(()=>playTone(660,'sine',0.25,0.06),150);setTimeout(()=>playTone(880,'sine',0.3,0.04),300);
 }
 function updateAchievements(dt){
   checkAchievements();
@@ -819,26 +887,8 @@ function stopAmbient(){
 
 // ── Sons de coque ─────────────────────────────
 let crackTimer=0;
-function playCrack(){
-  if(!audioCtx)return;
-  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-  o.type='sawtooth';
-  o.frequency.setValueAtTime(80+Math.random()*40,audioCtx.currentTime);
-  o.frequency.exponentialRampToValueAtTime(20,audioCtx.currentTime+0.15);
-  g.gain.setValueAtTime(0.15+Math.random()*0.1,audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
-  o.connect(g);g.connect(audioCtx.destination);
-  o.start();o.stop(audioCtx.currentTime+0.15);
-}
-function updateHullSounds(dt){
-  if(hull>30)return;
-  crackTimer-=dt;
-  const freq=0.3+((30-hull)/30)*1.5; // plus fréquent si coque plus basse
-  if(crackTimer<=0){
-    playCrack();
-    crackTimer=1/freq*(0.5+Math.random()*0.5);
-  }
-}
+function playCrack(){}
+function updateHullSounds(dt){}
 
 // ── Drift Mode ────────────────────────────────
 let driftTimer=0; // temps sans propulsion
@@ -991,17 +1041,17 @@ resize();window.addEventListener('resize',resize);
 // ── Audio ───────────────────────────────────
 let audioCtx=null;
 function initAudio(){audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function playTone(f,t,d,v=0.15){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);}
-function playThrust(){playTone(80+Math.random()*40,'sawtooth',0.12,0.05);}
-function playCollect(c){const b=330+c*55;playTone(b,'sine',0.1,0.12);setTimeout(()=>playTone(b*1.5,'sine',0.15,0.1),60);setTimeout(()=>playTone(b*2,'sine',0.2,0.08),130);}
-function playHit(){playTone(120,'square',0.3,0.2);playTone(60,'sawtooth',0.4,0.15);}
-function playAlarm(){playTone(880,'square',0.15,0.08);}
-function playEvent(){playTone(220,'triangle',0.3,0.1);}
-function playBossWarning(){playTone(150,'sawtooth',0.4,0.12);setTimeout(()=>playTone(100,'sawtooth',0.6,0.15),300);}
-function playFragment(){playTone(200+Math.random()*200,'square',0.1,0.06);}
-function playDayTone(){playTone(440,'sine',0.3,0.1);setTimeout(()=>playTone(550,'sine',0.4,0.08),200);setTimeout(()=>playTone(660,'sine',0.5,0.06),400);}
-function playPlanet(){playTone(330,'sine',0.2,0.1);setTimeout(()=>playTone(440,'sine',0.3,0.08),150);setTimeout(()=>playTone(550,'triangle',0.5,0.06),300);}
-function playGameOver(){[440,330,220,110].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.5,0.15),i*200));}
+function playTone(){}
+function playThrust(){}
+function playCollect(){}
+function playHit(){}
+function playAlarm(){}
+function playEvent(){}
+function playBossWarning(){}
+function playFragment(){}
+function playDayTone(){}
+function playPlanet(){}
+function playGameOver(){}
 
 // ── Difficulty ──────────────────────────────
 const DIFF_CONFIG={
@@ -1300,7 +1350,6 @@ function updateMission(){
     missionDone=true;
     upgradePoints+=currentMission.reward;
     logEvent(`✅ MISSION +${currentMission.reward}pts`,'planet');
-    playTone(660,'sine',0.3,0.1);setTimeout(()=>playTone(880,'sine',0.4,0.08),200);
     missionProgEl2.textContent='✓ OK';
     setTimeout(()=>missionBarEl2.classList.remove('visible'),3000);
   }
@@ -1315,7 +1364,6 @@ function activateSignal(){
   signalBannerEl2.classList.add('visible');
   setTimeout(()=>signalBannerEl2.classList.remove('visible'),5000);
   logEvent('📡 SIGNAL DÉTECTÉ','planet');
-  playTone(220,'sine',0.5,0.1);setTimeout(()=>playTone(330,'sine',0.6,0.08),300);setTimeout(()=>playTone(440,'sine',0.8,0.06),600);
   mdwReact('signal');
   journalFullText="Jour "+survivalDay+". Un signal. Quelque chose dans le vide répond. Je dois y aller.";
   journalCharIdx=0;journalActive=true;journalWriteTimer=0;
@@ -1746,9 +1794,6 @@ function updateWormhole(dt){
     logEvent(`🌀 ${u.name}`,'planet');
     mdwReact('wormhole');updateMDWTrust('wormhole');
     if(u.onEnter)setTimeout(()=>u.onEnter(),1000);
-    playTone(220,'sine',0.6,0.2);
-    setTimeout(()=>playTone(440,'sine',0.8,0.15),400);
-    setTimeout(()=>playTone(880,'sine',1.0,0.1),800);
     saveGame();
   }
 
@@ -2254,7 +2299,6 @@ function updatePlanets(dt){
       if(cd<p.r+c.r*2&&!c.hit){
         c.hit=true;c.life=0;
         spawnParticles(c.x,c.y,c.color,15,1.2);
-        playTone(200,'sawtooth',0.2,0.08);
       }
     }
     for(const cap of capsules) applyGravityOnObject(dt,cap,p.x,p.y,mass*0.3,p.r+cap.r+4);
@@ -2341,7 +2385,9 @@ function startGame(){
   clonePhase=0;clonePhaseTimer=0;cloneMessageSent=false;cloneHasTriggered=false;
   rareEventTimer=30+Math.random()*30;
   comets=[];quasars=[];auroraAngle=0;phenomena=[];radarGlitch=0;
-  driftTimer=0;driftMode=false;
+  dockedPlanet=null;dockTimer=0;dockProgress=0;
+  godSequenceActive=false;godFlareActive=false;godSequenceT=0;
+  window._godMode=false;window._godEncounterStarted=false;
   mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();
   crackTimer=0;
   // Épave garantie à portée radar — MDW dedans pour le tutorial
@@ -2526,6 +2572,11 @@ function updateShip(dt){
   ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
   ship.trail.push({x:ship.x,y:ship.y});if(ship.trail.length>80)ship.trail.shift();
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
+  // Amarrage automatique si lent et proche d'une planète
+  if(!dockedPlanet&&!ship.thrusting){
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    if(speed<DOCK_SPEED)tryDock();
+  }
 }
 
 function updateResources(dt){
@@ -2653,7 +2704,6 @@ function updateComets(dt){
       hull=Math.max(0,hull-18*drainMult);
       addHullMark(0.8);
       triggerFlash(c.color,0.4);triggerShake();
-      playTone(120,'sawtooth',0.4,0.15);playTone(60,'square',0.3,0.12);
       logEvent('☄ IMPACT COMÈTE — -18 HULL','danger');
       spawnParticles(c.x,c.y,c.color,20,2);
       for(let i=0;i<4;i++){
@@ -2717,18 +2767,7 @@ function triggerTransmission(){
   const msg=TRANSMISSIONS[Math.floor(Math.random()*TRANSMISSIONS.length)];
   writeGlitchText(msg,'📻 FRÉQUENCE INCONNUE');
   logEvent('📻 TRANSMISSION REÇUE','warn');
-  // Son radio dégradé
-  if(audioCtx){
-    [0,80,160,240].forEach(delay=>{
-      setTimeout(()=>{
-        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-        o.type='square';o.frequency.value=800+Math.random()*400;
-        g.gain.setValueAtTime(0.04,audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.08);
-        o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.08);
-      },delay);
-    });
-  }
+
 }
 
 function spawnGhostShip(){
@@ -3388,7 +3427,6 @@ function spawnEnemyTorpedo(x,y,angle,evx,evy){
     vy:Math.sin(angle)*spd+evy*0.3,
     life:1,r:3,trail:[],
   });
-  playTone(400,'sawtooth',0.1,0.06);
 }
 
 function updateEnemies(dt){
@@ -3445,7 +3483,6 @@ function updateEnemies(dt){
 
 function killEnemy(e){
   spawnParticles(e.x,e.y,e.type.color,20,2);
-  playTone(150,'sawtooth',0.4,0.12);
   // Fragment de journal ennemi
   const log=ENEMY_JOURNALS[Math.floor(Math.random()*ENEMY_JOURNALS.length)];
   setTimeout(()=>writeGlitchText(log,'📖 JOURNAL RÉCUPÉRÉ'),500);
@@ -3707,7 +3744,6 @@ function fireTorpedo(){
   });
   energy=Math.max(0,energy-10);
   torpedoReady=false;torpedoCooldown=TORPEDO_COOLDOWN;torpedoHoldTime=0;
-  playTone(300,'sawtooth',0.2,0.1);setTimeout(()=>playTone(150,'sawtooth',0.1,0.08),100);
 }
 
 function updateTorpedoes(dt){
@@ -3726,7 +3762,6 @@ function updateTorpedoes(dt){
       if(Math.sqrt(dx*dx+dy*dy)<d.r+t.r){
         d.hp-=t.power;d.hitFlash=1;
         spawnParticles(t.x,t.y,'#ffaa00',8,1.5);
-        playTone(200,'square',0.15,0.08);
         if(d.hp<=0){
           if(d.r>10)fragmentDebris(d);
           d.dead=true;
@@ -3927,8 +3962,6 @@ function startInstallModule(moduleKey,wreck){
   if(mdwActive)setTimeout(()=>mdwSpeak(SHIP_MODULES[moduleKey].mdwLine,true),300);
   // Ralentir légèrement le vaisseau
   ship.vx*=0.3;ship.vy*=0.3;
-  playTone(180,'sawtooth',0.3,0.08);
-  setTimeout(()=>playTone(220,'sawtooth',0.2,0.06),200);
 }
 
 function updateModuleInstall(dt){
@@ -4023,13 +4056,10 @@ function updateWrecks(dt){
       // MDW — première épave
       if((!mdwFound&&wrecksFound===1)||w.isMDWWreck){
         setTimeout(()=>initMDW(),1500);
-      } else if(w.hasPassenger&&passengers.length<3&&!w.moduleKey){
-        rescuePassenger(w);
       }
       // Fragment de VERA — une épave sur 5 environ
       if(wrecksFound>1&&Math.random()<0.2)injectVeraFragment(w);
       score+=200;updateMDWTrust('wreck');
-      playTone(440,'triangle',0.3,0.08);
       if(currentMission&&currentMission.text.includes('ÉPAVE'))missionCounter++;
     }
   }
@@ -4292,7 +4322,6 @@ function rescuePassenger(wreck){
   logEvent(`🧑 ${name} SAUVÉ — ${effect.label}`,'planet');
   unlockAchievement&&unlockAchievement('rescue');
   updatePassengersHUD();
-  playTone(550,'sine',0.2,0.1);setTimeout(()=>playTone(660,'sine',0.25,0.08),150);
 }
 
 function updatePassengers(dt){
@@ -4335,7 +4364,6 @@ const PHENOMENON_TYPES=[
      if(!p.jetActive&&p.jetTimer>p.jetPeriod){
        p.jetActive=true;p.jetTimer=0;
        if(dist<600)logEvent('⚡ PULSAR — JET RADIATION','danger');
-       playTone(660,'square',0.3,0.08);
      }
      if(p.jetActive){
        if(dist<250){
@@ -4517,7 +4545,7 @@ const PHENOMENON_TYPES=[
      }
      if(p.eruptTimer>p.eruptPeriod){
        p.wave={r:p.r,alpha:1};p.eruptTimer=0;
-       logEvent('☀ ÉRUPTION SOLAIRE !','danger');playTone(200,'sawtooth',0.5,0.1);triggerFlash('#ff8800',0.25);
+       logEvent('☀ ÉRUPTION SOLAIRE !','danger');triggerFlash('#ff8800',0.25);
      }
    }},
   // PLANÈTE ROGUE
@@ -4633,7 +4661,172 @@ function checkDead(){
   }
 }
 
-// ── Fins narratives ───────────────────────────
+// ── Séquence DIEU ─────────────────────────────
+let godSequenceActive=false;
+let godSequenceT=0;
+let godWords=[];
+let godFlareActive=false;
+let godFlareT=0;
+
+const GOD_WORDS=[
+  {text:'TU ÉTAIS DÉJÀ LÀ',     delay:3,  size:48, x:0.5, y:0.35, alpha:0},
+  {text:'LE NUMÉRO 7',           delay:7,  size:32, x:0.3, y:0.6,  alpha:0},
+  {text:'JE T\'ATTENDAIS',       delay:12, size:56, x:0.5, y:0.5,  alpha:0},
+  {text:'MDW SE SOUVIENT',       delay:17, size:28, x:0.7, y:0.7,  alpha:0},
+  {text:'LE VIDE N\'ÉTAIT PAS VIDE', delay:22, size:36, x:0.4, y:0.25, alpha:0},
+  {text:'CE N\'EST PAS UNE FIN', delay:28, size:44, x:0.5, y:0.65, alpha:0},
+];
+
+// Dialogue pilote → dieu
+const GOD_DIALOGUE=[
+  {speaker:'PILOTE', text:'Vous... vous êtes dieu ?', delay:6,  size:14},
+  {speaker:'',       text:'...',                       delay:20, size:14},
+  {speaker:'DIEU',   text:'C\'est toi qui m\'as appelé ainsi.', delay:32, size:18},
+];
+// Note : la réplique de dieu sera remplacée quand on aura trouvé la vraie
+
+function startGodSequence(){
+  if(godSequenceActive)return;
+  godSequenceActive=true;
+  godSequenceT=0;
+  godWords=GOD_WORDS.map(w=>({...w,alpha:0,currentAlpha:0}));
+  // Arrêter tout
+  stopAmbient();
+  // Plus de gravité, plus de débris
+  window._godMode=true;
+  ship.vx*=0.05;ship.vy*=0.05;
+  logEvent('◈ PRÉSENCE DÉTECTÉE','planet');
+  // MDW — sa dernière vraie phrase
+  setTimeout(()=>{
+    if(mdwActive)mdwSpeak('Je ne savais pas que ça me ferait quelque chose.',true);
+  },5000);
+  // Note longue
+  setTimeout(()=>{
+    if(audioCtx){
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=110;
+      g.gain.setValueAtTime(0,audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0.25,audioCtx.currentTime+3);
+      g.gain.setValueAtTime(0.25,audioCtx.currentTime+35);
+      g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+40);
+      o.connect(g);g.connect(audioCtx.destination);
+      o.start();o.stop(audioCtx.currentTime+42);
+    }
+  },2000);
+  // Éruption après le dialogue
+  setTimeout(()=>startGodFlare(),38000);
+}
+
+function updateGodSequence(dt){
+  if(!godSequenceActive)return;
+  godSequenceT+=dt;
+  // Faire apparaître les mots
+  for(const w of godWords){
+    if(godSequenceT>=w.delay){
+      w.currentAlpha=Math.min(w.alpha||0.6,(w.currentAlpha||0)+dt*0.3);
+    }
+  }
+  // Immobiliser le vaisseau
+  if(window._godMode){ship.vx*=Math.pow(0.99,dt*60);ship.vy*=Math.pow(0.99,dt*60);}
+}
+
+function drawGodSequence(){
+  if(!godSequenceActive)return;
+  ctx.save();
+  // Voile blanc croissant
+  const whiten=Math.min(0.4,godSequenceT/60*0.4);
+  ctx.fillStyle=`rgba(255,255,255,${whiten})`;ctx.fillRect(0,0,W,H);
+  // Mots dans l'espace
+  for(const w of godWords){
+    if(!w.currentAlpha||w.currentAlpha<=0)continue;
+    ctx.globalAlpha=w.currentAlpha;
+    ctx.font=`${w.size}px 'VT323'`;ctx.textAlign='center';
+    ctx.fillStyle='#ffffff';ctx.shadowColor='#ffffff';ctx.shadowBlur=20;
+    ctx.fillText(w.text,W*w.x,H*w.y);
+  }
+  // Dialogue
+  for(const d of GOD_DIALOGUE){
+    if(godSequenceT>=d.delay){
+      const a=Math.min(0.9,(godSequenceT-d.delay)*0.5);
+      ctx.globalAlpha=a;
+      ctx.font=`${d.size}px 'Share Tech Mono'`;ctx.textAlign='center';
+      const color=d.speaker==='DIEU'?'#ffffff':d.speaker==='PILOTE'?'#00ff41':'#888888';
+      ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=10;
+      const yPos=d.speaker==='PILOTE'?H*0.82:d.speaker==='DIEU'?H*0.88:H*0.85;
+      if(d.speaker)ctx.fillText(`[${d.speaker}] ${d.text}`,W*0.5,yPos);
+      else ctx.fillText(d.text,W*0.5,yPos);
+    }
+  }
+  // RECOMMENCE — si très long
+  if(godSequenceT>90&&!godFlareActive){
+    const a=Math.min(0.8,(godSequenceT-90)*0.1);
+    ctx.globalAlpha=a;
+    ctx.font=`24px 'VT323'`;ctx.textAlign='center';
+    ctx.fillStyle='rgba(255,255,255,0.6)';ctx.shadowBlur=5;
+    ctx.fillText('RECOMMENCE',W*0.5,H*0.5);
+  }
+  ctx.globalAlpha=1;ctx.shadowBlur=0;
+  ctx.restore();
+}
+
+// ── Éruption divine — éjecte le vaisseau ──────
+function startGodFlare(){
+  godFlareActive=true;godFlareT=0;
+  triggerFlash('#ffffff',1.0);
+  // Vitesse d'éjection massive en arrière
+  const ejectionAngle=ship.angle+Math.PI;
+  ship.vx=Math.cos(ejectionAngle)*15;
+  ship.vy=Math.sin(ejectionAngle)*15;
+  window._godMode=false;
+  logEvent('☀ ÉRUPTION DIVINE','danger');
+  // Silence absolu — stopAmbient suffit
+  stopAmbient();
+}
+
+function updateGodFlare(dt){
+  if(!godFlareActive)return;
+  godFlareT+=dt;
+  // Flash blanc qui se dissipe
+  if(godFlareT<0.5){
+    ctx.fillStyle=`rgba(255,255,255,${1-godFlareT*2})`;
+    ctx.fillRect(0,0,W,H);
+  }
+  // Après 3 secondes — noir total puis reset
+  if(godFlareT>3){
+    ctx.fillStyle='rgba(0,0,0,1)';ctx.fillRect(0,0,W,H);
+    // Message final
+    if(godFlareT>3.5&&godFlareT<6){
+      ctx.fillStyle=`rgba(0,255,65,${Math.min(1,(godFlareT-3.5)*0.5)})`;
+      ctx.font=`12px 'Share Tech Mono'`;ctx.textAlign='center';
+      ctx.fillText('Je me réveille aux commandes.',W*0.5,H*0.5-10);
+      ctx.fillText('J\'ai une douleur sourde à l\'arrière du crâne.',W*0.5,H*0.5+10);
+    }
+  }
+  // Reset complet après 7 secondes
+  if(godFlareT>7){
+    godFlareActive=false;godSequenceActive=false;
+    window._godMode=false;
+    // MDW légèrement différent cette fois
+    const oldMDW=mdwFound;
+    startGame();
+    // MDW se réveille un tout petit peu plus vite
+    if(oldMDW){
+      setTimeout(()=>{
+        if(wrecks.length>0)wrecks[0].discovered=false; // reset pour retrouver MDW
+      },500);
+    }
+  }
+}
+
+// Vérifier si on entre dans TERMINAL pour lancer la séquence dieu
+function checkGodEncounter(){
+  if(godSequenceActive||godFlareActive)return;
+  const u=UNIVERSES[currentUniverse];
+  if(u&&u.isTerminal&&!window._godEncounterStarted){
+    window._godEncounterStarted=true;
+    setTimeout(()=>startGodSequence(),10000); // 10s après l'entrée dans TERMINAL
+  }
+}
 // Déclenchées selon les conditions atteintes par le joueur
 
 const ENDINGS={
@@ -5596,11 +5789,11 @@ function gameLoop(ts){
       if(state==='playing'){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);checkMDWEmergency();checkMDWMeta();
-        checkLore();checkEndings();checkContracts();
+        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);checkMDWEmergency();checkMDWMeta();
+        checkLore();checkEndings();checkContracts();checkGodEncounter();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
@@ -5616,7 +5809,8 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawSpecialEffects();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
+      updateGodFlare(dt);
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
