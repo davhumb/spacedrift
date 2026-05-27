@@ -503,6 +503,36 @@ const titleCanvas=document.getElementById('title-canvas');
 const tctx=titleCanvas?titleCanvas.getContext('2d'):null;
 const launchFade=document.getElementById('launch-fade');
 
+// ── Effets spéciaux des secteurs ─────────────
+function updateSpecialSectors(dt){
+  if(window._voidPull&&state==='playing'){
+    ship.vx+=window._voidPull.vx*dt*60;
+    ship.vy+=window._voidPull.vy*dt*60;
+  }
+  if(window._terminalWhiten!==null&&window._terminalWhiten!==undefined){
+    window._terminalWhiten=Math.min(1,(window._terminalWhiten||0)+0.00005*dt*60);
+    if(window._terminalWhiten>0.5&&mdwActive&&Math.random()<0.001*dt*60){
+      const msgs=['...','Je ne sais pas.','Continuez.'];
+      mdwSpeak(msgs[Math.floor(Math.random()*msgs.length)],true);
+    }
+  }
+}
+
+function drawSpecialEffects(){
+  if(window._universeMult&&window._universeMult.crystal){
+    const [sx,sy]=worldToScreen(ship.x+30,ship.y+30);
+    ctx.save();ctx.globalAlpha=0.15;ctx.translate(sx,sy);ctx.rotate(ship.angle+0.3);
+    const s=viewZoom;
+    ctx.strokeStyle='#aaffff';ctx.lineWidth=1;ctx.shadowBlur=0;
+    ctx.beginPath();ctx.moveTo(14*s,0);ctx.lineTo(-10*s,-8*s);ctx.lineTo(-6*s,0);ctx.lineTo(-10*s,8*s);ctx.closePath();ctx.stroke();
+    ctx.restore();
+  }
+  if(window._terminalWhiten>0){
+    ctx.fillStyle=`rgba(255,255,255,${window._terminalWhiten*0.15})`;
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
 function drawShipAt(c,cx,cy,angle,scale,thrusting=false,thrustPower=0,modules=[]){
   c.save();c.translate(cx,cy);c.rotate(angle);
   const s=scale;
@@ -1401,9 +1431,94 @@ const UNIVERSES=[
    lore:"Tout émet ici. Le radar est saturé. Quelque chose d'énorme émet depuis le centre.",
    gravMult:1.1, debrisMult:1.0, radarSaturated:true,
    onEnter:()=>{
-     if(typeof mdwActive!=='undefined'&&mdwActive)
-       setTimeout(()=>mdwSpeak('Radar saturé. Quelque chose émet depuis le centre.',true),2000);
+     if(mdwActive)setTimeout(()=>mdwSpeak('Radar saturé. Quelque chose émet depuis le centre.',true),2000);
      writeGlitchText&&writeGlitchText('Tout parle ici. Je ne sais pas si c\'est dangereux ou si c\'est une réponse à quelque chose que j\'aurais dit sans le savoir.','📡 SECTEUR SIGNAL');
+   }},
+
+  // ── Secteurs avancés ──
+
+  {id:10, name:'SECTEUR VIDE',    bg:'#000000', primary:'#334433', dim:'#223322', accent:'#446644',
+   starColors:['#111111','#222222','#333333','#111122','#221111'],
+   nebulaColors:['rgba(10,10,10,','rgba(5,5,5,','rgba(8,8,12,','rgba(12,8,8,'],
+   scan:'rgba(50,80,50,0.02)',
+   lore:"Pas d'étoiles. Pas de débris. Le noir absolu. Et pourtant quelque chose tire le vaisseau dans une direction constante.",
+   gravMult:0.3, debrisMult:0.05,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Aucune étoile détectée. Aucun objet. Et pourtant je détecte une force. Source inconnue.',true),2000);
+     writeGlitchText&&writeGlitchText('Le vide ici n\'est pas vide. Il y a une direction. Je ne sais pas comment je le sais. Mais je la sens.','⬛ SECTEUR VIDE');
+     // Attirer passivement le vaisseau dans une direction
+     setTimeout(()=>{
+       if(typeof ship!=='undefined'){
+         const angle=Math.random()*Math.PI*2;
+         window._voidPull={vx:Math.cos(angle)*0.0008,vy:Math.sin(angle)*0.0008};
+       }
+     },3000);
+   }},
+
+  {id:11, name:'SECTEUR LENT',    bg:'#020308', primary:'#8080ff', dim:'#404080', accent:'#c0c0ff',
+   starColors:['#8080ff','#6060cc','#a0a0ff','#c0c0ff','#4040aa'],
+   nebulaColors:['rgba(40,40,120,','rgba(20,20,80,','rgba(60,60,160,','rgba(30,30,100,'],
+   scan:'rgba(128,128,255,0.03)',
+   lore:"Dilatation temporelle extrême. Tout va deux fois plus lentement. Nous sommes proches d'un objet très massif invisible.",
+   gravMult:0.8, debrisMult:0.6, timeDilationMult:0.4,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Dilatation temporelle. Nous sommes proches d\'un objet très massif. Le temps se courbe.',true),2000);
+     writeGlitchText&&writeGlitchText('Tout est ralenti. Mon propre rythme cardiaque semble différent. MDW dit que c\'est physique. Que c\'est réel.','⏳ SECTEUR LENT');
+   }},
+
+  {id:12, name:'SECTEUR BRUIT',   bg:'#040204', primary:'#ff40ff', dim:'#801080', accent:'#ff80ff',
+   starColors:['#ff40ff','#ff80ff','#cc00cc','#ff00ff','#aa00aa'],
+   nebulaColors:['rgba(160,0,160,','rgba(120,0,120,','rgba(200,0,200,','rgba(80,0,80,'],
+   scan:'rgba(255,64,255,0.04)',
+   lore:"Le radar est blanc. Les étoiles bougent. MDW ne peut plus distinguer le signal du bruit.",
+   gravMult:1.0, debrisMult:1.5, radarSaturated:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Je ne peux plus distinguer le signal du bruit. Quelque chose interfère depuis partout.',true),1500);
+     writeGlitchText&&writeGlitchText('Le radar montre tout et rien. MDW recalibre depuis 10 minutes. Il n\'a pas l\'air inquiet. Moi si.','📻 SECTEUR BRUIT');
+   }},
+
+  {id:13, name:'SECTEUR CHAUD',   bg:'#080200', primary:'#ff6600', dim:'#aa3300', accent:'#ffcc00',
+   starColors:['#ff6600','#ff4400','#ffaa00','#ff8800','#ffcc44'],
+   nebulaColors:['rgba(200,60,0,','rgba(180,40,0,','rgba(220,80,0,','rgba(160,30,0,'],
+   scan:'rgba(255,102,0,0.04)',
+   lore:"Tout est en fusion. La coque se dégrade passivement. Il faut rester en mouvement.",
+   gravMult:1.2, debrisMult:1.3,
+   hullDrainPassive:0.5, // drain passif de coque
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Température ambiante critique. La coque dissipe de la chaleur en permanence. Restez en mouvement.',true),2000);
+     writeGlitchText&&writeGlitchText('La chaleur ici est omniprésente. Pas une étoile proche — juste le fond du secteur lui-même. Comme si l\'espace brûlait.','🔥 SECTEUR CHAUD');
+   }},
+
+  {id:14, name:'SECTEUR CRISTAL', bg:'#020408', primary:'#aaffff', dim:'#408888', accent:'#ffffff',
+   starColors:['#aaffff','#ffffff','#88eeff','#ccffff','#44ccdd'],
+   nebulaColors:['rgba(100,220,240,','rgba(80,180,200,','rgba(120,240,255,','rgba(60,160,180,'],
+   scan:'rgba(170,255,255,0.04)',
+   lore:"Tout est dupliqué. Les étoiles ont des reflets. La physique est normale mais la perception est troublée.",
+   gravMult:1.0, debrisMult:1.0, crystalEffect:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Anomalie optique. Je détecte des doublons sur tous les capteurs. Ce n\'est pas une panne.',true),2000);
+     writeGlitchText&&writeGlitchText('Je vois double. Pas mes yeux — les instruments. MDW dit que c\'est le secteur. Que chaque objet a un reflet dans une dimension adjacente.','💎 SECTEUR CRISTAL');
+   }},
+
+  // ── SECTEUR TERMINAL — avant dieu ──
+  {id:15, name:'SECTEUR TERMINAL',bg:'#060606', primary:'#ffffff', dim:'#888888', accent:'#ffffff',
+   starColors:['#ffffff','#eeeeee','#dddddd','#cccccc','#bbbbbb'],
+   nebulaColors:['rgba(200,200,200,','rgba(180,180,180,','rgba(220,220,220,','rgba(160,160,160,'],
+   scan:'rgba(255,255,255,0.05)',
+   lore:"Les étoiles s'éteignent une par une. Le fond de l'espace devient blanc. MDW est silencieux.",
+   gravMult:0.5, debrisMult:0.1,
+   isTerminal:true,
+   onEnter:()=>{
+     // MDW devient silencieux — pause dramatique
+     setTimeout(()=>{
+       if(mdwActive)mdwSpeak('Je ne sais pas ce qui est devant nous.',true);
+     },5000);
+     setTimeout(()=>{
+       if(mdwActive)mdwSpeak('Dans toutes mes données. Dans toutes les expéditions. Personne n\'est allé plus loin.',true);
+     },15000);
+     writeGlitchText&&writeGlitchText('Les étoiles s\'éteignent. Une par une. MDW ne dit rien. Pour la première fois depuis le début, il ne dit rien.','◈ SECTEUR TERMINAL');
+     // Fond qui blanchit progressivement — géré dans drawBackground
+     window._terminalWhiten=0;
    }},
 ];
 
@@ -1521,13 +1636,24 @@ function applyUniverse(u){
   root.style.setProperty('--bg',u.bg);
   root.style.setProperty('--scan',u.scan||'rgba(0,255,65,0.03)');
   document.body.style.background=u.bg;
-  // Appliquer les modificateurs de l'univers
   window._universeMult={
-    grav: u.gravMult||1,
-    debris: u.debrisMult||1,
-    mirror: u.mirrorGravity||false,
-    radarSat: u.radarSaturated||false,
+    grav:    u.gravMult||1,
+    debris:  u.debrisMult||1,
+    mirror:  u.mirrorGravity||false,
+    radarSat:u.radarSaturated||false,
+    crystal: u.crystalEffect||false,
+    terminal:u.isTerminal||false,
   };
+  // Dilatation temporelle — secteur LENT
+  if(u.timeDilationMult){
+    timeDilationTarget=u.timeDilationMult;
+    dilationActive=true;
+  } else {
+    timeDilationTarget=1.0;dilationActive=false;
+  }
+  // Reset effets spéciaux
+  window._voidPull=null;
+  window._terminalWhiten=u.isTerminal?0:null;
 }
 
 let wormholeT=0;
@@ -1540,7 +1666,10 @@ function triggerWormhole(){
   wormholeT=0;
   wormholeActive=true;
   wormholePhase='closing';
-  wormholeNextUniverse=(currentUniverse+1)%UNIVERSES.length;
+  // Univers aléatoire — pas séquentiel
+  let next;
+  do{next=Math.floor(Math.random()*UNIVERSES.length);}while(next===currentUniverse);
+  wormholeNextUniverse=next;
   // Protéger les ressources pendant la transition — pas de game over possible
   hull=Math.max(hull,15);
   oxygen=Math.max(oxygen,20);
@@ -1929,7 +2058,7 @@ const PLANET_TYPES=[
    effect:()=>{oxygen=Math.min(maxOxygen,oxygen+35);logEvent('❄ GLACE — +35 OXYGEN','planet');}},
   {name:'BRÛLANTE', massKey:'planet_brulante', color:'#ff600040',glowColor:'#ff8040',ring:false,
    isDangerous:true,
-   effect:()=>{oxygen=Math.max(0,oxygen-20);hull=Math.max(0,hull-10);logEvent('?? IRRADIATION !','danger');}},
+   effect:()=>{oxygen=Math.max(0,oxygen-20);hull=Math.max(0,hull-10);logEvent('🔥 IRRADIATION !','danger');}},
   {name:'VIOLETTE', massKey:'planet_violette', color:'#c060ff50',glowColor:'#d080ff',ring:true,
    effect:()=>{score+=300;logEvent('✨ CRISTAUX — +300 SCORE','planet');}},
 ];
@@ -2392,10 +2521,14 @@ function updateResources(dt){
   const dilDt=dt*timeDilation;
   const recyclerBonus=getModuleBonus('o2drain');
   const earlyBonus=survivalDay<=2?0.6:1.0;
-  const driftBonus=driftMode?0.45:1.0; // drift mode réduit O2 de 55%
+  const driftBonus=driftMode?0.45:1.0;
   const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus*driftBonus;
   oxygen=Math.max(0,oxygen-o2Rate*dilDt);
   if(oxygen<=0)hull=Math.max(0,hull-5*drainMult*earlyBonus*dilDt);
+  // Secteur CHAUD — drain passif de coque
+  const u=UNIVERSES[currentUniverse];
+  if(u&&u.hullDrainPassive&&state==='playing')
+    hull=Math.max(0,hull-u.hullDrainPassive*drainMult*dt);
   alarmCooldown-=dt;
   if(alarmCooldown<=0&&(oxygen<20||energy<15||hull<20)){playAlarm();alarmCooldown=1.5;}
   applyModuleEffects(dt);
@@ -5455,7 +5588,7 @@ function gameLoop(ts){
         updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-        updateDriftMode(dt);updateHullSounds(dt);checkMDWEmergency();checkMDWMeta();
+        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);checkMDWEmergency();checkMDWMeta();
         checkLore();checkEndings();checkContracts();
         updateAmbient();
         if(musicDelay){
@@ -5472,7 +5605,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawSpecialEffects();drawSignal();drawEventBanner();
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
