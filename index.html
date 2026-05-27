@@ -12,7 +12,7 @@
   body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--scan) 3px,var(--scan) 4px);pointer-events:none;z-index:200;}
   body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.75) 100%);pointer-events:none;z-index:201;}
   canvas{display:block;position:fixed;inset:0;}
-  #hud{position:fixed;inset:0;pointer-events:none;z-index:50;}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0;transition:opacity 0.5s;}
 
   /* TOP BAR — juste le compteur de jour, discret */
   #top-bar{position:absolute;top:6px;right:10px;pointer-events:none;text-align:right;}
@@ -129,8 +129,8 @@
   #cosmo-overlay{position:fixed;inset:0;pointer-events:none;z-index:45;opacity:0;transition:opacity 1s;}
 
   /* TITRE — vaisseau centré au-dessus du texte */
-  #title-ship-wrap{display:flex;justify-content:center;margin-bottom:8px;opacity:0.85;}
-  #title-canvas{display:block;}
+  #title-ship-wrap{display:flex;justify-content:center;margin-bottom:4px;opacity:0.9;}
+  #title-canvas{display:block;margin:0 auto;}
   #title-voidrift{font-family:'VT323',monospace;font-size:clamp(48px,14vw,88px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:6px;line-height:1;text-align:center;}
 
   /* FONDU ENCHAÎNÉ */
@@ -164,53 +164,9 @@
     <div id="radar-label">RADAR</div>
     <div id="radar-planets">🪐 <span id="pc-val">0</span></div>
   </div>
-
   <div id="top-bar">
-    <div id="day-block">
-      <div class="day-label">SURVIE</div>
-      <div class="day-val" id="day-display">001</div>
-    </div>
-  </div>
-
-  <div id="mission-bar">
-    <div class="m-label">MISSION</div>
-    <div class="m-text" id="mission-text">—</div>
-    <div class="m-prog" id="mission-prog"></div>
-  </div>
-
-  <div id="signal-banner">
-    <div class="sb-title">📡 SIGNAL DÉTECTÉ</div>
-    <div class="sb-sub" id="signal-sub">DISTANCE : ???</div>
-  </div>
-
-  <div id="combo-display">
-    <div class="combo-x" id="combo-x">×2</div>
-    <div class="combo-label">COMBO</div>
-  </div>
-  <div id="boss-warning"><div class="warn-text">⚠ INCOMING ⚠</div></div>
-  <div id="planet-banner">
-    <div class="pb-title" id="pb-title">🪐 PLANÈTE DÉCOUVERTE</div>
-    <div class="pb-sub" id="pb-sub">CLASSE ROCHEUSE · +25 HULL</div>
-  </div>
-
-  <div id="event-log"></div>
-  <div id="journal">
-    <div id="journal-inner">
-      <div id="journal-day">JOUR 001</div>
-      <div id="journal-text"></div>
-    </div>
-  </div>
-  <div id="torpedo-bar">
-    <div class="t-label">TORPILLE</div>
-    <div class="t-charge" id="torpedo-charge">PRÊTE</div>
-  </div>
-  <div id="passengers"></div>
-<!-- Pop jour discret -->
-<div id="day-pop">
-  <div class="dp-num" id="dp-num">JOUR 2</div>
-  <div class="dp-sub">▸ LE VIDE CONTINUE</div>
-</div>
-      <div class="sub">SURVIVAL PROTOCOL v4.0</div>
+    <div id="title-block">
+      <div class="sub">VOID DRIFT</div>
       <div class="diff-badge" id="diff-badge"></div>
     </div>
     <div id="day-block">
@@ -218,20 +174,8 @@
       <div class="day-val" id="day-display">001</div>
     </div>
     <div id="score-block">
-      <div class="score-label">SCORE</div>
+      <div class="score-label">SURVIE</div>
       <div class="score-val" id="score-display">000000</div>
-    </div>
-  </div>
-
-  <div id="radar">
-    <canvas id="radar-canvas" width="70" height="70"></canvas>
-    <div id="radar-label">RADAR</div>
-    <div id="radar-planets">🪐 <span id="pc-val">0</span></div>
-  </div>
-  <div id="top-bar">
-    <div id="day-block">
-      <div class="day-label">SURVIE</div>
-      <div class="day-val" id="day-display">001</div>
     </div>
   </div>
 
@@ -256,6 +200,10 @@
   </div>
 
   <div id="event-log"></div>
+  <div id="day-pop">
+    <div class="dp-num" id="dp-num">JOUR 2</div>
+    <div class="dp-sub">▸ LE VIDE CONTINUE</div>
+  </div>
   <div id="journal">
     <div id="journal-inner">
       <div id="journal-day">JOUR 001</div>
@@ -295,7 +243,7 @@
 
 <div id="screen">
   <div id="title-ship-wrap">
-    <canvas id="title-canvas" width="70" height="70"></canvas>
+    <canvas id="title-canvas" width="80" height="80"></canvas>
   </div>
   <div id="title-voidrift">VOID DRIFT</div>
   <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
@@ -579,8 +527,8 @@ function drawShipAt(c,cx,cy,angle,scale,thrusting=false,thrustPower=0,modules=[]
   c.restore();
 }
 
-let titleShipAngle=Math.PI/2; // pointe vers le bas = V
-let titleShipX=35,titleShipY=58; // départ bas du canvas
+let titleShipAngle=-Math.PI/2; // pointe vers le HAUT
+let titleShipX=40,titleShipY=50; // centré horizontalement, bas du canvas pour décoller
 let titleShipVx=0,titleShipVy=0;
 let titleAnimating=false,titlePulse=0;
 
@@ -606,23 +554,18 @@ function titleLoop(){
 function launchSequence(callback){
   titleAnimating=true;
   let t=0;
-  // Distance à parcourir : de y=58 à y=35 (centre du canvas = centre écran = position jeu)
-  const startY=58,targetY=35;
-  const totalDist=startY-targetY; // 23px en canvas
-  // Durée totale : 0.9s pour atteindre le centre, puis fade
+  const startY=50,targetY=15;
+  const totalDist=startY-targetY;
   const duration=0.9;
 
   const step=()=>{
     t+=0.018;
     const progress=Math.min(1,t/duration);
-    // Easing ease-in (accélération progressive)
     const eased=progress*progress;
     titleShipY=startY-(eased*totalDist);
-    // Vitesse instantanée (dérivée de l'easing)
     titleShipVy=-(2*progress/duration)*totalDist*0.018;
     drawTitleShip();
 
-    // Fondu au noir — commence à 60% du trajet
     if(progress>0.6){
       launchFade.style.opacity=Math.min(1,(progress-0.6)/0.4);
     }
@@ -630,18 +573,13 @@ function launchSequence(callback){
     if(progress<1){
       requestAnimationFrame(step);
     }else{
-      // Le vaisseau a atteint le centre — démarrer le jeu
-      // Transmettre la vitesse au vaisseau joueur (converti en unités monde)
-      const worldVy=titleShipVy*2; // scale canvas→monde
-      callback(worldVy);
-      // Fondu sortant
+      callback(titleShipVy*2);
       setTimeout(()=>{
         launchFade.style.transition='opacity 0.7s ease-out';
         launchFade.style.opacity='0';
         setTimeout(()=>{
           launchFade.style.transition='opacity 0.6s ease-in-out';
-          // Reset position titre pour le prochain game over
-          titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+          titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
         },800);
       },50);
     }
@@ -2140,6 +2078,7 @@ function updatePlanets(dt){
 
 // ── Start ────────────────────────────────────
 function startGame(){
+  document.getElementById('hud').style.opacity='1';
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
   score=0;gameTime=0;difficulty=1;
@@ -4512,7 +4451,7 @@ function triggerEnding(ending){
       <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
     `;
     document.getElementById('btn-upgrades').addEventListener('click',()=>showUpgradeScreen());
-    titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+    titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
     if(!titleLoopRunning)titleLoop();
   },2000);
 }
@@ -4546,8 +4485,9 @@ function showCatalogue(){
 }
 
 function showGameOver(){
+  document.getElementById('hud').style.opacity='0';
   state='dead';screen.classList.remove('hidden');
-  titleShipX=35;titleShipY=58;titleShipVx=0;titleShipVy=0;titleAnimating=false;
+  titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
   if(!titleLoopRunning)titleLoop();
   stopAmbient();
   const dc=DIFF_CONFIG[selectedDiff];
