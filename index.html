@@ -1235,7 +1235,7 @@ let currentMission=null,missionCounter=0,missionDone=false;
 let debrisAvoided=0; // compteur global pour les missions
 
 // ── Signal final ──────────────────────────────
-const SIGNAL_DAY=7;
+const SIGNAL_DAY=10; // plus tardif — le pilote doit d'abord explorer
 let signalActive=false,signalPos=null,signalReached=false;
 let signalBannerEl,missionBarEl,missionTextEl,missionProgEl,signalSubEl;
 
@@ -1929,7 +1929,7 @@ const PLANET_TYPES=[
    effect:()=>{oxygen=Math.min(maxOxygen,oxygen+35);logEvent('❄ GLACE — +35 OXYGEN','planet');}},
   {name:'BRÛLANTE', massKey:'planet_brulante', color:'#ff600040',glowColor:'#ff8040',ring:false,
    isDangerous:true,
-   effect:()=>{oxygen=Math.max(0,oxygen-20);hull=Math.max(0,hull-10);logEvent('🔥 IRRADIATION !','danger');}},
+   effect:()=>{oxygen=Math.max(0,oxygen-20);hull=Math.max(0,hull-10);logEvent('?? IRRADIATION !','danger');}},
   {name:'VIOLETTE', massKey:'planet_violette', color:'#c060ff50',glowColor:'#d080ff',ring:true,
    effect:()=>{score+=300;logEvent('✨ CRISTAUX — +300 SCORE','planet');}},
 ];
@@ -4496,12 +4496,12 @@ const ENDINGS={
   signal:{
     id:'signal',title:'FIN — LE SIGNAL',color:'#ffaa00',
     condition:()=>signalReached&&sectorCount===0,
-    text:`Le signal était réel.\n\nAprès ${()=>survivalDay} jours de dérive, vous avez atteint la balise.\nUne voix. Statique. Puis des coordonnées.\nPas un secours. Une direction.\nQuelqu'un, avant vous, a balisé la route.\n\nVous continuez.`,
+    text:`Le signal était réel.\n\nAprès ${survivalDay} jours de dérive, vous avez atteint la balise.\nUne voix. Statique. Puis des coordonnées.\nPas un secours. Une direction.\nQuelqu'un, avant vous, a balisé la route.\n\nVous continuez.`,
   },
   cartographe:{
     id:'cartographe',title:'FIN — L\'ARCHIVISTE',color:'#40c8ff',
     condition:()=>catalogueEntries.length>=20&&sectorCount>=2,
-    text:`${()=>catalogueEntries.length} entrées. Chaque planète. Chaque phénomène.\n\nVous avez fait ce pour quoi vous avez été envoyé.\nMDW compile. Les données partent vers nulle part — ou peut-être vers quelqu'un.\n\nLe catalogue n'est jamais complet. Il y a toujours plus loin.`,
+    text:`${catalogueEntries.length} entrées. Chaque planète. Chaque phénomène.\n\nVous avez fait ce pour quoi vous avez été envoyé.\nMDW compile. Les données partent vers nulle part — ou peut-être vers quelqu'un.\n\nLe catalogue n'est jamais complet. Il y a toujours plus loin.`,
   },
   memoire:{
     id:'memoire',title:'FIN — LE SOUVENIR',color:'#c060ff',
@@ -4529,11 +4529,20 @@ function checkEndings(){
 }
 
 function triggerEnding(ending){
+  // La fin "signal" est une narration — pas un game over
+  if(ending.id==='signal'){
+    writeGlitchText&&writeGlitchText(ending.text,'📡 '+ending.title);
+    logEvent(`📡 ${ending.title}`,'planet');
+    score+=3000;
+    if(mdwActive)setTimeout(()=>mdwSpeak('Le signal. Vous l\'avez atteint.',true),3000);
+    // Pas de game over — le jeu continue
+    return;
+  }
+  // Les autres fins sont des fins narratives vraies
   setTimeout(()=>{
     state='dead';
     screen.classList.remove('hidden');
     stopAmbient();
-    const dc=DIFF_CONFIG[selectedDiff];
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
     const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
     upgradePoints+=earned;
