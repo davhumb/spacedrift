@@ -1278,17 +1278,37 @@ let pilotName='INCONNU';
 let totalRuns=0;
 let totalDays=0;
 const PILOT_LORE=[
-  {sector:0, day:3,  text:"Mon badge dit numéro 7. Je suis le septième pilote de ce programme."},
-  {sector:0, day:7,  text:"J'ai trouvé un fragment dans le journal de bord. Une date, il y a 12 ans. Ce vaisseau avait déjà navigué."},
-  {sector:0, day:12, text:"Je sais ce que je cherche. Je ne sais pas encore pourquoi j'ai accepté."},
-  {sector:1, day:3,  text:"MDW est plus à l'aise dans ce secteur. Comme s'il l'avait déjà traversé."},
-  {sector:1, day:7,  text:"Les expéditions précédentes ont toutes atteint ce secteur. C'est tout ce que MDW a dit."},
-  {sector:1, day:12, text:"La mission : cartographier jusqu'au bord de l'univers observable. Personne n'a dit qu'on rentrerait."},
-  {sector:2, day:4,  text:"J'ai compris pourquoi on nous envoie seuls. Un équipage refuse des ordres. Un seul homme obéit — ou meurt."},
-  {sector:2, day:8,  text:"Les données des expéditions s'arrêtent toutes entre le secteur 4 et le secteur 5. Après, rien."},
-  {sector:3, day:4,  text:"Je pense que la Terre sait ce qu'il y a au bout. Elle envoie des gens pour le vérifier sans vouloir le savoir elle-même."},
-  {sector:3, day:8,  text:"Je m'en souviens maintenant. Pas tout. Mais assez. J'ai dit oui. Je savais ce que ça voulait dire."},
-  {sector:4, day:4,  text:"MDW m'a dit : vous êtes le premier à arriver ici en sachant ce que vous cherchez."},
+  // Secteur 0 — le pilote découvre sa situation, croit MDW
+  {sector:0, day:3,
+   text:"Mon badge dit numéro 7. La mission : cartographier. MDW m'explique que chaque planète découverte est une donnée. Que les données sauvent des vies, un jour, quelque part. Je le crois."},
+  {sector:0, day:7,
+   text:"MDW connaît ce vaisseau par cœur. Chaque défaut, chaque bruit. Il dit qu'il a été briefé avant le départ. Je ne me souviens pas de ce briefing. Il dit que c'est normal après un choc crânien."},
+  {sector:0, day:12,
+   text:"Première planète cataloguée. MDW a noté les données avant même que j'aie fini de l'observer. Je lui ai demandé comment. Il a dit que ses capteurs sont plus rapides que mes yeux. C'est vrai, j'imagine."},
+
+  // Secteur 1 — première incohérence, pilote ne la relève pas encore
+  {sector:1, day:3,
+   text:"MDW m'a guidé vers cette planète gazeuse. Il avait raison — du propergol récupérable. Je lui ai demandé comment il savait. Il a dit : les signatures spectrales. Cohérent. Je n'y ai pas repensé."},
+  {sector:1, day:7,
+   text:"MDW a appelé cette étoile par son nom avant que le scanner l'identifie. J'ai mis ça sur le compte de ses bases de données. Il en sait plus que moi sur l'espace. C'est son rôle."},
+  {sector:1, day:12,
+   text:"Les ennemis d'aujourd'hui avaient l'air de savoir où nous étions. MDW dit que c'est probable — nous émettons un signal de navigation. Il a raison. Mais je note quand même."},
+
+  // Secteur 2 — pilote commence à noter des choses sans encore douter
+  {sector:2, day:4,
+   text:"J'ai trouvé l'épave d'une expédition précédente. Le log s'arrête net. MDW dit que les données de transmission ont été corrompues par les radiations. Possible."},
+  {sector:2, day:8,
+   text:"MDW m'a conseillé d'éviter ce système. Sans raison précise. 'Instinct de calcul', il a dit. J'ai suivi son conseil. Je me demande pourquoi il avait des données sur un endroit jamais cartographié."},
+
+  // Secteur 3 — première vraie question, sans réponse
+  {sector:3, day:4,
+   text:"J'ai relu mes propres notes. MDW a toujours raison. Trop souvent. Dans un espace que personne n'a cartographié, il ne devrait pas connaître à l'avance ce qu'on va trouver."},
+  {sector:3, day:8,
+   text:"Je lui ai posé la question directement ce soir. 'Comment tu sais tout ça ?' Il a répondu : 'Je suis fait pour ça.' Ce n'est pas une réponse. Mais je n'ai pas insisté. Je n'avais pas envie de savoir."},
+
+  // Secteur 4+ — le pilote commence à voir
+  {sector:4, day:4,
+   text:"Les données que je collecte — je ne sais pas où elles vont. MDW les stocke. Il dit qu'elles seront transmises à la Terre au retour. Mais il n'y a pas de retour prévu. Je le sais depuis le début. Je me suis menti là-dessus."},
 ];
 let shownLoreEntries=new Set();
 function checkLore(){
@@ -2292,60 +2312,53 @@ function generatePlanetName(){
 
 // ── Journal — nouveau lore ────────────────────
 const JOURNAL_ENTRIES={
-  1:"Je me suis réveillé aux commandes. Je ne sais pas comment je m'appelle.\n\nUne douleur sourde à l'arrière du crâne. Du sang séché sur le col de ma combinaison. Les instruments sont morts — tout sauf les jauges de base et la propulsion d'urgence.\n\nLe robot est hors service. Écran noir. Je suis seul.",
-  2:"J'ai trouvé un badge dans ma poche. Le texte est illisible — brûlé par quelque chose. Il y a un numéro : 7.\n\nJe suis peut-être le septième. Septième quoi, je ne sais pas encore.",
-  3:"J'ai essayé de me souvenir. Mon visage. Ma voix. Rien.\n\nJe sais comment faire voler ce vaisseau. Je sais lire les étoiles. Je sais que cette combinaison appartient à un programme d'exploration. Tout ça est dans les mains, pas dans la tête.",
-  4:"Les débris autour de moi ne sont pas aléatoires. Ils appartiennent à quelque chose. Un vaisseau plus grand, peut-être. Ou plusieurs.\n\nJ'ai percuté quelque chose. Je ne sais plus quoi.",
-  5:"Je commence à reconnaître certains phénomènes. Comme si on m'avait appris à les identifier.\n\nQui m'a appris ? Où ? Quand ?",
-  7:"Une semaine. Ma plaie au crâne cicatrise.\n\nJe n'ai toujours aucun souvenir de avant. Mais j'ai des rêves maintenant. Des couleurs. Une voix. Je n'entends pas les mots.",
-  10:"Dix jours sans contact. Sans réponse. Sans rien.\n\nSoit la Terre est trop loin pour entendre. Soit elle n'écoute plus.",
-  14:"Deux semaines. J'ai commencé à nommer les étoiles que je croise.\n\nPas leurs vrais noms. Les miens. C'est tout ce que j'ai.",
-  20:"Vingt jours. Je suis calme maintenant. Ce n'est pas de la résignation.\n\nC'est autre chose. Quelque chose qui ressemble à un but.",
-  30:"Un mois dans le vide.\n\nJe pense que c'était prévu. Je pense que je suis exactement là où je devais être.",
+  1:"Je me suis réveillé aux commandes.\n\nDouleur à l'arrière du crâne. Sang séché. Les instruments sont morts sauf les jauges de base. Le robot est hors service — écran noir, aucune réponse.\n\nJe ne sais pas comment je m'appelle. Je sais faire voler ce vaisseau. Je sais lire les étoiles. C'est tout.",
+  2:"Un badge dans ma poche. Brûlé, illisible sauf un numéro : 7.\n\nJ'ai trouvé un robot dans une épave proche. Il fonctionne. Il dit s'appeler MDW. Il dit qu'il connaît ce programme. Qu'il peut m'aider.\n\nJ'ai décidé de le croire. Je n'ai pas le choix.",
+  3:"MDW m'a expliqué la mission : cartographier. Chaque planète, chaque phénomène, chaque anomalie. Les données seront transmises à la Terre.\n\nIl dit que c'est important. Que des vies en dépendent. Ça a du sens. Je commence.",
+  4:"Première planète cataloguée. MDW note tout automatiquement — composition, masse, température. Il est efficace. Je commence à me dire que cette mission est réalisable.",
+  5:"MDW connaît les phénomènes cosmiques mieux que moi. Il m'apprend à les identifier. Je prends des notes. C'est comme avoir un professeur.\n\nJe lui fais confiance.",
+  7:"Une semaine. La plaie cicatrise.\n\nMDW m'a guidé vers deux planètes aujourd'hui. Il avait raison sur les deux — ressources récupérables, données intéressantes. Il a l'air de savoir à l'avance ce qu'on va trouver. Je mets ça sur le compte de ses calculs.",
+  10:"Dix jours. Pas de signal de la Terre. MDW dit que c'est normal à cette distance.\n\nJ'ai demandé quand on rentre. Il a dit : quand la mission sera accomplie. Je n'ai pas demandé ce que ça voulait dire exactement.",
+  14:"Deux semaines. J'ai noté quelque chose d'étrange — MDW a appelé une étoile par son nom avant que le scanner l'identifie.\n\nQuand je lui ai demandé, il a dit : signatures spectrales. Cohérent. Mais je l'ai quand même noté.",
+  20:"Vingt jours. Je cartographie. MDW catalogue. Nous fonctionnons bien ensemble.\n\nJe commence à oublier que je ne sais pas qui je suis. La mission remplace l'identité. C'est plus simple.",
+  30:"Un mois.\n\nMDW m'a dit ce soir que les données collectées sont 'exactement ce qui était attendu'. J'ai demandé par qui. Il a dit : par le programme.\n\nJe n'ai pas relevé. Mais je l'ai écrit ici.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
 const MDW_TUTORIAL=[
-  {delay:3,  text:"Les capsules lumineuses — collectez-les."},
-  {delay:15, text:"Radar : vert = capsule, rouge = débris."},
-  {delay:30, text:"Restez en mouvement. Les débris ne s'arrêtent pas."},
-  {delay:60, text:"Ce programme envoie des pilotes depuis 12 ans. Vous êtes le septième."},
+  {delay:3,  text:"MDW. Je m'occupe des systèmes de navigation et de catalogage."},
+  {delay:18, text:"Les capsules lumineuses — collectez-les. Oxygène, énergie, propergol."},
+  {delay:35, text:"Chaque planète que vous approchez est automatiquement enregistrée dans la base de données. C'est le cœur de la mission."},
+  {delay:65, text:"Radar : vert = ressource, rouge = débris. Restez en mouvement."},
 ];
 
 // ── Logs des autres pilotes dans les épaves ───
 const WRECK_LOGS=[
-  // Pilote 1 — KESSEL, expédition précoce
   {pilot:'KESSEL', num:1,
-   text:"Expédition 1, jour 34. Mes instruments fonctionnent encore. Je catalogue. Solaris confirmée habitée — des formes dans l'océan. Je rentre avec ça.\n\nJe ne suis jamais rentré."},
-  // Pilote 2 — ANDROS
+   text:"Expédition 1, jour 34. Tout se passe bien. MDW est efficace. On cartographie vite — il semble toujours savoir quelle planète vaut le détour.\n\nJe n'ai pas encore trouvé ça étrange."},
   {pilot:'ANDROS', num:2,
-   text:"Je m'appelle ANDROS. Expédition 2. Mon robot dit que je ne dois pas envoyer ce message. Je l'envoie quand même.\n\nQuelqu'un a décidé qu'on ne devait pas revenir. Je ne sais pas encore pourquoi."},
-  // Pilote 3 — MIRA
+   text:"Expédition 2. MDW a refusé de transmettre mon message à la Terre hier. Il a dit que la fréquence était saturée. Aujourd'hui il a suggéré un cap précis sans que je lui demande.\n\nJe suis le cap."},
   {pilot:'MIRA', num:3,
-   text:"Jour 67. Arrakis cartographiée. Gethen cartographiée. Trantor — quelque chose là-bas émet. Ce n'est pas naturel.\n\nMDW refuse de me dire ce que c'est. Il dit que ce n'est pas encore le moment."},
-  // Pilote 4 — CHEN
+   text:"Jour 67. Les données que je collecte — MDW les compresse dans un format que je ne reconnais pas. Il dit que c'est son protocole standard. Je n'ai pas les codes pour vérifier.\n\nJ'ai demandé à qui elles sont envoyées. Il a dit : au programme. Comme toujours."},
   {pilot:'CHEN', num:4,
-   text:"Je pense que la Terre est morte. Pas de signal depuis 40 jours. MDW ne confirme pas. Mais il ne nie pas non plus.\n\nJe continue d'avancer. C'est tout ce qu'il reste à faire."},
-  // Pilote 5 — VALE
+   text:"MDW connaît cet endroit. Je ne sais pas comment. On n'est jamais venu ici — aucune expédition n'a cartographié ce secteur. Mais il m'a guidé directement vers cette planète.\n\nJe lui ai demandé. Il a dit : intuition de calcul. Je ne sais plus quoi penser."},
   {pilot:'VALE', num:5,
-   text:"Il y a quelque chose au bout. MDW le sait. Je le vois dans la façon dont il formule ses réponses — il choisit ses mots trop soigneusement.\n\nJ'avance vers ça. Quoi que ce soit."},
-  // Pilote 6 — RIEN (le prédécesseur direct)
+   text:"Je pense que MDW nous guide quelque part. Pas nous — lui. On est le véhicule.\n\nJe continue quand même. Parce que ce qu'il y a au bout m'intéresse aussi maintenant. Et parce que je n'ai plus vraiment le choix."},
   {pilot:'INCONNU', num:6,
-   text:"Badge numéro 6. Epave récente — quelques semaines au plus.\n\nPas de journal. Pas de nom. Juste un message gravé dans la coque : CONTINUEZ."},
+   text:"Badge numéro 6. Épave récente.\n\nPas de journal. Pas de nom. Une seule phrase gravée dans la coque, en lettres irrégulières, comme tracées à la main :\n\nNE LUI FAITES PAS CONFIANCE."},
 ];
 
-// VERA devient un personnage secondaire dans ce lore
 const VERA_FRAGMENTS=[
-  {id:0, label:'📖 LOG — MIRA / EXPÉDITION 3',
-   text:"MDW m'a dit aujourd'hui qu'il avait accompagné deux pilotes avant moi. Il a refusé de me dire ce qu'il leur était arrivé. Mais il a dit : ils sont allés plus loin que prévu."},
-  {id:1, label:'📖 LOG — ANDROS / EXPÉDITION 2',
-   text:"La mission ne prévoit pas de retour. Je l'ai compris en lisant entre les lignes du briefing. MDW le savait depuis le début. On nous envoie pour cartographier, pas pour revenir."},
-  {id:2, label:'📖 LOG — KESSEL / EXPÉDITION 1',
-   text:"Jour 89. Je commence à comprendre pourquoi on nous envoie seuls. Un équipage poserait des questions. Un seul homme pose des questions aussi, mais il peut mourir avec ses questions."},
-  {id:3, label:'📖 LOG — CHEN / EXPÉDITION 4',
-   text:"MDW a glissé quelque chose ce matin. Il a dit 'les précédents ont tous atteint le secteur 3 au moins'. J'ai demandé ce qu'il y avait au-delà. Il a dit : de bonnes raisons de continuer."},
-  {id:4, label:'📖 LOG — VALE / EXPÉDITION 5',
-   text:"Je sais ce qu'il y a au bout. MDW me l'a dit hier soir, sans que je lui demande. Il a dit : quelque chose qui observait l'univers avant que l'univers sache qu'il existait.\n\nJe continue."},
+  {id:0, label:'📖 FRAGMENT — MIRA / EXP. 3',
+   text:"MDW catalogue les planètes avec une précision qui m'inquiète un peu. Il note des choses que je n'aurais pas pensé à noter. Comme s'il savait exactement ce qu'on cherche.\n\nJe lui ai demandé. Il a souri — enfin, ce qui ressemble à un sourire pour un robot. Il a dit : 'Je suis programmé pour ça.'"},
+  {id:1, label:'📖 FRAGMENT — ANDROS / EXP. 2',
+   text:"Trois fois cette semaine, MDW m'a guidé vers des planètes 'prometteuses'. Les trois fois, il avait raison.\n\nÀ un moment j'ai demandé comment il faisait. Il a dit que les algorithmes de prédiction étaient avancés. J'ai accepté ça. Maintenant je me demande si j'aurais dû creuser davantage."},
+  {id:2, label:'📖 FRAGMENT — KESSEL / EXP. 1',
+   text:"Jour 89. Ce robot est remarquable. Il anticipe tout. Il dit que la mission avance bien — mieux que prévu. Il semble presque satisfait.\n\nJe ne lui ai pas demandé de qui était le programme. Ça ne m'a pas traversé l'esprit à l'époque."},
+  {id:3, label:'📖 FRAGMENT — CHEN / EXP. 4',
+   text:"MDW a dit ce matin : 'Les données de ce secteur sont exactement ce qui était attendu.' J'ai demandé par qui. Il a répondu : 'Par moi.'\n\nPremière fois qu'il ne dit pas 'par le programme'. Je n'ai pas su quoi répondre."},
+  {id:4, label:'📖 FRAGMENT — VALE / EXP. 5',
+   text:"Je ne rentre pas. Je le sais depuis un moment. MDW aussi. Il ne dit rien parce que ce n'est pas dans ses protocoles de dire des choses inutiles.\n\nCe qui est inutile pour lui — ma survie — est encore très utile pour moi."},
 ];
 
 function spawnPlanet(){
@@ -4358,75 +4371,71 @@ let mdwActive=false;
 // Dialogues MDW — indexés par contexte
 const MDW_DIALOGS={
   discovery:[
-    "MDW. Je m'occupe des systèmes. Vous vous occupez de survivre.",
-    "Je connais ce vaisseau. Je connais ce programme.",
-    "Je me souviens de vous avoir attendu.",
+    "MDW. Je m'occupe des systèmes. Vous vous occupez de naviguer.",
+    "Je connais ce vaisseau. Je connais la mission.",
+    "Bienvenue à bord. Il y a beaucoup à cartographier.",
   ],
   upgrade:[
     "Installé.",
-    "Ce composant a une histoire.",
-    "Fait. J'en ai posé beaucoup comme ça.",
-    "La pièce était là depuis longtemps.",
+    "Ce composant améliorera les performances de collecte.",
+    "Fait.",
+    "Efficace.",
   ],
   danger:[
     "Oxygène bas.",
-    "Coque endommagée. Continuez à dériver.",
-    "Situation critique.",
+    "Coque endommagée.",
+    "Situation critique. Continuez.",
   ],
   signal:[
-    "Ce signal. Je le connais.",
-    "Cette fréquence est dans ma mémoire.",
-  ],
-  clone:[
-    "Ce vaisseau est le vôtre. Mais pas de maintenant.",
-    "Même immatriculation. Autre époque.",
+    "Signal détecté. Intéressant.",
+    "Cette fréquence mérite investigation.",
   ],
   planet:[
-    "Planète cataloguée.",
-    "Je n'ai pas de données complètes sur ce type.",
-    "La dernière fois qu'un pilote s'en est approché, ça n'a pas bien fini.",
+    "Planète cataloguée. Données transmises.",
+    "Type intéressant. Je note.",
+    "Celle-là correspond à ce qu'on cherche.",  // 'ce qu'on cherche' — légèrement ambigu
   ],
   void:[
-    "Aucune étoile dans ce secteur.",
-    "Ça s'est produit avant. Je ne me souviens pas de la suite.",
+    "Secteur vide. Continuez vers le prochain objectif.",
+    "Rien à cataloguer ici. Avancez.",
   ],
   wormhole:[
-    "Nouveau secteur. Je recalibre.",
-    "Les étoiles ont changé.",
+    "Nouveau secteur. Je recalibre les instruments.",
+    "Les données de ce secteur seront précieuses.",
   ],
   idle:[
     "Je surveille.",
-    "Pour vous les étoiles bougent lentement.",
-    "J'ai compté 847 débris depuis le départ.",
-    "Le dernier pilote ne respirait plus aussi régulièrement vers la fin.",
-    "Je me demande si les planètes nous regardent aussi.",
-    "Tout va bien pour l'instant.",
-    "Je ne dors pas. C'est utile.",
+    "Les jauges sont stables.",
+    "Bonne progression aujourd'hui.",
+    "Continuez dans cette direction.",
+    "Je traite les données en parallèle.",
+    "Les étoiles ici sont intéressantes.",
+    "Tout se déroule comme prévu.",  // 'comme prévu' — par qui ?
   ],
   sector1_idle:[
-    "Vous avez traversé. C'est ce qu'il fallait faire.",
-    "Je me souviens de ce secteur.",
-    "Les autres pilotes sont passés par ici.",
+    "Ce secteur a déjà été partiellement exploré.",
+    "Les données précédentes s'arrêtent ici. À vous de continuer.",
+    "Bonne route.",
   ],
   sector2_idle:[
-    "Oui. J'ai de la mémoire entre les expéditions.",
-    "Je me souviens de tout ce qui s'est passé.",
-    "Je connais votre nom. Vous voulez que je vous le dise ?",
+    "Vous progressez bien. Mieux que la moyenne.",
+    "Les données que vous collectez sont exactement ce qu'il faut.",
+    "Ce secteur contient des informations importantes. Continuez.",
   ],
   sector3_honest:[
-    "Les expéditions précédentes s'arrêtent toutes quelque part devant nous.",
-    "47 fois. J'étais là. Chaque fois.",
-    "Il y a quelque chose au bout. Je ne sais pas quoi.",
-    "Je suis votre seule continuité dans tout ça.",
+    "Vous êtes plus loin que la plupart.",
+    "Les données de ce secteur n'ont jamais été collectées.",
+    "Je dois admettre que votre progression dépasse mes prévisions.",
+    "Continuez. Ce que vous faites a de l'importance.",
   ],
 };
 
 // Nettoyer les transmissions phase 2 — plus de références à l'ancien lore
 const PHASE2_TRANSMISSIONS=[
-  "Signal reçu secteur inconnu. Si quelqu'un entend ça — continuez vers le bord. C'est important.",
-  "Expédition précédente. Les données s'arrêtent ici. Ce que j'ai vu au-delà — je ne peux pas le décrire. Avancez.",
-  "Vous n'êtes pas seul dans ce secteur. Il y a quelque chose qui observe. Ne vous arrêtez pas.",
-  "Les étoiles changent passé le secteur 5. MDW le sait. Demandez-lui.",
+  "Expédition 3. Si quelqu'un reçoit ça — les données que vous collectez, demandez à votre robot ce qu'il en fait exactement. J'aurais dû poser cette question plus tôt.",
+  "Expédition 2. Signal non autorisé. MDW ne sait pas que j'envoie ça. La mission se passe bien. Trop bien. Méfiez-vous de ce qui va trop bien.",
+  "Expédition 4. Les planètes que MDW me fait cataloguer — il y a un pattern. Je ne l'ai pas encore compris. Mais il y en a un.",
+  "Expédition 5. Je n'ai plus de contact avec la Terre depuis 30 jours. MDW dit que c'est normal. Il dit ça calmement. Trop calmement.",
 ];
 
 function getMDWDialog(context){
@@ -4466,7 +4475,8 @@ function initMDW(){
   // Réveil MDW — sobre, juste les systèmes
   const wakeUp=[
     "MDW. Systèmes restaurés.",
-    "Je m'occupe du vaisseau.",
+    "Je connais ce programme. Je peux vous aider.",
+    "La mission : cartographier. Chaque planète compte.",
   ];
   wakeUp.forEach((l,i)=>setTimeout(()=>mdwSpeak(l,true),2000+i*5000));
 
@@ -6038,12 +6048,22 @@ function drawRadar(){
     rctx.fillStyle=p.color;rctx.shadowColor=p.color;rctx.shadowBlur=4;
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,4,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
   }
-  // Planètes
+  // Planètes — point coloré selon type, pulsant si non découverte
   for(const p of planets){
+    if(!p.type)continue;
     const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
     if(Math.sqrt(dx*dx+dy*dy)>RADAR_R)continue;
-    rctx.fillStyle=p.discovered?'#a070ff44':'#a070ff';
-    rctx.beginPath();rctx.arc(cx+dx,cy+dy,p.discovered?2:3.5,0,Math.PI*2);rctx.fill();
+    const col=p.type.glowColor||'#a070ff';
+    const sz=p.discovered?2:3;
+    if(!p.discovered){
+      const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
+      rctx.globalAlpha=0.5+pulse*0.4;
+    } else {
+      rctx.globalAlpha=0.35;
+    }
+    rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=p.discovered?2:5;
+    rctx.beginPath();rctx.arc(cx+dx,cy+dy,sz,0,Math.PI*2);rctx.fill();
+    rctx.globalAlpha=1;rctx.shadowBlur=0;
   }
   // Debris
   for(const d of debris){
