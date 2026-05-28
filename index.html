@@ -571,7 +571,7 @@ function tryDock(){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
       logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
-      if(mdwActive)setTimeout(()=>mdwSpeak(`Extraction : ${res.label}.`,true),500);
+      
       return;
     }
   }
@@ -593,7 +593,7 @@ function updateDocking(dt){
     res.effect();
     addToCatalogue&&addToCatalogue('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}.`,'⚓');
     score+=400;spawnParticles&&spawnParticles(ship.x,ship.y,res.color,15,1.2);
-    if(mdwActive)setTimeout(()=>mdwSpeak('Extraction terminée.',true),300);
+    
     dockedPlanet=null;dockProgress=0;dockTimer=0;
   }
 }
@@ -721,6 +721,74 @@ function drawConvergence(){
   ctx.fillText(`◈ ${convergenceUniverse.name}`,W-8,H-50);
   ctx.globalAlpha=1;ctx.restore();
 }
+// ── Dialogues pilote → MDW intégrés aux événements ──
+const _exchangesDone=new Set();
+
+function pilotMDWExchange(pilotLine, mdwLine, delay=2500){
+  if(!journalEl)return;
+  journalFullText=pilotLine;
+  journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+  journalEl.classList.add('active');
+  journalDay.textContent='PILOTE';
+  journalText.textContent='';
+  if(mdwActive)setTimeout(()=>mdwSpeak(mdwLine,true),delay);
+}
+
+function triggerExchange(id, pilotLine, mdwLine, delay=2500){
+  if(_exchangesDone.has(id))return;
+  _exchangesDone.add(id);
+  pilotMDWExchange(pilotLine, mdwLine, delay);
+}
+
+function checkExchanges(){
+  if(!mdwActive||mdwSilent)return;
+
+  if(wrecksFound===1)
+    triggerExchange('wreck1',
+      "MDW, tu connais cette épave ?",
+      "Les expéditions précédentes ont toutes laissé des traces. C'est normal.");
+
+  if(planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
+    triggerExchange('violet1',
+      "Cette planète. Tu sembles t'y intéresser particulièrement.",
+      "Type rare. Les données sont précieuses.");
+
+  if(enemies.length>0&&survivalDay>=8)
+    triggerExchange('enemy1',
+      "D'où viennent ces vaisseaux ?",
+      "Ce secteur est disputé. Restez mobile.");
+
+  if(planets.some(p=>p.discovered&&p.type?.name==='ROGUE'))
+    triggerExchange('rogue1',
+      "Cette structure sur la planète. Quelqu'un est passé avant nous.",
+      "Données récupérées. Continuez.");
+
+  if(sectorCount>=2&&survivalDay>=5)
+    triggerExchange('sector2_doubt',
+      "Tu connais cet endroit ?",
+      "J'ai accès à beaucoup d'informations. C'est mon rôle.");
+
+  if(sectorCount>=3)
+    triggerExchange('sector3_question',
+      "Que fais-tu de toutes ces données ?",
+      "Elles vont là où elles doivent aller.");
+
+  if(sectorCount>=4&&wrecksFound>=3)
+    triggerExchange('sector4_pilots',
+      "Les autres pilotes sont tous passés par ici ?",
+      "Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
+
+  if(survivalDay>=30)
+    triggerExchange('return_question',
+      "On rentre quand ?",
+      "Quand la mission sera accomplie.");
+
+  if(currentUniverse===10)
+    triggerExchange('void_pull',
+      "Il y a quelque chose qui nous attire. Tu le sens ?",
+      "Je mesure une force. Pas de source identifiable.");
+}
+
 function updateSpecialSectors(dt){
   if(window._voidPull&&state==='playing'){
     ship.vx+=window._voidPull.vx*dt*60;
@@ -1055,7 +1123,7 @@ function updateDriftMode(dt){
     if(!driftMode&&driftTimer>=DRIFT_THRESHOLD){
       driftMode=true;
       logEvent('🌊 DÉRIVE SILENCIEUSE','warn');haptic('drift');
-      if(mdwActive)setTimeout(()=>mdwSpeak('Mode dérive. O₂ réduit. Contrôle réduit.',true),500);
+      
     }
     // Bonus score passif en drift
     if(driftMode)score+=0.5*dt;
@@ -1090,7 +1158,7 @@ function checkMDWEmergency(){
   if(hull<10&&oxygen<15){
     mdwEmergencyUsed=true;
     logEvent('🤖 MDW — INTERVENTION D\'URGENCE','planet');
-    mdwSpeak('Je prends le contrôle. Juste cette fois.',true);
+    mdwSpeak('Je prends le contrôle.',true);
     // MDW propulse loin du danger le plus proche
     const dangers=[...debris,...phenomena,...enemies];
     let closestDist=999,closestAngle=Math.random()*Math.PI*2;
@@ -1106,7 +1174,7 @@ function checkMDWEmergency(){
     oxygen=Math.min(maxOxygen,oxygen+20);
     spawnParticles(ship.x,ship.y,'#e8a030',20,1.5);
     triggerFlash('#e8a030',0.2);
-    setTimeout(()=>mdwSpeak('Vous êtes en sécurité. Pour l\'instant. Ne refaites pas ça.',true),2000);
+    setTimeout(()=>mdwSpeak('Évitez ça à l\'avenir.',true),2000);
   }
 }
 
@@ -1306,7 +1374,7 @@ function addToCatalogue(type,name,desc,icon='◈'){
   if(catalogueEntries.some(e=>e.name===name))return;
   catalogueEntries.push({type,name,desc,icon,day:survivalDay||1,sector:sectorCount||0});
   if(typeof mdwActive!=='undefined'&&mdwActive){
-    setTimeout(()=>mdwSpeak(`Entrée catalogue : ${name}.`,true),1500);
+    
   }
   saveGame();
 }
@@ -1627,7 +1695,7 @@ const UNIVERSES=[
    gravMult:1.0, debrisMult:1.0, mirrorGravity:true,
    onEnter:()=>{
      if(typeof mdwActive!=='undefined'&&mdwActive)
-       setTimeout(()=>mdwSpeak('Gravité inversée. Je recalibre.',true),2000);
+       setTimeout(()=>mdwSpeak('Quelque chose est inversé ici.',true),2000);
      writeGlitchText&&writeGlitchText('Quelque chose est différent ici. Le radar montre des directions qui ne correspondent pas à ma trajectoire. Comme un miroir.','🌀 ANOMALIE SECTORIELLE');
    }},
 
@@ -1639,7 +1707,7 @@ const UNIVERSES=[
    gravMult:1.8, debrisMult:2.0,
    onEnter:()=>{
      if(typeof mdwActive!=='undefined'&&mdwActive)
-       setTimeout(()=>mdwSpeak('Densité exceptionnelle. Champs gravitationnels croisés.',true),1500);
+       setTimeout(()=>mdwSpeak('Densité élevée. Naviguez prudemment.',true),1500);
    }},
 
   {id:8, name:'SECTEUR ANCIEN',  bg:'#080302', primary:'#cc6020', dim:'#883010', accent:'#ff9944',
@@ -1650,7 +1718,7 @@ const UNIVERSES=[
    gravMult:1.3, debrisMult:0.5,
    onEnter:()=>{
      if(typeof mdwActive!=='undefined'&&mdwActive)
-       setTimeout(()=>mdwSpeak('Univers vieux. Tout ici est en fin de vie.',true),2000);
+       setTimeout(()=>mdwSpeak('Ce secteur est vieux. Très vieux.',true),2000);
      writeGlitchText&&writeGlitchText('Les étoiles ici sont vieilles. Plus vieilles que tout ce que j\'ai vu. Je me demande si quelqu\'un d\'autre a déjà traversé ce secteur.','🌅 SECTEUR ANCIEN');
    }},
 
@@ -1771,7 +1839,7 @@ function spawnSecondaryWormhole(){
     y:ship.y+Math.sin(angle)*dist,
     r:20,pulse:Math.random()*Math.PI*2,
     rotAngle:0,
-    life:120+Math.random()*60,
+    life:DAY_DURATION+(Math.random()*DAY_DURATION*0.5), // 1 à 1.5 jours
     discovered:false,
     targetUniverse:target.id,
   });
@@ -2542,17 +2610,21 @@ function updatePlanets(dt){
       pcVal.textContent=discoveredPlanets;
       if(currentMission&&currentMission.text.includes('PLANÈTE'))missionCounter++;
       p.type.effect();
-      // Show banner
       pbTitle.textContent=`🪐 ${p.name}`;
       pbSub.textContent=`CLASSE ${p.type.name}`;
       pbTitle.style.color=p.type.glowColor;
       planetBanner.classList.add('visible');
-      playPlanet();
       spawnParticles(p.x,p.y,p.type.glowColor,20,1.5);
       logEvent(`🪐 ${p.name} — ${p.type.name}`,'planet');
       addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
       setTimeout(()=>planetBanner.classList.remove('visible'),3000);
-      mdwReact('planet');updateMDWTrust('planet');
+      // Réaction MDW — légèrement différente pour les planètes violettes
+      if(p.type.name==='VIOLETTE'){
+        setTimeout(()=>{if(mdwActive)mdwSpeak('Celle-là. Enregistrez ses coordonnées précises.',true);},1200);
+      } else {
+        mdwReact('planet');
+      }
+      updateMDWTrust('planet');
     }
 
     // Danger si planète brûlante et très proche
@@ -2612,7 +2684,8 @@ function startGame(){
   dockedPlanet=null;dockTimer=0;dockProgress=0;
   convergenceActive=false;convergenceT=0;convergenceUniverse=null;
   convergenceTimer=1500+Math.random()*600;
-  mdwSectorDialogTimer=30;mdwSectorDialogUsed=new Set();
+  _exchangesDone.clear();
+  mdwLastIdleTime=0;mdwSectorDialogTimer=30;
   godSequenceActive=false;godFlareActive=false;godSequenceT=0;
   window._godMode=false;window._godEncounterStarted=false;
   mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();mdwSilent=false;
@@ -3303,7 +3376,7 @@ function updateSupernovas(dt){
       s.announced=true;
       logEvent('⭐ SUPERNOVA IMMINENTE','warn');
       writeGlitchText('Une étoile meurt au loin. Je le vois dans le spectre. Dans quelques secondes, une explosion plus brillante qu\'une galaxie.','⭐ SUPERNOVA DÉTECTÉE');
-      mdwActive&&setTimeout(()=>mdwSpeak('Supernova. Distance sûre. Des capsules dans le sillage.',true),3000);
+      
     }
     if(s.phase==='warning'&&s.timer<=0){s.phase='exploding';s.timer=0.5;s.r=5;triggerFlash(s.color,0.3);}
     if(s.phase==='exploding'){s.r+=s.maxR*dt*3;if(s.timer<=0){s.phase='expanding';s.timer=4;}}
@@ -3423,7 +3496,7 @@ function updateTimeDilation(){
   if(timeDilation<0.7&&!dilationActive){
     dilationActive=true;
     logEvent('⏱ DILATATION TEMPORELLE','warn');
-    mdwActive&&setTimeout(()=>mdwSpeak('Dilatation temporelle. Vos jauges se vident moins vite.',true),500);
+    
   }
   if(timeDilation>0.9)dilationActive=false;
 
@@ -3858,7 +3931,7 @@ function addNeutronStar(){
   phenomena.push(p);
   logEvent('⭐ ÉTOILE À NEUTRONS DÉTECTÉE','warn');
   if(typeof mdwActive!=='undefined'&&mdwActive)
-    setTimeout(()=>mdwSpeak('Étoile à neutrons. N\'approchez pas.',true),500);
+    setTimeout(()=>mdwSpeak('N\'approchez pas.',true),500);
 }
 
 function updateNeutronStar(p,dt){
@@ -4748,7 +4821,7 @@ const PHENOMENON_TYPES=[
      if(!p.announced&&dist<800){
        p.announced=true;
        if(typeof mdwActive!=='undefined'&&mdwActive)
-         setTimeout(()=>mdwSpeak(`Pulsar. Période ${p.jetPeriod.toFixed(2)}s. Restez hors de l'axe.`,true),500);
+         setTimeout(()=>mdwSpeak('Ce signal pulse. Régulier. Artificiel presque.',true),500);
      }
      if(!p.jetActive&&p.jetTimer>p.jetPeriod){
        p.jetActive=true;p.jetTimer=0;
@@ -4917,7 +4990,7 @@ const PHENOMENON_TYPES=[
        logEvent('💥 MAGNÉTAR — BURST DE RADIATION','danger');
        triggerFlash('#ff4488',0.3);
        if(typeof mdwActive!=='undefined'&&mdwActive)
-         setTimeout(()=>mdwSpeak('Burst magnétique. Instruments hors service.',true),200);
+         setTimeout(()=>mdwSpeak('Instruments perturbés.',true),200);
      }
      if(p.bursting){
        p.burstDuration-=dt;
@@ -6208,15 +6281,13 @@ function drawRadar(){
     if(!p.type)continue;
     const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
     if(Math.sqrt(dx*dx+dy*dy)>RADAR_R)continue;
-    const col=p.type.glowColor||'#a070ff';
+    // Couleur selon type — fallback robuste
+    const col=p.type.glowColor||p.type.colors?.[0]||'#a070ff';
     const sz=p.discovered?2:3;
-    if(!p.discovered){
-      const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
-      rctx.globalAlpha=0.5+pulse*0.4;
-    } else {
-      rctx.globalAlpha=0.35;
-    }
-    rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=p.discovered?2:5;
+    const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
+    rctx.globalAlpha=p.discovered?0.35:(0.5+pulse*0.4);
+    rctx.fillStyle=col;
+    rctx.shadowColor=col;rctx.shadowBlur=p.discovered?2:4;
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,sz,0,Math.PI*2);rctx.fill();
     rctx.globalAlpha=1;rctx.shadowBlur=0;
   }
@@ -6332,7 +6403,7 @@ function updateOrbitalIndicator(){
     if(now-lastSlingshot>5000){
       lastSlingshot=now;
       logEvent('🌀 ÉLAN GRAVITATIONNEL','planet');
-      if(mdwActive)setTimeout(()=>mdwSpeak('Fronde gravitationnelle. Bien amorcée.',true),200);
+      if(mdwActive)
       // Traînée plus longue temporairement
       ship._slingshotTrail=3.0;
     }
@@ -6392,7 +6463,7 @@ function gameLoop(ts){
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
-        checkLore();checkEndings();checkContracts();checkGodEncounter();
+        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
