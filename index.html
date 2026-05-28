@@ -259,6 +259,8 @@
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
+  <button class="haptic-toggle" id="btn-voice-test" style="margin-top:2px;">🔊 TESTER VOIX MDW</button>
+  <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
   <div class="reset-confirm" id="reset-confirm">
     <div class="reset-confirm-text">EFFACER UPGRADES · CATALOGUE · RUNS ?</div>
@@ -4454,7 +4456,10 @@ function getMDWDialog(context){
 }
 
 function mdwSpeak(contextOrText, isRaw=false){
-  if(mdwSilent)return; // silence radio
+  if(mdwSilent){
+    if(window.speechSynthesis)speechSynthesis.cancel();
+    return;
+  }
   const text=isRaw?contextOrText:getMDWDialog(contextOrText);
   if(!text)return;
   mdwDialogQueue.push(text);
@@ -4512,6 +4517,8 @@ function updateMDW(dt){
       textEl.textContent='';
       mdwEl.style.opacity='1';
       mdwTypingActive=true;
+      // Voix MDW
+      mdwSpeak_voice(text);
       let i=0;
       mdwCurrentInterval=setInterval(()=>{
         if(i<text.length){
@@ -6382,6 +6389,59 @@ function resetGame(){
   Object.keys(upgrades).forEach(k=>upgrades[k]=0);
   Object.values(UPGRADES).forEach(u=>{try{if(u.apply)u.apply();}catch(e){}});
 }
+
+// ── Speech Synthesis — voix MDW ──────────────
+let voiceEnabled=true; // activé par défaut
+let mdwVoice=null;
+
+function initVoice(){
+  if(!window.speechSynthesis)return false;
+  // Chercher une voix anglaise ou française robotique
+  const voices=speechSynthesis.getVoices();
+  // Préférer une voix avec "google" ou "microsoft" dans le nom (plus robotique)
+  mdwVoice=voices.find(v=>v.lang.startsWith('fr')&&v.name.toLowerCase().includes('google'))
+    ||voices.find(v=>v.lang.startsWith('fr'))
+    ||voices.find(v=>v.name.toLowerCase().includes('google'))
+    ||voices[0]||null;
+  return true;
+}
+
+function mdwSpeak_voice(text){
+  if(!voiceEnabled||!window.speechSynthesis)return;
+  speechSynthesis.cancel(); // annuler si déjà en train de parler
+  const utt=new SpeechSynthesisUtterance(text);
+  if(mdwVoice)utt.voice=mdwVoice;
+  utt.rate=1.15;   // plus rapide — moins humain
+  utt.pitch=0.3;   // très grave — robotique
+  utt.volume=0.9;
+  speechSynthesis.speak(utt);
+}
+
+// Test voix sur l'écran titre
+document.getElementById('btn-voice-test').addEventListener('click',()=>{
+  if(!window.speechSynthesis){
+    alert('Speech Synthesis non supporté sur ce navigateur.');return;
+  }
+  // Charger les voix (nécessaire sur certains navigateurs)
+  const trySpeak=()=>{
+    initVoice();
+    speechSynthesis.cancel();
+    const utt=new SpeechSynthesisUtterance('MDW. Systèmes restaurés. La mission : cartographier. Chaque planète compte.');
+    if(mdwVoice)utt.voice=mdwVoice;
+    utt.rate=1.15;utt.pitch=0.3;utt.volume=0.9;
+    speechSynthesis.speak(utt);
+  };
+  // Les voix sont chargées de façon async sur certains navigateurs
+  if(speechSynthesis.getVoices().length>0){trySpeak();}
+  else{speechSynthesis.onvoiceschanged=()=>{trySpeak();speechSynthesis.onvoiceschanged=null;};}
+});
+const voiceToggleBtn=document.getElementById('btn-voice-toggle');
+voiceToggleBtn.addEventListener('click',()=>{
+  voiceEnabled=!voiceEnabled;
+  if(!voiceEnabled&&window.speechSynthesis)speechSynthesis.cancel();
+  voiceToggleBtn.textContent=`🔊 VOIX MDW : ${voiceEnabled?'ON':'OFF'}`;
+  voiceToggleBtn.className='haptic-toggle'+(voiceEnabled?' on':'');
+});
 
 document.getElementById('btn-zen').addEventListener('click',()=>{
   initAudio();
