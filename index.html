@@ -788,6 +788,14 @@ function checkExchanges(){
       "Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
 
   // Suite acte 1
+  if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_rentrer')&&survivalDay>=1)
+    triggerExchange('mdw_rentrer',
+      "MDW comment on rentre sur Terre ?",
+      "Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
+  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
+    triggerExchange('mdw_pc2',
+      "",
+      "Je suis connecté. Programme de transmission trouvé.\nModule de collecte 235.\nMission de cartographie confirmée.");
   if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
     triggerExchange('mdw_memory',
       "Je ne me souviens de rien. Qui suis-je ?",
@@ -2453,13 +2461,17 @@ function generatePlanetName(){
 
 // ── Journal — nouveau lore ────────────────────
 const JOURNAL_ENTRIES={
-  // Série 1 — avant la découverte de MDW
   1:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.",
   2:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.",
   3:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.",
-  4:"J'ai une plaie au front et mon dos me fait souffrir.",
-  // Série 2 — après la découverte de MDW (déclenchées par les échanges)
-  5:"J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.",
+  4:"J'ai une plaie au front et mon dos me fait souffrir.\nMais je suis vivant. Je crois.",
+  5:"Ce robot — MDW — semble fonctionner.\nJe ne sais pas si c'est une bonne nouvelle.",
+  6:"MDW dit qu'il va essayer de réparer les systèmes de navigation.\nJe m'accroche à ça.",
+  7:"Troisième jour. Toujours rien sur les instruments.\nMDW dit que les trous de ver sont statistiquement notre meilleure chance de retrouver la Terre.\nJe ne comprends pas tout. Mais j'ai pas le choix d'essayer.",
+  10:"Je commence à comprendre comment fonctionne ce vaisseau.\nMDW m'explique. Il est patient. C'est rassurant.",
+  14:"On a traversé plusieurs trous de ver.\nMDW dit qu'on se rapproche. Je le crois.\nQu'est-ce que je ferais sans lui.",
+  20:"Je ne panique plus comme avant.\nL'espace est immense mais MDW sait ce qu'il fait.\nJe pense que ça va aller.",
+  30:"Un mois.\nJe ne pensais pas tenir aussi longtemps.\nMDW a dit ce soir que les données qu'on collecte sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui. Il n'a pas répondu.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -4312,14 +4324,9 @@ const MDW_DB={
     {t:"Les données de ce secteur sont propres.", s:0},
     {t:"Je n'ai pas besoin de dormir. C'est pratique.", s:1},
     {t:"Vous naviguer mieux que la moyenne.", s:1},    // 'la moyenne' — de qui ?
-    {t:"Ce secteur a déjà été partiellement documenté.", s:1},
-    {t:"Les données précédentes s'arrêtent ici.", s:1},
     {t:"Votre progression dépasse mes prévisions initiales.", s:2},
     {t:"Les données que vous collectez sont exactement ce qu'il faut.", s:2}, // ce qu'il faut à qui ?
     {t:"Ce secteur contient des informations que personne n'a encore collectées.", s:2},
-    {t:"Vous êtes plus loin que la plupart.", s:3},
-    {t:"Ce que vous faites a de l'importance.", s:3},
-    {t:"Je dois admettre que votre progression est remarquable.", s:3},
     {t:"Les données de ce secteur n'ont jamais existé avant aujourd'hui.", s:4},
     {t:"Je note tout.", s:4},                          // tout — vraiment tout
   ],
@@ -4327,7 +4334,6 @@ const MDW_DB={
   // ── Événements — importants, voix ──
   discovery:[
     {t:"MDW. Je m'occupe des systèmes. Vous vous occupez de naviguer.", v:true},
-    {t:"Je connais ce vaisseau. Je connais la mission.", v:true},
     {t:"Bienvenue à bord. Il y a beaucoup à cartographier.", v:true},
   ],
   upgrade:[
