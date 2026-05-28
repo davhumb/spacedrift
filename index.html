@@ -145,7 +145,9 @@
   .reset-confirm-text{font-size:8px;letter-spacing:1px;color:rgba(255,60,60,0.7);}
   .reset-yes{padding:5px 16px;background:transparent;border:1px solid rgba(255,60,60,0.6);color:rgba(255,60,60,0.8);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
   .reset-no{padding:5px 16px;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
-  #catalogue-btn{position:fixed;bottom:80px;right:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;}
+  #catalogue-btn{position:fixed;bottom:80px;right:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;transition:all 0.3s;}
+  #catalogue-btn.new-entry{border-color:rgba(0,255,65,0.9);color:rgba(0,255,65,1);animation:journalPulse 1s ease-in-out infinite;}
+  @keyframes journalPulse{0%,100%{box-shadow:0 0 4px rgba(0,255,65,0.3);}50%{box-shadow:0 0 12px rgba(0,255,65,0.8),0 0 20px rgba(0,255,65,0.4);}}
   #catalogue-panel{position:fixed;inset:0;z-index:200;background:rgba(0,9,2,0.97);display:none;flex-direction:column;overflow:hidden;}
   #catalogue-panel.open{display:flex;}
   #cat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(0,255,65,0.2);}
@@ -294,7 +296,7 @@
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
-  <button class="haptic-toggle" id="btn-voice-test" style="margin-top:2px;">🔊 TESTER VOIX MDW</button>
+  <button class="haptic-toggle" id="btn-fullscreen" style="margin-top:2px;">⛶ PLEIN ÉCRAN</button>
   <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
   <div class="reset-confirm" id="reset-confirm">
@@ -2256,7 +2258,12 @@ function updateJournal(dt){
 function updateDay(dt){
   if(inDayTransition)return;
   dayTimer+=dt;
-  if(dayTimer>=DAY_DURATION){dayTimer=0;survivalDay++;showDayTransition(survivalDay);}
+  if(dayTimer>=DAY_DURATION){
+    dayTimer=0;survivalDay++;showDayTransition(survivalDay);
+    // Clignoter le bouton journal pour inciter à lire
+    const catBtn=document.getElementById('catalogue-btn');
+    if(catBtn&&!cataloguePaused)catBtn.classList.add('new-entry');
+  }
 }
 function showDayTransition(day){
   inDayTransition=true;
@@ -6535,6 +6542,9 @@ let currentCatTab='journal';
 function openCatalogue(){
   if(state!=='playing')return;
   cataloguePaused=true;
+  // Arrêter le clignotement
+  const catBtn=document.getElementById('catalogue-btn');
+  if(catBtn)catBtn.classList.remove('new-entry');
   document.getElementById('catalogue-panel').classList.add('open');
   renderCatTab(currentCatTab);
 }
@@ -6660,7 +6670,9 @@ function mdwSpeak_voice(text){
 }
 
 // Test voix sur l'écran titre
-document.getElementById('btn-voice-test').addEventListener('click',()=>{
+// Bouton test voix — déclenché depuis btn-voice-toggle long press ou directement
+const voiceTestEl=document.getElementById('btn-voice-test');
+if(voiceTestEl)voiceTestEl.addEventListener('click',()=>{
   if(!window.speechSynthesis){
     alert('Speech Synthesis non supporté sur ce navigateur.');return;
   }
@@ -6685,6 +6697,19 @@ voiceToggleBtn.addEventListener('click',()=>{
   voiceToggleBtn.className='haptic-toggle'+(voiceEnabled?' on':'');
 });
 
+document.getElementById('btn-fullscreen').addEventListener('click',()=>{
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+    document.getElementById('btn-fullscreen').textContent='⛶ QUITTER PLEIN ÉCRAN';
+  } else {
+    document.exitFullscreen();
+    document.getElementById('btn-fullscreen').textContent='⛶ PLEIN ÉCRAN';
+  }
+});
+document.addEventListener('fullscreenchange',()=>{
+  const btn=document.getElementById('btn-fullscreen');
+  if(btn)btn.textContent=document.fullscreenElement?'⛶ QUITTER PLEIN ÉCRAN':'⛶ PLEIN ÉCRAN';
+});
 document.getElementById('btn-zen').addEventListener('click',()=>{
   initAudio();
   launchSequence((vy)=>{startZenMode();if(vy)ship.vy=vy;ship.angle=-Math.PI/2;});
