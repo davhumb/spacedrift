@@ -564,7 +564,7 @@ const PLANET_RESOURCES={
 function tryDock(){
   if(dockedPlanet)return;
   for(const p of planets){
-    if(!p.type)continue;
+    if(!p.type||p.mined)continue; // skip déjà minée
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
@@ -572,7 +572,6 @@ function tryDock(){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
       logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
-      
       return;
     }
   }
@@ -584,7 +583,7 @@ function updateDocking(dt){
   const dist=Math.sqrt(dx*dx+dy*dy);
   const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
   if(speed>DOCK_SPEED*2||dist>dockedPlanet.r+60){
-    logEvent('⚓ DÉSARRIMAGE','warn');
+    
     dockedPlanet=null;dockProgress=0;return;
   }
   ship.vx*=Math.pow(0.97,dt*60);ship.vy*=Math.pow(0.97,dt*60);
@@ -594,7 +593,7 @@ function updateDocking(dt){
     res.effect();
     addToCatalogue&&addToCatalogue('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}.`,'⚓');
     score+=400;spawnParticles&&spawnParticles(ship.x,ship.y,res.color,15,1.2);
-    
+    dockedPlanet.mined=true; // ne peut plus être minée ce run
     dockedPlanet=null;dockProgress=0;dockTimer=0;
   }
 }
@@ -760,6 +759,33 @@ function checkExchanges(){
     triggerExchange('wreck1',
       "MDW, tu connais cette épave ?",
       "Les expéditions précédentes ont toutes laissé des traces. C'est normal.");
+
+  // Acte 1 — premières questions après le réveil
+  if(mdwFound&&survivalDay>=1&&!_exchangesDone.has('amnesia_where'))
+    setTimeout(()=>triggerExchange('amnesia_where',
+      "Où sommes-nous ?",
+      "Secteur périphérique. Coordonnées imprécises. Vos instruments sont endommagés."),
+    8000);
+
+  if(mdwFound&&survivalDay>=1&&_exchangesDone.has('amnesia_where')&&!_exchangesDone.has('amnesia_ship'))
+    triggerExchange('amnesia_ship',
+      "Ce vaisseau. Tu peux me dire quelque chose ?",
+      "Vaisseau d'exploration de classe légère. Programme scientifique. Vous êtes le pilote désigné.");
+
+  if(mdwFound&&survivalDay>=2&&_exchangesDone.has('amnesia_ship')&&!_exchangesDone.has('amnesia_mission'))
+    triggerExchange('amnesia_mission',
+      "D'après toi, quelle est ma mission ?",
+      "Cartographier. Chaque planète, chaque phénomène. Les données ont de la valeur.");
+
+  if(mdwFound&&survivalDay>=2&&_exchangesDone.has('amnesia_mission')&&!_exchangesDone.has('amnesia_who'))
+    triggerExchange('amnesia_who',
+      "Qui a décidé de ça ?",
+      "Le programme. Vous avez accepté avant le départ.");
+
+  if(mdwFound&&survivalDay>=3&&_exchangesDone.has('amnesia_who')&&!_exchangesDone.has('amnesia_memory'))
+    triggerExchange('amnesia_memory',
+      "Je ne me souviens de rien.",
+      "C'est le choc. Ça reviendra peut-être. En attendant, la mission continue.");
 
   if(planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
     triggerExchange('violet1',
@@ -1856,7 +1882,7 @@ function spawnSecondaryWormhole(){
     discovered:false,
     targetUniverse:target.id,
   });
-  logEvent('🌀 TROU DE VER DÉTECTÉ','warn');
+  
   if(mdwActive)setTimeout(()=>mdwSpeak('Trou de ver. Non prévu. Destination inconnue.',true),800);
 }
 
@@ -2224,7 +2250,7 @@ function triggerPhase2Transmission(){
   if(sectorCount<1)return;
   const msg=PHASE2_TRANSMISSIONS[Math.floor(Math.random()*PHASE2_TRANSMISSIONS.length)];
   writeGlitchText(msg,'📡 TRANSMISSION REÇUE');
-  logEvent('📡 TRANSMISSION','warn');
+  
   if(mdwActive)setTimeout(()=>mdwSpeak('Signal capté. Source inconnue.',true),2000);
 }
 
@@ -2267,13 +2293,18 @@ function updateDay(dt){
 }
 function showDayTransition(day){
   inDayTransition=true;
-  // Pop discret au lieu du plein écran
   dpNum.textContent=`JOUR ${String(day).padStart(3,'0')}`;
   dayPop.classList.add('show');
-  playDayTone();
-  oxygen=Math.min(maxOxygen,oxygen+10);logEvent(`☀ JOUR ${day} — +10 O₂`,'warn');
+  oxygen=Math.min(maxOxygen,oxygen+10);
+  logEvent(`☀ JOUR ${day}`,'warn');
   setTimeout(()=>startMission(),1000);
   if(day>=SIGNAL_DAY&&!signalActive)activateSignal();
+  // Trou de ver garanti 1/jour à partir du jour 4
+  if(day>=4){
+    setTimeout(()=>{
+      if(secondaryWormholes.length<2)spawnSecondaryWormhole();
+    },3000+Math.random()*5000);
+  }
   setTimeout(()=>{
     dayPop.classList.remove('show');
     inDayTransition=false;
@@ -4758,7 +4789,7 @@ const PHENOMENON_TYPES=[
      if(p.mass>12000&&p.lastMDWComment<3){
        p.lastMDWComment=3;
        if(mdwActive)setTimeout(()=>mdwSpeak('Je recommande de quitter ce secteur.',true),500);
-       logEvent('🌀 TROU NOIR INSTABLE','danger');
+       
        triggerFlash('#8820ff',0.2);
      }
      if(p.mass>20000&&p.lastMDWComment<4){
@@ -5176,7 +5207,7 @@ function updateTerminalDialog(dt){
   // Prise de contrôle MDW à t=78 — vaisseau qui résiste
   if(terminalDialogT>=78&&terminalDialogT<107&&!mdwControlActive){
     mdwControlActive=true;
-    logEvent('⚠ CONTRÔLE NAVIGATION — MDW','danger');
+    
     haptic('danger');
   }
   if(mdwControlActive&&terminalDialogT<107){
@@ -6682,7 +6713,7 @@ if(voiceTestEl)voiceTestEl.addEventListener('click',()=>{
     speechSynthesis.cancel();
     const utt=new SpeechSynthesisUtterance('MDW. Systèmes restaurés. La mission : cartographier. Chaque planète compte.');
     if(mdwVoice)utt.voice=mdwVoice;
-    utt.rate=1.15;utt.pitch=0.3;utt.volume=0.9;
+    utt.rate=1.15;utt.pitch=0.3;utt.volume=0.55;
     speechSynthesis.speak(utt);
   };
   // Les voix sont chargées de façon async sur certains navigateurs
