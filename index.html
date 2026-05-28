@@ -135,7 +135,10 @@
 
   /* FONDU ENCHAÎNÉ */
   #launch-fade{position:fixed;inset:0;background:#000902;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.6s ease-in-out;}
-  .reset-btn{margin-top:2px;padding:6px 20px;background:transparent;border:1px solid rgba(255,60,60,0.3);color:rgba(255,60,60,0.5);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;cursor:pointer;transition:all 0.2s;}
+  .zen-btn{margin-top:2px;padding:8px 24px;background:transparent;border:1px solid rgba(64,200,255,0.4);color:rgba(64,200,255,0.6);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;cursor:pointer;transition:all 0.15s;}
+  .zen-btn:hover,.zen-btn:active{border-color:rgba(64,200,255,0.9);color:rgba(64,200,255,0.9);background:rgba(64,200,255,0.05);}
+  .haptic-toggle{font-size:8px;letter-spacing:2px;color:rgba(0,255,65,0.35);cursor:pointer;padding:4px 8px;border:1px solid rgba(0,255,65,0.15);background:transparent;font-family:'Share Tech Mono',monospace;transition:all 0.15s;}
+  .haptic-toggle.on{color:rgba(0,255,65,0.7);border-color:rgba(0,255,65,0.4);}font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;cursor:pointer;transition:all 0.2s;}
   .reset-btn:hover,.reset-btn:active{border-color:rgba(255,60,60,0.8);color:rgba(255,60,60,0.9);background:rgba(255,60,60,0.05);}
   .reset-confirm{display:none;flex-direction:column;align-items:center;gap:6px;margin-top:4px;}
   .reset-confirm.visible{display:flex;}
@@ -254,6 +257,8 @@
     <button class="diff-btn" data-diff="harder">HARDER</button>
   </div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
+  <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
+  <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
   <div class="reset-confirm" id="reset-confirm">
     <div class="reset-confirm-text">EFFACER UPGRADES · CATALOGUE · RUNS ?</div>
@@ -527,7 +532,7 @@ function tryDock(){
     if(dist<p.r+30&&speed<DOCK_SPEED){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
-      logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');
+      logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
       if(mdwActive)setTimeout(()=>mdwSpeak(`Extraction : ${res.label}.`,true),500);
       return;
     }
@@ -566,6 +571,35 @@ function drawDockingUI(){
   ctx.fillStyle='#ffffff';ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=0;
   ctx.fillText(`⚓ ${res.label} ${Math.floor(dockProgress*100)}%`,sx,sy-29);
   ctx.restore();
+}
+
+// ── Vibrations ────────────────────────────────
+let hapticsEnabled=true;
+try{hapticsEnabled=localStorage.getItem('vd_haptics')!=='off';}catch(e){}
+
+function haptic(type){
+  if(!hapticsEnabled||!navigator.vibrate)return;
+  const patterns={
+    impact:[40],debris:[30],blackhole:[80,30,80],
+    magnetar:[100,20,60,20,40],wormhole:[50,30,80,30,120,30,200],
+    godFlare:[400,100,200,50,100],collect:[15],
+    danger:[60,40,60],drift:[20],dock:[30,20,30],silence:[200],
+  };
+  try{navigator.vibrate(patterns[type]||[30]);}catch(e){}
+}
+
+// ── Mode Zen ──────────────────────────────────
+let zenMode=false;
+
+function startZenMode(){
+  zenMode=true;
+  startGame();
+  if(mdwActive)setTimeout(()=>mdwSpeak('Mode contemplation. Aucune urgence.',true),5000);
+}
+
+function updateZenMode(){
+  if(!zenMode)return;
+  oxygen=maxOxygen;energy=100;hull=100;propellant=maxPropellant;
 }
 
 const titleCanvas=document.getElementById('title-canvas');
@@ -982,9 +1016,11 @@ function updateDriftMode(dt){
     driftTimer+=dt;
     if(!driftMode&&driftTimer>=DRIFT_THRESHOLD){
       driftMode=true;
-      logEvent('🌊 DÉRIVE SILENCIEUSE — O₂ -50%','warn');
+      logEvent('🌊 DÉRIVE SILENCIEUSE','warn');haptic('drift');
       if(mdwActive)setTimeout(()=>mdwSpeak('Mode dérive. O₂ réduit. Contrôle réduit.',true),500);
     }
+    // Bonus score passif en drift
+    if(driftMode)score+=0.5*dt;
   }
 }
 
@@ -1153,7 +1189,7 @@ document.querySelectorAll('.diff-btn').forEach(btn=>{
 let state='menu',score=0,gameTime=0,lastTime=0,alarmCooldown=0;
 let combo=0,comboTimer=0,comboHideTimer=0;
 let bossTimer=0,bossActive=false,bossWarningShown=false;
-let survivalDay=1,dayTimer=0,DAY_DURATION=60,inDayTransition=false;
+let survivalDay=1,dayTimer=0,DAY_DURATION=120,inDayTransition=false;
 let journalShownDays=new Set(),journalWriteTimer=0,journalFullText='',journalCharIdx=0,journalActive=false;
 let discoveredPlanets=0;
 
@@ -1808,6 +1844,7 @@ let wormholePhase='closing';
 let wormholeNextUniverse=0;
 
 function triggerWormhole(){
+  haptic('wormhole');
   state='wormhole';
   wormholeT=0;
   wormholeActive=true;
@@ -2028,6 +2065,22 @@ function startTutorial(){
 }
 
 // Narration phase 2 — transmissions adressées directement
+function triggerSilenceRadio(){
+  if(!mdwActive)return;
+  const duration=DAY_DURATION*2; // 2 jours
+  mdwSilent=true;
+  haptic('silence');
+  logEvent('📡 SILENCE RADIO','warn');
+  writeGlitchText&&writeGlitchText('MDW ne répond plus. Depuis ce matin. J\'ai essayé plusieurs fois. Rien.','📡 SILENCE');
+  setTimeout(()=>{
+    mdwSilent=false;
+    logEvent('📡 MDW EN LIGNE','ok');
+    mdwSpeak('Je suis là. Il y avait quelque chose que je devais vérifier.',true);
+  },duration*1000);
+}
+
+let mdwSilent=false;
+
 function triggerPhase2Transmission(){
   if(sectorCount<1)return;
   const msg=PHASE2_TRANSMISSIONS[Math.floor(Math.random()*PHASE2_TRANSMISSIONS.length)];
@@ -2511,7 +2564,9 @@ function startGame(){
   mdwSectorDialogTimer=30;mdwSectorDialogUsed=new Set();
   godSequenceActive=false;godFlareActive=false;godSequenceT=0;
   window._godMode=false;window._godEncounterStarted=false;
-  mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();
+  mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();mdwSilent=false;
+  // zenMode conservé — reset seulement si nouvelle partie normale
+  if(!zenMode)zenMode=false;
   crackTimer=0;
   // Épave garantie à portée radar — MDW dedans pour le tutorial
   const startAngle=Math.random()*Math.PI*2;
@@ -2530,7 +2585,7 @@ function startGame(){
   if(lastBlackBox&&lastBlackBox.day>=3){
     const bbAngle=Math.random()*Math.PI*2;
     const bbDist=600+Math.random()*400;
-    const bbLog=`Expédition #${lastBlackBox.runNumber||'?'}. Jour ${lastBlackBox.day}. Secteur ${lastBlackBox.sector}. ${lastBlackBox.planets} planète${lastBlackBox.planets>1?'s':''} découverte${lastBlackBox.planets>1?'s':''}.\n\nLe pilote n'est pas rentré.`;
+    const bbLog=`Expédition #${lastBlackBox.runNumber||'?'}. Jour ${lastBlackBox.day}. Secteur ${lastBlackBox.sector}.\n${lastBlackBox.planets} planète${lastBlackBox.planets>1?'s':''} découverte${lastBlackBox.planets>1?'s':''}.\n\n"${lastBlackBox.lastWords||'...'}"`;
     wrecks.push({
       x:ship.x+Math.cos(bbAngle)*bbDist,
       y:ship.y+Math.sin(bbAngle)*bbDist,
@@ -2697,14 +2752,31 @@ function updateShip(dt){
       }else{
         energy=Math.max(0,energy-ENERGY_THRUST_COST*2*dt*ship.thrustPower);
       }
+      // Particules de propulsion principale
       if(Math.random()<0.4){
         const ex=ship.x+Math.cos(ship.angle+Math.PI)*10,ey=ship.y+Math.sin(ship.angle+Math.PI)*10;
+        const flameColor=driftMode?'#40c8ff':hasProp?'#00ff41':'#ff6020';
         particles.push({x:ex,y:ey,
           vx:Math.cos(ship.angle+Math.PI)*(1+Math.random())+ship.vx*0.3,
           vy:Math.sin(ship.angle+Math.PI)*(1+Math.random())+ship.vy*0.3,
           life:1,decay:0.07+Math.random()*0.05,r:2+Math.random()*2,
-          color:hasProp?'#00ff41':'#ff6020'});
+          color:flameColor});
       }
+      // Rétro-fusées — impulsions latérales si changement de direction brutal
+      if(ship._prevAngle!==undefined){
+        const angleDiff=Math.abs(ship.angle-ship._prevAngle);
+        const normalDiff=angleDiff>Math.PI?Math.PI*2-angleDiff:angleDiff;
+        if(normalDiff>0.3&&Math.random()<0.5){
+          // Particule latérale
+          const lateralAngle=ship.angle+Math.PI/2*(Math.random()<0.5?1:-1);
+          particles.push({
+            x:ship.x+Math.cos(lateralAngle)*8,y:ship.y+Math.sin(lateralAngle)*8,
+            vx:Math.cos(lateralAngle)*0.8,vy:Math.sin(lateralAngle)*0.8,
+            life:0.6,decay:0.12,r:1.5,color:'rgba(180,220,255,0.7)'
+          });
+        }
+      }
+      ship._prevAngle=ship.angle;
     }else{ship.thrusting=false;ship.thrustPower=0;}
   }else{ship.thrusting=false;ship.thrustPower=0;}
   // Drift mode — drag légèrement réduit (on glisse plus)
@@ -2743,7 +2815,7 @@ function updateDebris(dt){
     if(d.hitFlash>0)d.hitFlash-=dt*3;
     const dx=ship.x-d.x,dy=ship.y-d.y,dist=Math.sqrt(dx*dx+dy*dy);
     if(dist<d.r+10){
-      hull=Math.max(0,hull-d.damage*0.15*drainMult*getModuleBonus('armor'));
+      hull=Math.max(0,hull-d.damage*0.15*drainMult*getModuleBonus('armor'));haptic('debris');
       ship.vx+=(dx/dist)*0.4;ship.vy+=(dy/dist)*0.4;
       d.vx-=(dx/dist)*0.5;d.vy-=(dy/dist)*0.5;
       spawnParticles(ship.x,ship.y,'#ff2020',8,2);
@@ -3085,6 +3157,7 @@ const RARE_EVENTS=[
   {name:'anomaly',       minDay:3, weight:2, trigger:()=>spawnAnomalyPlanet()},
   {name:'neutronstar',   minDay:5, weight:1, trigger:()=>addNeutronStar()},
   {name:'phase2',        minDay:1, weight:2, trigger:()=>triggerPhase2Transmission(), minSector:1},
+  {name:'silence',       minDay:3, weight:1, trigger:()=>triggerSilenceRadio()},
 ];
 
 // ── BLOC 1 — Phénomènes cosmologiques ─────────
@@ -4372,6 +4445,7 @@ function getMDWDialog(context){
 }
 
 function mdwSpeak(contextOrText, isRaw=false){
+  if(mdwSilent)return; // silence radio
   const text=isRaw?contextOrText:getMDWDialog(contextOrText);
   if(!text)return;
   mdwDialogQueue.push(text);
@@ -4830,8 +4904,19 @@ function updatePhenomena(dt){
   phenomena=phenomena.filter(p=>{const dx=p.x-ship.x,dy=p.y-ship.y;return Math.sqrt(dx*dx+dy*dy)<Math.max(W,H)*2;});
 }
 
+function getLastWords(){
+  if(hull<=0&&oxygen<=0)return "La coque et l'air. Les deux en même temps. Je n'ai pas eu le temps de noter.";
+  if(hull<=0){
+    const sources=["Un débris. Stupide.","La gravité a eu raison de moi.","Je n'ai pas vu l'impact venir.","La coque a cédé. MDW n'a rien dit."];
+    return sources[Math.floor(Math.random()*sources.length)];
+  }
+  if(oxygen<=0)return "L'oxygène. Il me restait du temps. Ou peut-être pas.";
+  return "Je ne sais pas ce qui s'est passé.";
+}
+
 function checkDead(){
-  if(state==='wormhole')return; // jamais de game over pendant la transition
+  if(zenMode)return; // mode zen — pas de game over
+  if(state==='wormhole')return;
   if(hull<=0||(oxygen<=0&&hull<=0)){
     triggerFlash('#ff2020');spawnParticles(ship.x,ship.y,'#ff2020',30,3);playGameOver();
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
@@ -5139,8 +5224,13 @@ function showCatalogue(){
 
 function showGameOver(){
   document.getElementById('hud').style.opacity='0';
-  // Sauvegarder black box avant le reset
-  lastBlackBox={day:survivalDay,sector:sectorCount,modules:[...installedModules],runNumber:totalRuns,planets:discoveredPlanets};
+  // Sauvegarder black box avec derniers mots
+  lastBlackBox={
+    day:survivalDay,sector:sectorCount,
+    modules:[...installedModules],
+    runNumber:totalRuns,planets:discoveredPlanets,
+    lastWords:getLastWords(),
+  };
   state='dead';screen.classList.remove('hidden');
   titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
   if(!titleLoopRunning)titleLoop();
@@ -5743,21 +5833,40 @@ function drawShip(){
   if(hullMarks.length>0)drawHullMarks(ctx,s);
   // Hublot
   ctx.strokeStyle='#aaffcc';ctx.lineWidth=1;ctx.beginPath();ctx.arc(4*s,0,3*s,0,Math.PI*2);ctx.stroke();
-  // Indicateur drift mode — halo bleuté autour du vaisseau
+  // Indicateur drift mode — halo bleuté prononcé + traînée colorée
   if(driftMode){
-    const pulse=(Math.sin(Date.now()*0.002)+1)*0.5;
-    ctx.strokeStyle=`rgba(64,200,255,${0.2+pulse*0.15})`;ctx.lineWidth=1;
+    const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
+    // Halo externe pulsant
+    const dg=ctx.createRadialGradient(0,0,0,0,0,28*s);
+    dg.addColorStop(0,'rgba(64,200,255,0.08)');
+    dg.addColorStop(0.6,`rgba(64,200,255,${0.04+pulse*0.04})`);
+    dg.addColorStop(1,'transparent');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(0,0,28*s,0,Math.PI*2);ctx.fill();
+    // Cercle pointillé
+    ctx.strokeStyle=`rgba(64,200,255,${0.35+pulse*0.25})`;ctx.lineWidth=1;
+    ctx.shadowColor='#40c8ff';ctx.shadowBlur=6+pulse*4;
     ctx.setLineDash([2,4]);
     ctx.beginPath();ctx.arc(0,0,20*s,0,Math.PI*2);ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash([]);ctx.shadowBlur=0;
+    // Petites particules de drift autour du vaisseau
+    if(Math.random()<0.3){
+      const a=Math.random()*Math.PI*2;
+      ctx.fillStyle=`rgba(64,200,255,${0.3+Math.random()*0.3})`;
+      ctx.beginPath();ctx.arc(Math.cos(a)*18*s,Math.sin(a)*18*s,0.8*s,0,Math.PI*2);ctx.fill();
+    }
   }
 
   // Propulsion
   if(ship.thrusting&&energy>0){
     const fl=(8+ship.thrustPower*14+Math.random()*4)*s;
     const thrustMult=installedModules.includes('thruster')?1.4:1;
-    ctx.strokeStyle=`rgba(255,${Math.floor(170+Math.random()*85)},0,0.8)`;
-    ctx.lineWidth=(2+ship.thrustPower*2)*s;ctx.shadowColor='#ffaa00';ctx.shadowBlur=12;
+    // Couleur flamme selon mode
+    const flameR=driftMode?64:255;
+    const flameG=driftMode?200:Math.floor(170+Math.random()*85);
+    const flameB=driftMode?255:0;
+    ctx.strokeStyle=`rgba(${flameR},${flameG},${flameB},0.85)`;
+    ctx.shadowColor=driftMode?'#40c8ff':'#ffaa00';ctx.shadowBlur=driftMode?8:12;
+    ctx.lineWidth=(2+ship.thrustPower*2)*s;
     ctx.beginPath();ctx.moveTo(-7*s,0);ctx.lineTo(-7*s-fl*thrustMult,(Math.random()-0.5)*4*s);ctx.stroke();
   } else if(!ship.thrusting&&energy<=0){
     // Propulsion d'urgence — flamme orange
@@ -6107,7 +6216,7 @@ function gameLoop(ts){
         updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateMDWSectorDialogs(dt);checkMDWEmergency();checkMDWMeta();
+        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         checkLore();checkEndings();checkContracts();checkGodEncounter();
         updateAmbient();
         if(musicDelay){
@@ -6253,6 +6362,22 @@ function resetGame(){
   Object.keys(upgrades).forEach(k=>upgrades[k]=0);
   Object.values(UPGRADES).forEach(u=>{try{if(u.apply)u.apply();}catch(e){}});
 }
+
+document.getElementById('btn-zen').addEventListener('click',()=>{
+  initAudio();
+  launchSequence((vy)=>{startZenMode();if(vy)ship.vy=vy;ship.angle=-Math.PI/2;});
+});
+
+const hapticBtn=document.getElementById('btn-haptic');
+hapticBtn.textContent=`📳 VIBRATIONS : ${hapticsEnabled?'ON':'OFF'}`;
+hapticBtn.className='haptic-toggle'+(hapticsEnabled?' on':'');
+hapticBtn.addEventListener('click',()=>{
+  hapticsEnabled=!hapticsEnabled;
+  try{localStorage.setItem('vd_haptics',hapticsEnabled?'on':'off');}catch(e){}
+  hapticBtn.textContent=`📳 VIBRATIONS : ${hapticsEnabled?'ON':'OFF'}`;
+  hapticBtn.className='haptic-toggle'+(hapticsEnabled?' on':'');
+  if(hapticsEnabled)haptic('collect');
+});
 
 document.getElementById('btn-reset').addEventListener('click',()=>{
   document.getElementById('reset-confirm').classList.add('visible');
