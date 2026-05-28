@@ -307,6 +307,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
+  <div style="font-size:6px;letter-spacing:2px;color:rgba(0,255,65,0.15);margin-top:3px;">v0.9.1</div>
 </div>
 
 <script>
@@ -781,22 +782,31 @@ function checkExchanges(){
       "Tu peux te connecter au PC de bord ?",
       "J'essaie...");
 
-  // MDW connecté — mission confirmée
+  // MDW s'allume — présente la mission
+  if(mdwFound&&!_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('_intro1_timer')){
+    _exchangesDone.add('_intro1_timer');
+    setTimeout(()=>triggerExchange('mdw_intro1',
+      "",
+      "D'après mes calculs, il est statistiquement probable que votre mission soit de cartographier les planètes et autres phénomènes."),
+    4000);
+  }
+  if(_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('mdw_comment'))
+    triggerExchange('mdw_comment',
+      "Comment peux-tu savoir ça ?",
+      "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
+  if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
+    triggerExchange('mdw_pc',
+      "Tu peux te connecter au PC de bord ?",
+      "J'essaie...");
   if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
     triggerExchange('mdw_pc2',
       "",
       "Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
-
-  // Suite acte 1
-  if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_rentrer')&&survivalDay>=1)
+  if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_rentrer'))
     triggerExchange('mdw_rentrer',
       "MDW comment on rentre sur Terre ?",
       "Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
-  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
-    triggerExchange('mdw_pc2',
-      "",
-      "Je suis connecté. Programme de transmission trouvé.\nModule de collecte 235.\nMission de cartographie confirmée.");
-  if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
+  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
     triggerExchange('mdw_memory',
       "Je ne me souviens de rien. Qui suis-je ?",
       "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
@@ -2819,12 +2829,12 @@ function startGame(){
   if(!zenMode)zenMode=false;
   crackTimer=0;
   // Épave garantie à portée radar — MDW dedans pour le tutorial
-  // Épave MDW — droit devant (nord = angle -PI/2), assez loin pour laisser les journaux défiler
-  // La poussée initiale du vaisseau titre va vers le haut — l'épave est dans cette direction
-  const mdwDist=900+Math.random()*200; // loin — 900 à 1100 unités
+  // Épave MDW — position aléatoire comme les autres épaves
+  const mdwAngle=Math.random()*Math.PI*2;
+  const mdwDist=400+Math.random()*300;
   wrecks.push({
-    x:ship.x+Math.cos(-Math.PI/2)*(mdwDist*0.3), // légèrement décalé horizontalement
-    y:ship.y+Math.sin(-Math.PI/2)*mdwDist,        // principalement vers le haut
+    x:ship.x+Math.cos(mdwAngle)*mdwDist,
+    y:ship.y+Math.sin(mdwAngle)*mdwDist,
     rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
     name:'CSS EREBUS',
     log:'Épave de programme. Robot MDW en hibernation. Durée indéterminée. Cargo intact.',
@@ -4600,8 +4610,7 @@ function initMDW(){
   // Réveil MDW — sobre, juste les systèmes
   const wakeUp=[
     "MDW. Systèmes restaurés.",
-    "Je connais ce programme. Je peux vous aider.",
-    "La mission : cartographier. Chaque planète compte.",
+    "Je m'occupe du vaisseau.",
   ];
   wakeUp.forEach((l,i)=>setTimeout(()=>mdwSpeak(l,true),2000+i*5000));
 
