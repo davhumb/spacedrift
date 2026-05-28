@@ -757,32 +757,7 @@ function checkExchanges(){
   if(!mdwActive||mdwSilent)return;
   if(mdwTypingActive||mdwDialogQueue.length>0)return;
 
-  // Épave — avant MDW
-  if(wrecksFound>=1&&!mdwFound)
-    triggerExchange('pre_mdw',"J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.","");
-
-  // MDW s'allume — il se présente et annonce la mission
-  if(mdwFound&&!_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('_intro1_timer')){
-    _exchangesDone.add('_intro1_timer');
-    setTimeout(()=>triggerExchange('mdw_intro1',
-      "",
-      "D'après mes calculs, il est statistiquement probable que votre mission soit de cartographier les planètes et autres phénomènes."),
-    4000);
-  }
-
-  // Pilote : comment peux-tu savoir ça ?
-  if(_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('mdw_comment'))
-    triggerExchange('mdw_comment',
-      "Comment peux-tu savoir ça ?",
-      "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
-
-  // Pilote : tu peux te connecter au PC ?
-  if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
-    triggerExchange('mdw_pc',
-      "Tu peux te connecter au PC de bord ?",
-      "J'essaie...");
-
-  // MDW s'allume — présente la mission
+  // Séquence acte 1 — MDW s'allume et présente la mission
   if(mdwFound&&!_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('_intro1_timer')){
     _exchangesDone.add('_intro1_timer');
     setTimeout(()=>triggerExchange('mdw_intro1',
@@ -2769,9 +2744,32 @@ function updatePlanets(dt){
 }
 
 // ── Start ────────────────────────────────────
+function startOpeningSequence(){
+  // Série 1 — avant MDW, espacée pour laisser le temps de lire
+  const lines=[
+    {text:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.", label:"JOURNAL", delay:3000},
+    {text:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.", label:"JOURNAL", delay:11000},
+    {text:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous\net certains indicateurs ont l'air d'être HS.", label:"JOURNAL", delay:19000},
+    {text:"J'ai une plaie au front et mon dos me fait souffrir.", label:"JOURNAL", delay:27000},
+  ];
+  lines.forEach(l=>{
+    setTimeout(()=>{
+      if(!journalEl)return;
+      journalFullText=l.text;
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');
+      journalDay.textContent=l.label;
+      journalText.textContent='';
+      journalText.style.color='rgba(0,255,65,0.85)';
+    },l.delay);
+  });
+}
+
 function startGame(){
   document.getElementById('hud').style.opacity='1';
   requestWakeLock();
+  // Séquence d'ouverture — textes de Simon dès le début
+  setTimeout(()=>startOpeningSequence(),1500);
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
   score=0;gameTime=0;difficulty=1;
@@ -4606,6 +4604,17 @@ function initMDW(){
   document.getElementById('hud').appendChild(mdwEl);
   mdwActive=true;
   mdwFound=true;
+
+  // Simon note la découverte — avant que MDW parle
+  setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText="J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.";
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');
+    journalDay.textContent='JOURNAL';
+    journalText.textContent='';
+    journalText.style.color='rgba(0,255,65,0.85)';
+  },500);
 
   // Réveil MDW — sobre, juste les systèmes
   const wakeUp=[
