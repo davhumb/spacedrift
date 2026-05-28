@@ -2959,7 +2959,8 @@ function updateShip(dt){
   const driftDrag=driftMode?DRAG*0.3:DRAG;
   ship.vx*=Math.pow(1-driftDrag,dt*60);ship.vy*=Math.pow(1-driftDrag,dt*60);
   ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
-  ship.trail.push({x:ship.x,y:ship.y});if(ship.trail.length>80)ship.trail.shift();
+  ship.trail.push({x:ship.x,y:ship.y,vx:ship.vx,vy:ship.vy});
+  if(ship.trail.length>150)ship.trail.shift();
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique si lent et proche d'une planète
   if(!dockedPlanet&&!ship.thrusting){
@@ -5336,36 +5337,15 @@ function checkEndings(){
 }
 
 function triggerEnding(ending){
-  // La fin "signal" est une narration — pas un game over
-  if(ending.id==='signal'){
-    writeGlitchText&&writeGlitchText(ending.text,'📡 '+ending.title);
-    logEvent(`📡 ${ending.title}`,'planet');
-    score+=3000;
-    if(mdwActive)setTimeout(()=>mdwSpeak('Le signal. Vous l\'avez atteint.',true),3000);
-    // Pas de game over — le jeu continue
-    return;
-  }
-  // Les autres fins sont des fins narratives vraies
-  setTimeout(()=>{
-    state='dead';
-    screen.classList.remove('hidden');
-    stopAmbient();
-    hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
-    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
-    upgradePoints+=earned;
-    saveGame();
-    screen.innerHTML=`
-      <div class="big-title" style="color:${ending.color};text-shadow:0 0 20px ${ending.color},0 0 60px ${ending.color}44;font-size:clamp(24px,6vw,40px);letter-spacing:3px;">${ending.title}</div>
-      <div class="tagline" style="max-width:320px;line-height:2;white-space:pre-line;text-align:left;font-size:9px;">${ending.text}</div>
-      <div class="tagline" style="color:var(--amber)">SURVIE : ${survivalDay} JOURS · ${sectorCount} SECTEUR${sectorCount>1?'S':''} · 📋 ${catalogueEntries.length} ENTRÉES</div>
-      <div class="tagline" style="color:#00ff41">+${earned} POINTS D'UPGRADE</div>
-      <button class="screen-btn" id="btn-upgrades">[ CONTINUER ]</button>
-      <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-    `;
-    document.getElementById('btn-upgrades').addEventListener('click',()=>showUpgradeScreen());
-    titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
-    if(!titleLoopRunning)titleLoop();
-  },2000);
+  // Toutes les fins sont des moments narratifs — le jeu continue
+  writeGlitchText&&writeGlitchText(ending.text,'◈ '+ending.title);
+  logEvent(`◈ ${ending.title}`,'planet');
+  score+=2000;
+  if(ending.id==='signal'&&mdwActive)
+    setTimeout(()=>mdwSpeak('Le signal. Vous l\'avez atteint.',true),3000);
+  if(ending.id==='cartographe'&&mdwActive)
+    setTimeout(()=>mdwSpeak('Les données sont complètes. Continuez.',true),3000);
+  // Pas de game over — le jeu continue toujours
 }
 
 // ── Catalogue consultable ─────────────────────
@@ -5970,14 +5950,33 @@ function drawPlanets(){
 function drawShip(){
   const [sx,sy]=worldToScreen(ship.x,ship.y);
   ctx.save();
-  // Traînée — plus longue pendant fronde gravitationnelle
-  const trailLen=ship._slingshotTrail>0?Math.min(ship.trail.length,160):ship.trail.length;
+
+  // ── Indicateur vecteur vitesse ──
+  const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  if(speed>0.5){
+    const velAngle=Math.atan2(ship.vy,ship.vx);
+    const velLen=Math.min(40,speed*3)*viewZoom;
+    ctx.strokeStyle=`rgba(0,255,65,${Math.min(0.4,speed*0.03)})`;
+    ctx.lineWidth=0.8;ctx.setLineDash([3,4]);
+    ctx.beginPath();
+    ctx.moveTo(sx,sy);
+    ctx.lineTo(sx+Math.cos(velAngle)*velLen,sy+Math.sin(velAngle)*velLen);
+    ctx.stroke();ctx.setLineDash([]);
+  }
+
+  // ── Traînée — 150 points, dégradé selon vitesse et drift ──
+  const trailLen=ship.trail.length;
+  const trailColor=driftMode?'64,200,255':'0,255,65';
   for(let i=1;i<trailLen;i++){
-    const [tx1,ty1]=worldToScreen(ship.trail[ship.trail.length-trailLen+i-1].x,ship.trail[ship.trail.length-trailLen+i-1].y);
-    const [tx2,ty2]=worldToScreen(ship.trail[ship.trail.length-trailLen+i].x,ship.trail[ship.trail.length-trailLen+i].y);
-    const alpha=(i/trailLen)*(ship._slingshotTrail>0?0.5:0.25);
-    ctx.strokeStyle=`rgba(0,255,65,${alpha})`;
-    ctx.lineWidth=(i/trailLen)*1.5;
+    const pt1=ship.trail[trailLen-trailLen+i-1];
+    const pt2=ship.trail[trailLen-trailLen+i];
+    if(!pt1||!pt2)continue;
+    const [tx1,ty1]=worldToScreen(pt1.x,pt1.y);
+    const [tx2,ty2]=worldToScreen(pt2.x,pt2.y);
+    const frac=i/trailLen;
+    const alpha=frac*(ship._slingshotTrail>0?0.5:driftMode?0.35:0.22);
+    ctx.strokeStyle=`rgba(${trailColor},${alpha})`;
+    ctx.lineWidth=(frac)*1.8*viewZoom;
     ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
   }
   ctx.restore();
@@ -6308,10 +6307,14 @@ function drawRadar(){
   }
 
   rctx.restore();
-  // Écho radar
+  // Clipping final — masquer tout ce qui dépasse le cercle radar
+  rctx.save();
+  rctx.globalCompositeOperation='destination-in';
+  rctx.fillStyle='#ffffff'; // obligatoire pour destination-in
+  rctx.beginPath();rctx.arc(cx,cy,RADAR_R+1,0,Math.PI*2);rctx.fill();
+  rctx.restore();
+  // Écho radar par-dessus le clipping
   drawRareRadarEffects();
-  rctx.save();rctx.globalCompositeOperation='destination-in';
-  rctx.beginPath();rctx.arc(cx,cy,RADAR_R+1,0,Math.PI*2);rctx.fill();rctx.restore();
 }
 
 // ── HUD ──────────────────────────────────────
