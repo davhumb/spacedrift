@@ -572,7 +572,83 @@ const titleCanvas=document.getElementById('title-canvas');
 const tctx=titleCanvas?titleCanvas.getContext('2d'):null;
 const launchFade=document.getElementById('launch-fade');
 
-// ── Effets spéciaux des secteurs ─────────────
+// ── Convergence — deux univers superposés ─────
+let convergenceActive=false;
+let convergenceT=0;
+let convergenceUniverse=null;
+let convergenceTimer=1500+Math.random()*600; // ~25-35 min entre chaque
+
+function updateConvergence(dt){
+  convergenceTimer-=dt;
+  if(convergenceTimer<=0&&!convergenceActive&&survivalDay>=5){
+    if(Math.random()<0.4){
+      startConvergence();
+    }
+    convergenceTimer=1200+Math.random()*600;
+  }
+  if(!convergenceActive)return;
+  convergenceT+=dt;
+  if(convergenceT>60){
+    endConvergence();
+  }
+}
+
+function startConvergence(){
+  convergenceActive=true;convergenceT=0;
+  // Choisir un univers différent
+  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&u.id!==15);
+  convergenceUniverse=available[Math.floor(Math.random()*available.length)];
+  logEvent(`🌌 CONVERGENCE — ${convergenceUniverse.name}`,'warn');
+  if(mdwActive)setTimeout(()=>mdwSpeak('Anomalie dimensionnelle. Deux secteurs se superposent.',true),500);
+  // Appliquer les règles hybrides — gravité moyenne des deux
+  const u1=UNIVERSES[currentUniverse];
+  const u2=convergenceUniverse;
+  window._universeMult.grav=((u1.gravMult||1)+(u2.gravMult||1))/2;
+  window._universeMult.debris=((u1.debrisMult||1)+(u2.debrisMult||1))/2;
+}
+
+function endConvergence(){
+  convergenceActive=false;convergenceUniverse=null;convergenceT=0;
+  // Restaurer les règles de l'univers actuel
+  const u=UNIVERSES[currentUniverse];
+  window._universeMult.grav=u.gravMult||1;
+  window._universeMult.debris=u.debrisMult||1;
+  logEvent('🌌 CONVERGENCE TERMINÉE','ok');
+}
+
+function drawConvergence(){
+  if(!convergenceActive||!convergenceUniverse)return;
+  const progress=convergenceT/60; // 0→1
+  const peakAlpha=progress<0.3?progress/0.3:progress>0.7?(1-progress)/0.3:1;
+
+  // Overlay des couleurs du second univers
+  ctx.save();
+  ctx.globalAlpha=peakAlpha*0.12;
+  // Gradient diagonal
+  const grd=ctx.createLinearGradient(0,0,W,H);
+  grd.addColorStop(0,convergenceUniverse.bg);
+  grd.addColorStop(0.5,'transparent');
+  grd.addColorStop(1,convergenceUniverse.primary+'44');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+
+  // Étoiles du second univers en transparence
+  const uColors=convergenceUniverse.starColors||['#ffffff'];
+  for(let i=0;i<20;i++){
+    const x=((ship.x*0.05+i*137)%W+W)%W;
+    const y=((ship.y*0.05+i*97)%H+H)%H;
+    ctx.fillStyle=uColors[i%uColors.length];
+    ctx.globalAlpha=peakAlpha*0.2;
+    ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Indicateur discret
+  ctx.fillStyle=convergenceUniverse.primary;
+  ctx.globalAlpha=peakAlpha*0.6;
+  ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='right';
+  ctx.fillText(`◈ ${convergenceUniverse.name}`,W-8,H-50);
+  ctx.globalAlpha=1;ctx.restore();
+}
 function updateSpecialSectors(dt){
   if(window._voidPull&&state==='playing'){
     ship.vx+=window._voidPull.vx*dt*60;
@@ -1111,6 +1187,14 @@ let maxOxygen=100;
 // ── localStorage ──────────────────────────────
 function saveGame(){
   try{
+    // Sauvegarder aussi une black box du run actuel si on a survécu assez longtemps
+    const blackBox=survivalDay>=3?{
+      day:survivalDay,
+      sector:sectorCount,
+      modules:[...(installedModules||[])],
+      runNumber:totalRuns,
+      planets:discoveredPlanets,
+    }:null;
     localStorage.setItem('voidDrift_v1',JSON.stringify({
       upgrades,upgradePoints,
       installedModules:installedModules||[],
@@ -1118,9 +1202,12 @@ function saveGame(){
       unlockedAchIds:[...(unlockedAch||new Set())],
       catalogue:catalogueEntries||[],
       pilotName,totalRuns,totalDays,
+      lastBlackBox:blackBox,
     }));
   }catch(e){}
 }
+
+let lastBlackBox=null; // données du run précédent
 function loadGame(){
   try{
     const raw=localStorage.getItem('voidDrift_v1');
@@ -1133,6 +1220,7 @@ function loadGame(){
     if(d.unlockedAchIds&&unlockedAch)d.unlockedAchIds.forEach(id=>unlockedAch.add(id));
     if(d.catalogue)catalogueEntries=d.catalogue;
     if(d.pilotName)pilotName=d.pilotName;
+    if(d.lastBlackBox)lastBlackBox=d.lastBlackBox;
     if(typeof d.totalRuns==='number')totalRuns=d.totalRuns;
     if(typeof d.totalDays==='number')totalDays=d.totalDays;
   }catch(e){}
@@ -1361,8 +1449,8 @@ function activateSignal(){
   signalActive=true;
   const angle=Math.random()*Math.PI*2;
   signalPos={x:ship.x+Math.cos(angle)*1200,y:ship.y+Math.sin(angle)*1200};
-  signalBannerEl2.classList.add('visible');
-  setTimeout(()=>signalBannerEl2.classList.remove('visible'),5000);
+  signalBannerEl2.style.display='none'; // plus de bannière
+  setTimeout(()=>signalBannerEl2.classList.remove('visible'),100);
   logEvent('📡 SIGNAL DÉTECTÉ','planet');
   mdwReact('signal');
   journalFullText="Jour "+survivalDay+". Un signal. Quelque chose dans le vide répond. Je dois y aller.";
@@ -1668,12 +1756,20 @@ function drawSecondaryWormholes(){
       ctx.fillText(`${Math.floor(w.life)}s`,sx,sy+r+10);
       ctx.restore();
     }
-    // Sur le radar
+    // Sur le radar — point pulsant avec couleur destination
     const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
     const rdx=(w.x-ship.x)/RADAR_RANGE*32,rdy=(w.y-ship.y)/RADAR_RANGE*32;
     if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
-      rctx.fillStyle=u.primary;rctx.shadowColor=u.primary;rctx.shadowBlur=6;
-      rctx.beginPath();rctx.arc(35+rdx,35+rdy,4,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
+      const t=Date.now()*0.001;
+      const pulse=(Math.sin(t*4)+1)*0.5; // pulse plus rapide pour se distinguer
+      rctx.fillStyle=u.primary;
+      rctx.globalAlpha=0.4+pulse*0.6;
+      rctx.shadowColor=u.primary;rctx.shadowBlur=6+pulse*4;
+      // Losange pour distinguer des débris (cercle) et planètes
+      rctx.save();rctx.translate(35+rdx,35+rdy);rctx.rotate(Math.PI/4);
+      rctx.fillRect(-3,-3,6,6);
+      rctx.restore();
+      rctx.globalAlpha=1;rctx.shadowBlur=0;
     }
   }
 }
@@ -2386,6 +2482,9 @@ function startGame(){
   rareEventTimer=30+Math.random()*30;
   comets=[];quasars=[];auroraAngle=0;phenomena=[];radarGlitch=0;
   dockedPlanet=null;dockTimer=0;dockProgress=0;
+  convergenceActive=false;convergenceT=0;convergenceUniverse=null;
+  convergenceTimer=1500+Math.random()*600;
+  mdwSectorDialogTimer=30;mdwSectorDialogUsed=new Set();
   godSequenceActive=false;godFlareActive=false;godSequenceT=0;
   window._godMode=false;window._godEncounterStarted=false;
   mdwTrust=50;mdwEmergencyUsed=false;mdwMetaSaid=new Set();
@@ -2398,10 +2497,28 @@ function startGame(){
     rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
     name:'CSS EREBUS',
     log:'Épave de programme. Robot MDW en hibernation. Durée indéterminée. Cargo intact.',
-    hasPassenger:false,hasResources:true,moduleKey:null,
+    hasResources:true,moduleKey:null,
     discovered:false,pulse:Math.random()*Math.PI*2,r:20,
     isMDWWreck:true,
   });
+
+  // Black box — épave du run précédent, plus loin
+  if(lastBlackBox&&lastBlackBox.day>=3){
+    const bbAngle=Math.random()*Math.PI*2;
+    const bbDist=600+Math.random()*400;
+    const bbLog=`Expédition #${lastBlackBox.runNumber||'?'}. Jour ${lastBlackBox.day}. Secteur ${lastBlackBox.sector}. ${lastBlackBox.planets} planète${lastBlackBox.planets>1?'s':''} découverte${lastBlackBox.planets>1?'s':''}.\n\nLe pilote n'est pas rentré.`;
+    wrecks.push({
+      x:ship.x+Math.cos(bbAngle)*bbDist,
+      y:ship.y+Math.sin(bbAngle)*bbDist,
+      rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
+      name:`ÉPAVE INCONNUE — EXP.#${lastBlackBox.runNumber||'?'}`,
+      log:bbLog,
+      hasResources:true,
+      moduleKey:lastBlackBox.modules?.length?lastBlackBox.modules[Math.floor(Math.random()*lastBlackBox.modules.length)]:null,
+      discovered:false,pulse:Math.random()*Math.PI*2,r:22,
+      isBlackBox:true,
+    });
+  }
   spawnedRelics=0;relicSpawnTimer=200+Math.random()*200;
   veraFragmentsFound=[];
   hullMarks=[];
@@ -4014,8 +4131,8 @@ let wrecksFound=0;
 function spawnWreck(){
   const angle=Math.random()*Math.PI*2;
   const dist=400+Math.random()*500;
-  // Modules rares — 15% de chance seulement
-  const moduleKey=Math.random()<0.15?getRandomModule():null;
+  // Modules — 35% de chance, plus généreux
+  const moduleKey=Math.random()<0.35?getRandomModule():null;
   wrecks.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
@@ -4056,6 +4173,15 @@ function updateWrecks(dt){
       // MDW — première épave
       if((!mdwFound&&wrecksFound===1)||w.isMDWWreck){
         setTimeout(()=>initMDW(),1500);
+      }
+      // Black box — MDW la reconnaît
+      if(w.isBlackBox){
+        setTimeout(()=>{
+          writeGlitchText&&writeGlitchText(w.log,`📦 ${w.name}`);
+          if(mdwActive)setTimeout(()=>mdwSpeak('Je connais cette épave.',true),2000);
+          logEvent(`📦 BLACK BOX RÉCUPÉRÉE`,'planet');
+          addToCatalogue&&addToCatalogue('blackbox',w.name,w.log,'📦');
+        },1000);
       }
       // Fragment de VERA — une épave sur 5 environ
       if(wrecksFound>1&&Math.random()<0.2)injectVeraFragment(w);
@@ -4443,37 +4569,66 @@ const PHENOMENON_TYPES=[
        }
      }
 
-     // Accrétion passive — grossit lentement même sans avaler
-     p.mass+=0.8*dt; // 0.8 unité/seconde — visible sur 3 minutes
+     // Accrétion passive — plus agressive
+     p.mass+=1.5*dt;
+
+     // ── Avaler les planètes si assez gros ──
+     if(p.mass>6000){
+       for(let i=planets.length-1;i>=0;i--){
+         const pl=planets[i];
+         if(!pl.type)continue;
+         const pdx=pl.x-p.x,pdy=pl.y-p.y,pd=Math.sqrt(pdx*pdx+pdy*pdy);
+         // Attirer les planètes
+         if(pd<gravityRange(p.mass)*0.8){
+           const f=G_CONST*p.mass*0.3/Math.max(pdx*pdx+pdy*pdy,500);
+           pl.x+=pdx/pd*(-f)*dt*60*50;pl.y+=pdy/pd*(-f)*dt*60*50;
+         }
+         if(pd<p.horizonR+pl.r){
+           // Planète avalée
+           const massGain=pl.r*30;
+           p.mass+=massGain;
+           logEvent(`🌀 PLANÈTE ABSORBÉE — ${pl.name}`,'danger');
+           spawnParticles(pl.x,pl.y,pl.type.colors?.[0]||'#8820ff',40,3);
+           triggerFlash('#8820ff',0.3);
+           p._shockwaves=p._shockwaves||[];
+           p._shockwaves.push({r:p.horizonR,maxR:p.horizonR*8,alpha:0.9});
+           if(mdwActive)setTimeout(()=>mdwSpeak(`${pl.name} absorbée.`,true),500);
+           planets.splice(i,1);
+         }
+       }
+     }
 
      // Ondes de choc
      p._shockwaves=p._shockwaves||[];
-     for(const sw of p._shockwaves){sw.r+=4*dt*60;sw.alpha-=0.012*dt*60;}
+     for(const sw of p._shockwaves){sw.r+=5*dt*60;sw.alpha-=0.01*dt*60;}
      p._shockwaves=p._shockwaves.filter(sw=>sw.alpha>0);
 
-     // Croissance très visible
-     const targetR=22+Math.log(Math.max(1,p.mass/2000))*20;
-     p.r+=(Math.max(22,targetR)-p.r)*0.02*dt*60;
+     // Croissance — logarithmique mais plus dramatique
+     const growthFactor=Math.log(Math.max(1,p.mass/2000))*25;
+     const targetR=22+growthFactor;
+     p.r+=(Math.max(22,targetR)-p.r)*0.025*dt*60;
      p.horizonR=p.r*2.5;
      BODY_MASSES.blackhole=p.mass;
 
-     // MDW commente la croissance
+     // ── Seuils MDW dramatiques ──
      if(p.mass>3000&&p.lastMDWComment<1){
        p.lastMDWComment=1;
-       if(typeof mdwActive!=='undefined'&&mdwActive)
-         setTimeout(()=>mdwSpeak('Le trou noir grandit. Éloignez-vous.',true),500);
+       if(mdwActive)setTimeout(()=>mdwSpeak('Le trou noir grossit.',true),500);
      }
-     if(p.mass>5000&&p.lastMDWComment<2){
+     if(p.mass>6000&&p.lastMDWComment<2){
        p.lastMDWComment=2;
-       if(typeof mdwActive!=='undefined'&&mdwActive)
-         setTimeout(()=>mdwSpeak('Il a doublé. Tout ce qui s\'approche est perdu.',true),500);
-       logEvent('🌀 TROU NOIR EN EXPANSION','danger');
+       if(mdwActive)setTimeout(()=>mdwSpeak('Il est capable d\'absorber les planètes maintenant.',true),500);
+       logEvent('🌀 TROU NOIR — MASSE CRITIQUE','danger');
      }
-     if(p.mass>8000&&p.lastMDWComment<3){
+     if(p.mass>12000&&p.lastMDWComment<3){
        p.lastMDWComment=3;
-       if(typeof mdwActive!=='undefined'&&mdwActive)
-         setTimeout(()=>mdwSpeak('Anomalie critique. Ce secteur est dangereux.',true),500);
-       triggerFlash('#8820ff',0.15);
+       if(mdwActive)setTimeout(()=>mdwSpeak('Je recommande de quitter ce secteur.',true),500);
+       logEvent('🌀 TROU NOIR INSTABLE','danger');
+       triggerFlash('#8820ff',0.2);
+     }
+     if(p.mass>20000&&p.lastMDWComment<4){
+       p.lastMDWComment=4;
+       if(mdwActive)setTimeout(()=>mdwSpeak('Il va tout avaler.',true),500);
      }
 
      // Avaler le vaisseau si dans l'horizon
@@ -4854,6 +5009,38 @@ const ENDINGS={
 
 let currentEnding=null;
 
+const MDW_SECTOR_DIALOGS={
+  5:["Je ne reconnais aucune de ces étoiles.","Elles sont toutes mortes.","Je me demande si c'est ce qui attend tout le reste."],
+  6:["Mes capteurs retournent des données contradictoires.","Je détecte ma propre position à deux endroits.","Quelque chose inverse les références ici."],
+  7:["Trois champs gravitationnels se chevauchent.","Restez attentif. Les planètes bougent vite."],
+  8:["Ces étoiles ont plusieurs milliards d'années.","Tout ici est en train de mourir lentement."],
+  9:["Le radar capte tout. Je ne sais plus quoi filtrer.","Il y a quelque chose au centre. Je ne sais pas ce que c'est."],
+  10:["Rien sur les capteurs. Et pourtant.","Le vide absolu n'existe pas. Il y a toujours quelque chose."],
+  11:["Le temps se courbe ici. Je le mesure.","Il faut moins d'O₂. Le temps est plus lent pour nous."],
+  12:["Je ne peux plus distinguer le signal du bruit.","Mes filtres sont saturés. Je travaille à l'aveugle."],
+  13:["Température ambiante critique. Restez en mouvement.","Ce secteur brûle. Pas d'étoile visible. Juste la chaleur."],
+  14:["Je détecte des doublons sur tous les capteurs.","Chaque objet a un reflet. Je ne sais pas où il se trouve."],
+  15:["...","Je ne sais pas.","Continuez.","Je ne vois plus d'étoiles dans cette direction."],
+};
+let mdwSectorDialogTimer=0;
+let mdwSectorDialogUsed=new Set();
+
+function updateMDWSectorDialogs(dt){
+  if(!mdwActive)return;
+  const dialogs=MDW_SECTOR_DIALOGS[currentUniverse];
+  if(!dialogs)return;
+  mdwSectorDialogTimer-=dt;
+  if(mdwSectorDialogTimer<=0){
+    const available=dialogs.filter((_,i)=>!mdwSectorDialogUsed.has(`${currentUniverse}:${i}`));
+    if(available.length>0){
+      const idx=Math.floor(Math.random()*available.length);
+      mdwSpeak(available[idx],true);
+      mdwSectorDialogUsed.add(`${currentUniverse}:${dialogs.indexOf(available[idx])}`);
+    }
+    mdwSectorDialogTimer=50+Math.random()*70;
+  }
+}
+
 function checkEndings(){
   if(currentEnding)return;
   for(const [key,ending] of Object.entries(ENDINGS)){
@@ -4928,6 +5115,8 @@ function showCatalogue(){
 
 function showGameOver(){
   document.getElementById('hud').style.opacity='0';
+  // Sauvegarder black box avant le reset
+  lastBlackBox={day:survivalDay,sector:sectorCount,modules:[...installedModules],runNumber:totalRuns,planets:discoveredPlanets};
   state='dead';screen.classList.remove('hidden');
   titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
   if(!titleLoopRunning)titleLoop();
@@ -5114,53 +5303,98 @@ function drawPhenomena(ts){
     }
     else if(p.name==='TROU NOIR'){
       const bhMass=p.mass||BODY_MASSES.blackhole;
-      const growthFactor=Math.min(3,bhMass/2000); // 1 à 3 selon la taille
-      // Disque d'accrétion — plus lumineux si gros
-      for(let i=3;i>=1;i--){
-        const ag=ctx.createRadialGradient(sx,sy,p.r*viewZoom*i*0.4,sx,sy,p.r*viewZoom*i*1.4);
-        ag.addColorStop(0,`rgba(136,32,255,${0.1+growthFactor*0.08})`);
-        ag.addColorStop(0.5,`rgba(80,0,180,${0.06+growthFactor*0.04})`);
+      const growthFactor=Math.min(6,bhMass/2000); // jusqu'à 6× selon la masse
+      const isMassive=bhMass>6000;
+      const isGiant=bhMass>12000;
+      const isMonstrous=bhMass>20000;
+
+      // Distorsion gravitationnelle — grille déformée autour si gros
+      if(isMassive){
+        const distortR=p.r*viewZoom*(4+growthFactor);
+        for(let i=0;i<8;i++){
+          const a=i/8*Math.PI*2+p.lensAngle*0.3;
+          const lg=ctx.createLinearGradient(
+            sx+Math.cos(a)*distortR,sy+Math.sin(a)*distortR,sx,sy);
+          lg.addColorStop(0,'transparent');
+          lg.addColorStop(1,`rgba(80,0,180,${0.06+growthFactor*0.02})`);
+          ctx.strokeStyle=lg;ctx.lineWidth=0.5;
+          ctx.beginPath();ctx.moveTo(sx+Math.cos(a)*distortR,sy+Math.sin(a)*distortR);
+          ctx.lineTo(sx,sy);ctx.stroke();
+        }
+      }
+
+      // Disque d'accrétion — plus large, plus lumineux
+      const diskLayers=isGiant?5:isMassive?4:3;
+      for(let i=diskLayers;i>=1;i--){
+        const ag=ctx.createRadialGradient(sx,sy,p.r*viewZoom*i*0.3,sx,sy,p.r*viewZoom*i*(1.5+growthFactor*0.2));
+        ag.addColorStop(0,`rgba(180,60,255,${0.12+growthFactor*0.04})`);
+        ag.addColorStop(0.4,`rgba(100,0,220,${0.08+growthFactor*0.03})`);
         ag.addColorStop(1,'transparent');
-        ctx.fillStyle=ag;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom*i*1.4,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=ag;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom*i*(1.5+growthFactor*0.2),0,Math.PI*2);ctx.fill();
       }
-      // Halo rouge de Hawking si très gros
+
+      // Halo rouge chaud si très gros
       if(growthFactor>1.5){
-        const hg=ctx.createRadialGradient(sx,sy,p.r*viewZoom*3,sx,sy,p.r*viewZoom*5);
-        hg.addColorStop(0,`rgba(255,80,0,${(growthFactor-1.5)*0.06})`);
+        const hg=ctx.createRadialGradient(sx,sy,p.r*viewZoom*2,sx,sy,p.r*viewZoom*(4+growthFactor));
+        hg.addColorStop(0,`rgba(255,100,0,${Math.min(0.25,(growthFactor-1.5)*0.05)})`);
+        hg.addColorStop(0.5,`rgba(255,40,0,${Math.min(0.1,(growthFactor-1.5)*0.02)})`);
         hg.addColorStop(1,'transparent');
-        ctx.fillStyle=hg;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom*5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=hg;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom*(4+growthFactor),0,Math.PI*2);ctx.fill();
       }
+
+      // Halo blanc monstrueux si énorme
+      if(isMonstrous){
+        const mg=ctx.createRadialGradient(sx,sy,p.r*viewZoom*4,sx,sy,p.r*viewZoom*10);
+        mg.addColorStop(0,`rgba(255,255,255,0.08)`);
+        mg.addColorStop(1,'transparent');
+        ctx.fillStyle=mg;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom*10,0,Math.PI*2);ctx.fill();
+      }
+
       ctx.translate(sx,sy);
-      // Lensing — plus d'anneaux si plus gros
-      const rings=Math.floor(3+growthFactor);
+
+      // Lensing — anneaux qui tournent
+      const rings=Math.floor(3+growthFactor*0.8);
       for(let i=0;i<rings;i++){
         ctx.save();ctx.rotate(p.lensAngle+i*Math.PI*2/rings);
-        ctx.strokeStyle=`rgba(136,32,255,${0.12+i*0.03})`;ctx.lineWidth=1;
-        ctx.beginPath();ctx.ellipse(0,0,p.r*viewZoom*2.5,p.r*viewZoom*(0.4+i*0.1),0,0,Math.PI*2);ctx.stroke();
+        const opacity=0.08+i*0.025;
+        ctx.strokeStyle=`rgba(180,60,255,${opacity})`;ctx.lineWidth=0.8+i*0.1;
+        const rx=p.r*viewZoom*(2+growthFactor*0.3);
+        const ry=p.r*viewZoom*(0.35+i*0.08);
+        ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.stroke();
         ctx.restore();
       }
+
       // Noyau noir absolu
       ctx.fillStyle='#000000';ctx.beginPath();ctx.arc(0,0,p.r*viewZoom,0,Math.PI*2);ctx.fill();
-      // Bordure violette pulsée — plus brillante si gros
-      ctx.strokeStyle='#8820ff';ctx.lineWidth=1+growthFactor*0.5;
-      ctx.shadowColor='#8820ff';ctx.shadowBlur=10+growthFactor*15;
+
+      // Bordure — plus brillante et large selon la masse
+      const borderWidth=1+growthFactor*0.8;
+      const glowRadius=12+growthFactor*20;
+      ctx.strokeStyle=isGiant?'#ff4488':isMassive?'#cc44ff':'#8820ff';
+      ctx.lineWidth=borderWidth;
+      ctx.shadowColor=isGiant?'#ff4488':isMassive?'#cc44ff':'#8820ff';
+      ctx.shadowBlur=glowRadius;
       ctx.beginPath();ctx.arc(0,0,p.r*viewZoom,0,Math.PI*2);ctx.stroke();
-      // Horizon des événements — cercle pointillé visible
-      ctx.strokeStyle=`rgba(136,32,255,${0.3+pulse*0.2})`;ctx.lineWidth=0.5;
+
+      // Horizon des événements
+      ctx.strokeStyle=`rgba(136,32,255,${0.2+pulse*0.15})`;ctx.lineWidth=0.5;
       ctx.setLineDash([3,5]);
       ctx.beginPath();ctx.arc(0,0,p.horizonR*viewZoom,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
-      // Indicateur de masse si proche
+
+      // Label masse + niveau de danger
       const distToShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
-      if(distToShip<600){
-        ctx.fillStyle=`rgba(136,32,255,${Math.min(1,(600-distToShip)/300)})`;
+      if(distToShip<Math.max(800,p.r*20)){
+        const dangerLabel=isMonstrous?'⚠ CRITIQUE':isGiant?'⚠ GÉANT':isMassive?'EN EXPANSION':'';
+        ctx.fillStyle=`rgba(${isGiant?'255,68,136':'136,32,255'},${Math.min(1,(Math.max(800,p.r*20)-distToShip)/400)})`;
         ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='center';ctx.shadowBlur=0;
-        ctx.fillText(`M:${Math.floor(bhMass)}`,0,p.r*viewZoom+14);
+        ctx.fillText(`M:${Math.floor(bhMass)} ${dangerLabel}`,0,p.r*viewZoom+18);
       }
+
       // Ondes de choc d'absorption
       for(const sw of (p._shockwaves||[])){
         ctx.strokeStyle=`rgba(136,32,255,${sw.alpha})`;
-        ctx.lineWidth=1;ctx.shadowColor='#8820ff';ctx.shadowBlur=6;
+        ctx.lineWidth=sw.alpha*2;ctx.shadowColor='#8820ff';ctx.shadowBlur=8;
         ctx.beginPath();ctx.arc(0,0,sw.r*viewZoom,0,Math.PI*2);ctx.stroke();
       }
     }
@@ -5571,39 +5805,39 @@ function drawTouchTarget(){
 
 function drawSignal(){
   if(!signalActive||!signalPos||signalReached)return;
-  const [sx,sy]=worldToScreen(signalPos.x,signalPos.y);
-  const t=Date.now()*0.001;
-  const pulse=(Math.sin(t*2)+1)*0.5;
-  ctx.save();
-  // Halo pulsé
-  const grd=ctx.createRadialGradient(sx,sy,0,sx,sy,(30+pulse*20)*viewZoom);
-  grd.addColorStop(0,'rgba(255,170,0,0.3)');grd.addColorStop(1,'transparent');
-  ctx.fillStyle=grd;ctx.beginPath();ctx.arc(sx,sy,(30+pulse*20)*viewZoom,0,Math.PI*2);ctx.fill();
-  // Croix clignotante
-  ctx.strokeStyle=`rgba(255,170,0,${0.6+pulse*0.4})`;ctx.lineWidth=1.5;
-  ctx.shadowColor='#ffaa00';ctx.shadowBlur=10+pulse*8;
-  const s=10*viewZoom;
-  ctx.beginPath();ctx.moveTo(sx-s,sy);ctx.lineTo(sx+s,sy);ctx.moveTo(sx,sy-s);ctx.lineTo(sx,sy+s);ctx.stroke();
-  ctx.beginPath();ctx.arc(sx,sy,s*0.7,0,Math.PI*2);ctx.stroke();
-  // Label si proche
   const dist=Math.sqrt((signalPos.x-ship.x)**2+(signalPos.y-ship.y)**2);
-  if(dist<600){
-    ctx.fillStyle='#ffaa00';ctx.font=`8px 'Share Tech Mono'`;
-    ctx.textAlign='center';ctx.shadowBlur=0;
-    ctx.fillText(`📡 ${Math.floor(dist)}u`,sx,sy-(s+14));
+  // Visible sur le canvas seulement si dans le champ de vision
+  const [sx,sy]=worldToScreen(signalPos.x,signalPos.y);
+  if(sx>-50&&sx<W+50&&sy>-50&&sy<H+50){
+    const t=Date.now()*0.001;
+    const pulse=(Math.sin(t*2)+1)*0.5;
+    ctx.save();
+    // Halo pulsé — discret
+    const grd=ctx.createRadialGradient(sx,sy,0,sx,sy,(20+pulse*15)*viewZoom);
+    grd.addColorStop(0,'rgba(255,170,0,0.2)');grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(sx,sy,(20+pulse*15)*viewZoom,0,Math.PI*2);ctx.fill();
+    // Croix — seulement si très proche
+    if(dist<400){
+      ctx.strokeStyle=`rgba(255,170,0,${0.5+pulse*0.3})`;ctx.lineWidth=1;
+      ctx.shadowColor='#ffaa00';ctx.shadowBlur=6+pulse*4;
+      const s=8*viewZoom;
+      ctx.beginPath();ctx.moveTo(sx-s,sy);ctx.lineTo(sx+s,sy);ctx.moveTo(sx,sy-s);ctx.lineTo(sx,sy+s);ctx.stroke();
+      ctx.fillStyle='#ffaa00';ctx.font=`7px 'Share Tech Mono'`;
+      ctx.textAlign='center';ctx.shadowBlur=0;
+      ctx.fillText(`📡 ${Math.floor(dist)}u`,sx,sy-(s+10));
+    }
+    ctx.restore();
   }
-  // Ligne de cap depuis vaisseau
-  const [wx,wy]=worldToScreen(ship.x,ship.y);
-  ctx.strokeStyle='rgba(255,170,0,0.15)';ctx.lineWidth=1;ctx.setLineDash([6,8]);
-  ctx.beginPath();ctx.moveTo(wx,wy);ctx.lineTo(sx,sy);ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-  // Point sur le radar
-  const rdx=(signalPos.x-ship.x)/500*44,rdy=(signalPos.y-ship.y)/500*44;
-  if(Math.sqrt(rdx*rdx+rdy*rdy)<44){
-    rctx.fillStyle=`rgba(255,170,0,${0.6+pulse*0.4})`;
-    rctx.shadowColor='#ffaa00';rctx.shadowBlur=6;
-    rctx.beginPath();rctx.arc(35+rdx,45+rdy,4,0,Math.PI*2);rctx.fill();
+  // Sur le radar — point discret qui pulse
+  const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
+  const rdx=(signalPos.x-ship.x)/RADAR_RANGE*32;
+  const rdy=(signalPos.y-ship.y)/RADAR_RANGE*32;
+  if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
+    const t=Date.now()*0.001;
+    const pulse=(Math.sin(t*3)+1)*0.5;
+    rctx.fillStyle=`rgba(255,170,0,${0.4+pulse*0.5})`;
+    rctx.shadowColor='#ffaa00';rctx.shadowBlur=4;
+    rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();
     rctx.shadowBlur=0;
   }
 }
@@ -5670,6 +5904,29 @@ function drawRadar(){
     rctx.fillStyle='#00ff41';rctx.shadowColor='#00ff41';rctx.shadowBlur=4;
     rctx.beginPath();rctx.arc(cx,cy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
   }
+
+  // ── Points directeurs sur le cadre — trous de ver hors portée ──
+  const allWormholes=[
+    ...(secondaryWormholes||[]).map(w=>({x:w.x,y:w.y,color:UNIVERSES[w.targetUniverse]?.primary||'#ffffff'})),
+    ...(signalActive&&signalPos&&!signalReached?[{x:signalPos.x,y:signalPos.y,color:'#ffaa00'}]:[]),
+  ];
+  for(const wh of allWormholes){
+    const dx=wh.x-ship.x,dy=wh.y-ship.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const radarDist=Math.sqrt((dx/RADAR_RANGE*RADAR_R)**2+(dy/RADAR_RANGE*RADAR_R)**2);
+    if(radarDist<=RADAR_R)continue; // déjà visible dans le radar
+    // Projeter sur le bord du cercle
+    const angle=Math.atan2(dy,dx);
+    const bx=cx+Math.cos(angle)*(RADAR_R-2);
+    const by=cy+Math.sin(angle)*(RADAR_R-2);
+    const pulse=(Math.sin(Date.now()*0.004)+1)*0.5;
+    rctx.fillStyle=wh.color;
+    rctx.globalAlpha=0.4+pulse*0.5;
+    rctx.shadowColor=wh.color;rctx.shadowBlur=4;
+    rctx.beginPath();rctx.arc(bx,by,2.5,0,Math.PI*2);rctx.fill();
+    rctx.globalAlpha=1;rctx.shadowBlur=0;
+  }
+
   rctx.restore();
   // Écho radar
   drawRareRadarEffects();
@@ -5789,10 +6046,10 @@ function gameLoop(ts){
       if(state==='playing'){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateResources(dt);updateDebris(dt);updateCapsules(dt);
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
-        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);checkMDWEmergency();checkMDWMeta();
+        updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateMDWSectorDialogs(dt);checkMDWEmergency();checkMDWMeta();
         checkLore();checkEndings();checkContracts();checkGodEncounter();
         updateAmbient();
         if(musicDelay){
@@ -5806,7 +6063,7 @@ function gameLoop(ts){
         checkDead();
       }
       drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
-      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawPlanets();
+      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
       drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
