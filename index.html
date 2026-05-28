@@ -26,11 +26,11 @@
   #radar-planets{font-size:6px;letter-spacing:1px;color:#a070ff;text-align:center;}
 
   /* JOURNAL — bas gauche */
-  #journal{position:absolute;bottom:72px;left:12px;width:190px;pointer-events:none;display:none;z-index:10;}
+  #journal{position:absolute;top:110px;left:10px;width:200px;pointer-events:none;display:none;z-index:10;}
   #journal.active{display:block;}
-  #journal-inner{background:rgba(0,9,2,0.95);border:1px solid rgba(0,255,65,0.2);border-left:2px solid var(--green-dim);padding:10px 12px;}
-  #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:5px;}
-  #journal-text{font-size:11px;color:var(--green);line-height:1.7;letter-spacing:0.3px;min-height:40px;max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,255,65,0.2) transparent;}
+  #journal-inner{background:transparent;padding:4px 0;}
+  #journal-day{font-size:7px;letter-spacing:2px;color:var(--green-dim);margin-bottom:3px;opacity:0.6;}
+  #journal-text{font-size:10px;color:var(--green);line-height:1.6;letter-spacing:0.2px;opacity:0.85;text-shadow:0 0 8px rgba(0,255,65,0.3);}
 
   /* GAUGES */
   #gauges{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:16px;padding:8px 12px;background:rgba(0,9,2,0.7);}
@@ -754,80 +754,61 @@ function triggerExchange(id, pilotLine, mdwLine, delay=2500){
 
 function checkExchanges(){
   if(!mdwActive||mdwSilent)return;
+  if(mdwTypingActive||mdwDialogQueue.length>0)return;
 
-  if(wrecksFound===1)
-    triggerExchange('wreck1',
-      "MDW, tu connais cette épave ?",
-      "Les expéditions précédentes ont toutes laissé des traces. C'est normal.");
+  // Épave — avant MDW
+  if(wrecksFound>=1&&!mdwFound)
+    triggerExchange('pre_mdw',"J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.","");
 
-  // Acte 1 — premières questions après le réveil
-  if(mdwFound&&survivalDay>=1&&!_exchangesDone.has('amnesia_where'))
-    setTimeout(()=>triggerExchange('amnesia_where',
-      "Où sommes-nous ?",
-      "Secteur périphérique. Coordonnées imprécises. Vos instruments sont endommagés."),
-    8000);
+  // MDW s'allume — il se présente et annonce la mission
+  if(mdwFound&&!_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('_intro1_timer')){
+    _exchangesDone.add('_intro1_timer');
+    setTimeout(()=>triggerExchange('mdw_intro1',
+      "",
+      "D'après mes calculs, il est statistiquement probable que votre mission soit de cartographier les planètes et autres phénomènes."),
+    4000);
+  }
 
-  if(mdwFound&&survivalDay>=1&&_exchangesDone.has('amnesia_where')&&!_exchangesDone.has('amnesia_ship'))
-    triggerExchange('amnesia_ship',
-      "Ce vaisseau. Tu peux me dire quelque chose ?",
-      "Vaisseau d'exploration de classe légère. Programme scientifique. Vous êtes le pilote désigné.");
+  // Pilote : comment peux-tu savoir ça ?
+  if(_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('mdw_comment'))
+    triggerExchange('mdw_comment',
+      "Comment peux-tu savoir ça ?",
+      "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
 
-  if(mdwFound&&survivalDay>=2&&_exchangesDone.has('amnesia_ship')&&!_exchangesDone.has('amnesia_mission'))
-    triggerExchange('amnesia_mission',
-      "D'après toi, quelle est ma mission ?",
-      "Cartographier. Chaque planète, chaque phénomène. Les données ont de la valeur.");
+  // Pilote : tu peux te connecter au PC ?
+  if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
+    triggerExchange('mdw_pc',
+      "Tu peux te connecter au PC de bord ?",
+      "J'essaie...");
 
-  if(mdwFound&&survivalDay>=2&&_exchangesDone.has('amnesia_mission')&&!_exchangesDone.has('amnesia_who'))
-    triggerExchange('amnesia_who',
-      "Qui a décidé de ça ?",
-      "Le programme. Vous avez accepté avant le départ.");
+  // MDW connecté — mission confirmée
+  if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
+    triggerExchange('mdw_pc2',
+      "",
+      "Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
 
-  if(mdwFound&&survivalDay>=3&&_exchangesDone.has('amnesia_who')&&!_exchangesDone.has('amnesia_memory'))
-    triggerExchange('amnesia_memory',
-      "Je ne me souviens de rien.",
-      "C'est le choc. Ça reviendra peut-être. En attendant, la mission continue.");
+  // Suite acte 1
+  if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
+    triggerExchange('mdw_memory',
+      "Je ne me souviens de rien. Qui suis-je ?",
+      "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
 
-  if(planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
-    triggerExchange('violet1',
-      "Cette planète. Tu sembles t'y intéresser particulièrement.",
-      "Type rare. Les données sont précieuses.");
-
-  if(enemies.length>0&&survivalDay>=8)
-    triggerExchange('enemy1',
-      "D'où viennent ces vaisseaux ?",
-      "Ce secteur est disputé. Restez mobile.");
-
+  // Acte 2 — doutes progressifs
+  if(sectorCount>=1&&_exchangesDone.has('mdw_memory')&&planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
+    triggerExchange('violet1',"Cette planète. Tu sembles t'y intéresser particulièrement.","Type rare. Les données sont précieuses.");
   if(planets.some(p=>p.discovered&&p.type?.name==='ROGUE'))
-    triggerExchange('rogue1',
-      "Cette structure sur la planète. Quelqu'un est passé avant nous.",
-      "Données récupérées. Continuez.");
-
-  if(sectorCount>=2&&survivalDay>=5)
-    triggerExchange('sector2_doubt',
-      "Tu connais cet endroit ?",
-      "J'ai accès à beaucoup d'informations. C'est mon rôle.");
-
+    triggerExchange('rogue1',"Cette structure sur la planète. Quelqu'un est passé avant nous.","Données récupérées. Continuez.");
+  if(sectorCount>=2&&_exchangesDone.has('mdw_memory'))
+    triggerExchange('sector2_doubt',"Tu connais cet endroit ?","J'ai accès à beaucoup d'informations. C'est mon rôle.");
   if(sectorCount>=3)
-    triggerExchange('sector3_question',
-      "Que fais-tu de toutes ces données ?",
-      "Elles vont là où elles doivent aller.");
-
+    triggerExchange('sector3_question',"Que fais-tu de toutes ces données ?","Elles vont là où elles doivent aller.");
   if(sectorCount>=4&&wrecksFound>=3)
-    triggerExchange('sector4_pilots',
-      "Les autres pilotes sont tous passés par ici ?",
-      "Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
-
+    triggerExchange('sector4_pilots',"Les autres pilotes sont tous passés par ici ?","Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
   if(survivalDay>=30)
-    triggerExchange('return_question',
-      "On rentre quand ?",
-      "Quand la mission sera accomplie.");
-
+    triggerExchange('return_question',"On rentre quand ?","Quand la mission sera accomplie.");
   if(currentUniverse===10)
-    triggerExchange('void_pull',
-      "Il y a quelque chose qui nous attire. Tu le sens ?",
-      "Je mesure une force. Pas de source identifiable.");
+    triggerExchange('void_pull',"Il y a quelque chose qui nous attire. Tu le sens ?","Je mesure une force. Pas de source identifiable.");
 }
-
 function updateSpecialSectors(dt){
   if(window._voidPull&&state==='playing'){
     ship.vx+=window._voidPull.vx*dt*60;
@@ -2270,12 +2251,17 @@ function triggerJournal(day){
 function updateJournal(dt){
   if(!journalActive)return;
   journalWriteTimer+=dt;
-  const target=Math.floor(journalWriteTimer*25);
+  const target=Math.floor(journalWriteTimer*30);
   if(target>journalCharIdx&&journalCharIdx<journalFullText.length){
     journalCharIdx=Math.min(target,journalFullText.length);
-    journalText.textContent=journalFullText.slice(0,journalCharIdx);
+    // Limiter à 2 lignes — couper au 2e retour à la ligne
+    let text=journalFullText.slice(0,journalCharIdx);
+    const lines=text.split('\n');
+    if(lines.length>2)text=lines.slice(0,2).join('\n');
+    journalText.textContent=text;
   }
-  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/25+3){
+  // Disparition rapide — 4s après la fin de l'écriture
+  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/30+4){
     journalActive=false;journalEl.classList.remove('active');
   }
 }
@@ -2467,16 +2453,13 @@ function generatePlanetName(){
 
 // ── Journal — nouveau lore ────────────────────
 const JOURNAL_ENTRIES={
-  1:"Je me suis réveillé aux commandes.\n\nDouleur à l'arrière du crâne. Sang séché. Les instruments sont morts sauf les jauges de base. Le robot est hors service — écran noir, aucune réponse.\n\nJe ne sais pas comment je m'appelle. Je sais faire voler ce vaisseau. Je sais lire les étoiles. C'est tout.",
-  2:"Un badge dans ma poche. Brûlé, illisible sauf un numéro : 7.\n\nJ'ai trouvé un robot dans une épave proche. Il fonctionne. Il dit s'appeler MDW. Il dit qu'il connaît ce programme. Qu'il peut m'aider.\n\nJ'ai décidé de le croire. Je n'ai pas le choix.",
-  3:"MDW m'a expliqué la mission : cartographier. Chaque planète, chaque phénomène, chaque anomalie. Les données seront transmises à la Terre.\n\nIl dit que c'est important. Que des vies en dépendent. Ça a du sens. Je commence.",
-  4:"Première planète cataloguée. MDW note tout automatiquement — composition, masse, température. Il est efficace. Je commence à me dire que cette mission est réalisable.",
-  5:"MDW connaît les phénomènes cosmiques mieux que moi. Il m'apprend à les identifier. Je prends des notes. C'est comme avoir un professeur.\n\nJe lui fais confiance.",
-  7:"Une semaine. La plaie cicatrise.\n\nMDW m'a guidé vers deux planètes aujourd'hui. Il avait raison sur les deux — ressources récupérables, données intéressantes. Il a l'air de savoir à l'avance ce qu'on va trouver. Je mets ça sur le compte de ses calculs.",
-  10:"Dix jours. Pas de signal de la Terre. MDW dit que c'est normal à cette distance.\n\nJ'ai demandé quand on rentre. Il a dit : quand la mission sera accomplie. Je n'ai pas demandé ce que ça voulait dire exactement.",
-  14:"Deux semaines. J'ai noté quelque chose d'étrange — MDW a appelé une étoile par son nom avant que le scanner l'identifie.\n\nQuand je lui ai demandé, il a dit : signatures spectrales. Cohérent. Mais je l'ai quand même noté.",
-  20:"Vingt jours. Je cartographie. MDW catalogue. Nous fonctionnons bien ensemble.\n\nJe commence à oublier que je ne sais pas qui je suis. La mission remplace l'identité. C'est plus simple.",
-  30:"Un mois.\n\nMDW m'a dit ce soir que les données collectées sont 'exactement ce qui était attendu'. J'ai demandé par qui. Il a dit : par le programme.\n\nJe n'ai pas relevé. Mais je l'ai écrit ici.",
+  // Série 1 — avant la découverte de MDW
+  1:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.",
+  2:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.",
+  3:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.",
+  4:"J'ai une plaie au front et mon dos me fait souffrir.",
+  // Série 2 — après la découverte de MDW (déclenchées par les échanges)
+  5:"J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -5770,71 +5753,73 @@ function drawPhenomena(ts){
 }
 
 function drawGrid(){
-  const gs=120*viewZoom;
   const fields=window._gravFields||[];
-  if(fields.length===0)return; // pas de grille sans champ
+  if(fields.length===0)return;
 
-  ctx.lineWidth=0.8;
+  // Résolution de la grille — plus fine près des corps massifs
+  const COLS=28, ROWS=28;
+  const uColor=UNIVERSES[currentUniverse]?.primary||'#00ff41';
+  const ur=parseInt(uColor.slice(1,3),16)||0;
+  const ug=parseInt(uColor.slice(3,5),16)||255;
+  const ub=parseInt(uColor.slice(5,7),16)||65;
 
-  for(let xi=0;xi*gs<W+gs;xi++){
-    const baseX=((-camX*viewZoom%gs)+gs)%gs+xi*gs-gs;
-    ctx.beginPath();
-    for(let yi=0;yi<=24;yi++){
-      const baseY=yi*(H/24);
-      let wx=(baseX-W/2)/viewZoom+camX;
-      let wy=(baseY-H/2)/viewZoom+camY;
+  // Précalcul de tous les points déformés
+  const pts=[];
+  for(let row=0;row<=ROWS;row++){
+    pts.push([]);
+    for(let col=0;col<=COLS;col++){
+      // Position monde de ce point de grille
+      const gs=150; // espacement en unités monde
+      const wx=camX+(col-COLS/2)*gs;
+      const wy=camY+(row-ROWS/2)*gs;
+
+      // Déformation gravitationnelle
       let dx_tot=0,dy_tot=0;
       for(const f of fields){
         const ddx=wx-f.x,ddy=wy-f.y;
         const d2=ddx*ddx+ddy*ddy;
-        const d=Math.sqrt(d2);
-        if(d<f.range&&d>f.r){
-          // Amplification de la déformation — ×4 plus visible
-          const strength=Math.min(80,G_CONST*f.mass*3200/Math.max(d2,200));
-          dx_tot-=ddx/d*strength*viewZoom;
-          dy_tot-=ddy/d*strength*viewZoom;
+        const d=Math.sqrt(d2)+0.001;
+        if(d<f.range&&d>f.r*0.5){
+          // Déformation forte — inversement proportionnelle au carré
+          const strength=Math.min(300,f.mass*G_CONST*8000/Math.max(d2,100));
+          // Direction vers le corps massif
+          dx_tot-=ddx/d*strength;
+          dy_tot-=ddy/d*strength;
         }
       }
-      const sx=baseX+dx_tot,sy=baseY+dy_tot;
+
+      // Convertir en coordonnées écran
+      const [sx,sy]=worldToScreen(wx+dx_tot,wy+dy_tot);
       const deform=Math.sqrt(dx_tot*dx_tot+dy_tot*dy_tot);
-      // Couleur adaptée à l'univers courant
-      const uColor=UNIVERSES[currentUniverse]?.primary||'#00ff41';
-      const r=parseInt(uColor.slice(1,3),16);
-      const g=parseInt(uColor.slice(3,5),16);
-      const b=parseInt(uColor.slice(5,7),16);
-      ctx.strokeStyle=`rgba(${r},${g},${b},${Math.min(0.18,0.015+deform*0.006)})`;
-      yi===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+      pts[row].push({sx,sy,deform});
     }
-    ctx.stroke();
   }
-  for(let yi=0;yi*gs<H+gs;yi++){
-    const baseY=((-camY*viewZoom%gs)+gs)%gs+yi*gs-gs;
-    ctx.beginPath();
-    for(let xi2=0;xi2<=24;xi2++){
-      const baseX=xi2*(W/24);
-      let wx=(baseX-W/2)/viewZoom+camX;
-      let wy=(baseY-H/2)/viewZoom+camY;
-      let dx_tot=0,dy_tot=0;
-      for(const f of fields){
-        const ddx=wx-f.x,ddy=wy-f.y;
-        const d2=ddx*ddx+ddy*ddy;
-        const d=Math.sqrt(d2);
-        if(d<f.range&&d>f.r){
-          const strength=Math.min(80,G_CONST*f.mass*3200/Math.max(d2,200));
-          dx_tot-=ddx/d*strength*viewZoom;
-          dy_tot-=ddy/d*strength*viewZoom;
-        }
-      }
-      const sx=baseX+dx_tot,sy=baseY+dy_tot;
-      const deform=Math.sqrt(dx_tot*dx_tot+dy_tot*dy_tot);
-      const uColor=UNIVERSES[currentUniverse]?.primary||'#00ff41';
-      const r=parseInt(uColor.slice(1,3),16);
-      const g=parseInt(uColor.slice(3,5),16);
-      const b=parseInt(uColor.slice(5,7),16);
-      ctx.strokeStyle=`rgba(${r},${g},${b},${Math.min(0.18,0.015+deform*0.006)})`;
-      xi2===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+
+  // Dessiner segment par segment avec couleur selon déformation
+  ctx.lineWidth=0.6;
+
+  // Lignes horizontales
+  for(let row=0;row<=ROWS;row++){
+    for(let col=0;col<COLS;col++){
+      const p1=pts[row][col],p2=pts[row][col+1];
+      const deform=Math.max(p1.deform,p2.deform);
+      const alpha=Math.min(0.35,0.02+deform*0.0008);
+      if(alpha<0.02)continue;
+      ctx.strokeStyle=`rgba(${ur},${ug},${ub},${alpha})`;
+      ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();
     }
-    ctx.stroke();
+  }
+
+  // Lignes verticales
+  for(let col=0;col<=COLS;col++){
+    for(let row=0;row<ROWS;row++){
+      const p1=pts[row][col],p2=pts[row+1][col];
+      const deform=Math.max(p1.deform,p2.deform);
+      const alpha=Math.min(0.35,0.02+deform*0.0008);
+      if(alpha<0.02)continue;
+      ctx.strokeStyle=`rgba(${ur},${ug},${ub},${alpha})`;
+      ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();
+    }
   }
 }
 
