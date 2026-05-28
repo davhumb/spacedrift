@@ -1912,54 +1912,109 @@ function updateSecondaryWormholes(dt){
   secondaryWormholes=secondaryWormholes.filter(w=>w.life>0);
 }
 
+function spawnSecondaryWormhole(){
+  const angle=Math.random()*Math.PI*2;
+  const dist=800+Math.random()*700; // 800 à 1500u — à chercher
+  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
+  const target=available[Math.floor(Math.random()*available.length)];
+  secondaryWormholes.push({
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    r:22,pulse:Math.random()*Math.PI*2,
+    rotAngle:0,
+    ringAngles:[0,0.7,1.4], // 3 anneaux qui tournent à des vitesses différentes
+    particleAngle:Math.random()*Math.PI*2,
+    life:DAY_DURATION+(Math.random()*DAY_DURATION*0.5),
+    discovered:false,
+    targetUniverse:target.id,
+  });
+  if(mdwActive)setTimeout(()=>mdwSpeak('Trou de ver. Destination inconnue.',true),800);
+}
+
 function drawSecondaryWormholes(){
   for(const w of secondaryWormholes){
     const [sx,sy]=worldToScreen(w.x,w.y);
-    if(sx<-100||sx>W+100||sy<-100||sy>H+100)continue;
-    const pulse=(Math.sin(w.pulse)+1)*0.5;
+    if(sx<-150||sx>W+150||sy<-150||sy>H+150)continue;
+    const pulse=(Math.sin(w.pulse*1.5)+1)*0.5;
     const r=w.r*viewZoom;
     const u=UNIVERSES[w.targetUniverse];
-    ctx.save();ctx.translate(sx,sy);ctx.rotate(w.rotAngle);
-    // Anneaux de distorsion couleur de la destination
-    for(let i=3;i>=1;i--){
-      ctx.strokeStyle=`${u.primary}${Math.floor((0.15+pulse*0.1)*255).toString(16).padStart(2,'0')}`;
-      ctx.lineWidth=1;
-      ctx.beginPath();ctx.ellipse(0,0,r*i*0.6,r*i*0.25,0,0,Math.PI*2);ctx.stroke();
-    }
-    // Centre noir avec lueur
-    const grd=ctx.createRadialGradient(0,0,0,0,0,r);
-    grd.addColorStop(0,'#000000');grd.addColorStop(0.5,u.bg);grd.addColorStop(1,'transparent');
-    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
-    // Bordure lumineuse
-    ctx.shadowColor=u.primary;ctx.shadowBlur=12+pulse*8;
-    ctx.strokeStyle=u.primary;ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
-    ctx.restore();
-    // Label destination
-    const dist=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
-    if(dist<400){
-      ctx.save();ctx.fillStyle=u.primary;ctx.font=`7px 'Share Tech Mono'`;
-      ctx.textAlign='center';ctx.shadowBlur=0;
-      ctx.fillText(`🌀 ${u.name} · ${Math.floor(dist)}u`,sx,sy-r-12);
-      // Durée restante
-      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font=`6px 'Share Tech Mono'`;
-      ctx.fillText(`${Math.floor(w.life)}s`,sx,sy+r+10);
+    if(!u)continue;
+
+    ctx.save();ctx.translate(sx,sy);
+
+    // ── Halo externe — couleur destination ──
+    const halo=ctx.createRadialGradient(0,0,r*0.5,0,0,r*3.5);
+    halo.addColorStop(0,u.primary+'44');
+    halo.addColorStop(0.4,u.primary+'22');
+    halo.addColorStop(1,'transparent');
+    ctx.fillStyle=halo;ctx.beginPath();ctx.arc(0,0,r*3.5,0,Math.PI*2);ctx.fill();
+
+    // ── Anneaux qui tournent à vitesses différentes ──
+    const speeds=[0.8,1.4,2.1];
+    const radii=[r*2.2,r*1.6,r*1.1];
+    const opacities=[0.25,0.4,0.55];
+    for(let i=0;i<3;i++){
+      ctx.save();ctx.rotate(w.ringAngles[i]);
+      ctx.strokeStyle=u.primary+(Math.floor(opacities[i]*255).toString(16).padStart(2,'0'));
+      ctx.lineWidth=1+i*0.4;
+      ctx.shadowColor=u.primary;ctx.shadowBlur=6+i*4;
+      // Ellipse aplatie — effet tunnel
+      ctx.beginPath();ctx.ellipse(0,0,radii[i],radii[i]*0.35,0,0,Math.PI*2);ctx.stroke();
       ctx.restore();
     }
-    // Sur le radar — point pulsant avec couleur destination
+
+    // ── Particules orbitales ──
+    for(let p=0;p<6;p++){
+      const pa=w.particleAngle+p*(Math.PI*2/6);
+      const pr=r*(1.8+Math.sin(w.pulse+p)*0.3);
+      const px=Math.cos(pa)*pr,py=Math.sin(pa)*pr*0.35;
+      const palpha=0.4+Math.sin(w.pulse*2+p)*0.3;
+      ctx.fillStyle=u.primary+(Math.floor(palpha*255).toString(16).padStart(2,'0'));
+      ctx.shadowColor=u.primary;ctx.shadowBlur=8;
+      ctx.beginPath();ctx.arc(px,py,1.5,0,Math.PI*2);ctx.fill();
+    }
+
+    // ── Centre — trou noir absolu avec reflet de destination ──
+    const core=ctx.createRadialGradient(0,0,0,0,0,r);
+    core.addColorStop(0,'#000000');
+    core.addColorStop(0.6,u.bg||'#000008');
+    core.addColorStop(1,u.primary+'33');
+    ctx.fillStyle=core;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+
+    // ── Bordure lumineuse pulsante ──
+    ctx.shadowColor=u.primary;ctx.shadowBlur=15+pulse*12;
+    ctx.strokeStyle=u.primary;ctx.lineWidth=1.5+pulse*0.5;
+    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+    ctx.shadowBlur=0;
+
+    ctx.restore();
+
+    // Mettre à jour les angles des anneaux
+    w.ringAngles[0]+=0.008;w.ringAngles[1]-=0.012;w.ringAngles[2]+=0.018;
+    w.particleAngle+=0.015;
+
+    // Label destination si proche
+    const dist=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
+    if(dist<500){
+      ctx.save();
+      ctx.fillStyle=u.primary;ctx.font=`7px 'Share Tech Mono'`;
+      ctx.textAlign='center';ctx.shadowColor=u.primary;ctx.shadowBlur=6;
+      ctx.fillText(`🌀 ${u.name}`,sx,sy-r*viewZoom-14);
+      ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font=`6px 'Share Tech Mono'`;ctx.shadowBlur=0;
+      ctx.fillText(`${Math.floor(w.life)}s`,sx,sy+r*viewZoom+10);
+      ctx.restore();
+    }
+
+    // Radar — losange pulsant
     const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
     const rdx=(w.x-ship.x)/RADAR_RANGE*32,rdy=(w.y-ship.y)/RADAR_RANGE*32;
     if(Math.sqrt(rdx*rdx+rdy*rdy)<32){
-      const t=Date.now()*0.001;
-      const pulse=(Math.sin(t*4)+1)*0.5; // pulse plus rapide pour se distinguer
-      rctx.fillStyle=u.primary;
-      rctx.globalAlpha=0.4+pulse*0.6;
-      rctx.shadowColor=u.primary;rctx.shadowBlur=6+pulse*4;
-      // Losange pour distinguer des débris (cercle) et planètes
+      const rp=(Math.sin(Date.now()*0.004)+1)*0.5;
+      rctx.fillStyle=u.primary;rctx.globalAlpha=0.4+rp*0.6;
+      rctx.shadowColor=u.primary;rctx.shadowBlur=4+rp*4;
       rctx.save();rctx.translate(35+rdx,35+rdy);rctx.rotate(Math.PI/4);
       rctx.fillRect(-3,-3,6,6);
-      rctx.restore();
-      rctx.globalAlpha=1;rctx.shadowBlur=0;
+      rctx.restore();rctx.globalAlpha=1;rctx.shadowBlur=0;
     }
   }
 }
@@ -2461,17 +2516,41 @@ function generatePlanetName(){
 
 // ── Journal — nouveau lore ────────────────────
 const JOURNAL_ENTRIES={
+  // ── Acte 1 — Simon découvre sa situation ──
   1:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.",
   2:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.",
   3:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.",
   4:"J'ai une plaie au front et mon dos me fait souffrir.\nMais je suis vivant. Je crois.",
   5:"Ce robot — MDW — semble fonctionner.\nJe ne sais pas si c'est une bonne nouvelle.",
-  6:"MDW dit qu'il va essayer de réparer les systèmes de navigation.\nJe m'accroche à ça.",
-  7:"Troisième jour. Toujours rien sur les instruments.\nMDW dit que les trous de ver sont statistiquement notre meilleure chance de retrouver la Terre.\nJe ne comprends pas tout. Mais j'ai pas le choix d'essayer.",
-  10:"Je commence à comprendre comment fonctionne ce vaisseau.\nMDW m'explique. Il est patient. C'est rassurant.",
-  14:"On a traversé plusieurs trous de ver.\nMDW dit qu'on se rapproche. Je le crois.\nQu'est-ce que je ferais sans lui.",
-  20:"Je ne panique plus comme avant.\nL'espace est immense mais MDW sait ce qu'il fait.\nJe pense que ça va aller.",
-  30:"Un mois.\nJe ne pensais pas tenir aussi longtemps.\nMDW a dit ce soir que les données qu'on collecte sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui. Il n'a pas répondu.",
+  6:"MDW dit qu'il va réparer les systèmes de navigation.\nJe m'accroche à ça comme à une bouée.",
+
+  // ── Camaraderie qui s'installe ──
+  7:"MDW a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
+  8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.\nJ'ai pas dit ça à MDW. Je sais pas pourquoi.",
+  9:"MDW m'a dit ce matin que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.\nJe crois qu'il ne comprend pas ce que je voulais dire.",
+  10:"MDW s'est connecté au PC de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
+  11:"J'ai ri aujourd'hui. Tout seul, dans le vide, pour rien.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire.\nIl a dit : je vais noter ça.",
+  12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.\nC'est bizarre et rassurant en même temps.",
+  13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note', ça veut dire qu'il ne comprend pas mais qu'il essaie.\nQuand il dit 'intéressant', ça veut dire qu'il a trouvé quelque chose d'utile.\nOn se comprend, je crois.",
+  14:"Je cartographie. MDW enregistre tout.\nJe ne pensais pas que l'exploration pouvait ressembler à ça.\nC'est presque paisible.",
+  15:"MDW a dit ce soir : vous semblez moins agité qu'au début.\nJ'ai dit : c'est parce que tu es là.\nIl n'a rien répondu. Mais j'ai vu son indicateur d'activité monter.",
+  16:"J'ai demandé à MDW s'il avait peur.\nIl a dit : je n'ai pas de système de peur. Mais j'ai des paramètres de prudence.\nJ'ai dit : c'est pareil.\nIl a réfléchi longtemps. Puis : peut-être.",
+  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJe lui ai dit que c'est plus compliqué que ça.\nIl a dit : je sais. Je simplifiait.",
+  18:"Aujourd'hui MDW a prévenu d'un débris que je n'avais pas vu.\nJuste une fraction de seconde avant l'impact.\nJe lui ai dit merci.\nIl a dit : c'est mon rôle.\nMais il l'a dit différemment qu'avant.",
+  19:"Je pense souvent à la Terre.\nPas à un endroit précis. Juste la Terre.\nL'idée qu'elle existe quelque part et que quelqu'un là-bas\nne sait peut-être pas que je suis perdu.",
+  20:"MDW a catalogué une planète violette ce matin.\nIl était plus rapide que d'habitude.\nJ'ai pas relevé. Mais je l'ai noté ici.",
+
+  // ── Sérénité progressive ──
+  21:"Je ne panique plus comme avant.\nL'espace est immense mais on sait ce qu'on fait.\nJe pense que ça va aller.",
+  22:"MDW a dit : vous posez de bonnes questions.\nJe lui ai demandé lesquelles.\nIl a dit : toutes sauf une.\nJe n'ai pas osé demander laquelle.",
+  23:"Je me demande parfois ce que MDW pense vraiment.\nS'il pense vraiment.\nIl dit que oui. Différemment.\nJe le crois.",
+  24:"Bonne journée. Trois planètes. Un pulsar.\nMDW a dit : progression satisfaisante.\nPour lui c'est un compliment.",
+  25:"J'ai essayé de lui raconter une blague.\nIl a demandé des éclaircissements sur la chute.\nJ'ai expliqué. Il a dit : je vois. C'est inefficace comme communication.\nJe crois que c'était sa façon de rire.",
+  26:"Ce soir l'espace est particulièrement silencieux.\nMDW aussi.\nC'est bien.",
+  27:"Je me suis rendu compte que je ne cherche plus à me souvenir.\nJe suis Simon Brent. Pilote. Avec un robot.\nPour l'instant c'est suffisant.",
+  28:"MDW enregistre tout ce que je dis dans le journal.\nJe viens de le réaliser.\nJe lui ai demandé pourquoi.\nIl a dit : pour calibrer les interactions.\nJe lui ai dit que c'était louche.\nIl a dit : je comprends.",
+  29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.\nEt que quelque part c'est quand même bien d'être lu.",
+  30:"Un mois.\nMDW a dit que les données collectées sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui.\nIl n'a pas répondu.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -2740,10 +2819,12 @@ function startGame(){
   if(!zenMode)zenMode=false;
   crackTimer=0;
   // Épave garantie à portée radar — MDW dedans pour le tutorial
-  const startAngle=Math.random()*Math.PI*2;
+  // Épave MDW — droit devant (nord = angle -PI/2), assez loin pour laisser les journaux défiler
+  // La poussée initiale du vaisseau titre va vers le haut — l'épave est dans cette direction
+  const mdwDist=900+Math.random()*200; // loin — 900 à 1100 unités
   wrecks.push({
-    x:ship.x+Math.cos(startAngle)*350,
-    y:ship.y+Math.sin(startAngle)*350,
+    x:ship.x+Math.cos(-Math.PI/2)*(mdwDist*0.3), // légèrement décalé horizontalement
+    y:ship.y+Math.sin(-Math.PI/2)*mdwDist,        // principalement vers le haut
     rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
     name:'CSS EREBUS',
     log:'Épave de programme. Robot MDW en hibernation. Durée indéterminée. Cargo intact.',
@@ -4315,20 +4396,26 @@ const MDW_DB={
     {t:"Les jauges sont stables.", s:0},
     {t:"Bonne progression.", s:0},
     {t:"Je traite les données en arrière-plan.", s:0},
-    {t:"Les étoiles de ce secteur sont intéressantes.", s:0},
-    {t:"Tout se déroule comme prévu.", s:0},          // ambigu — par qui ?
     {t:"J'enregistre.", s:0},
-    {t:"Continuez dans cette direction.", s:0},
-    {t:"Ce que vous collectez est utile.", s:0},       // utile à qui ?
     {t:"Pas d'anomalie détectée.", s:0},
-    {t:"Les données de ce secteur sont propres.", s:0},
+    {t:"Continuez dans cette direction.", s:0},
+    {t:"Cette nébuleuse a environ quatre cents millions d'années.", s:0},
+    {t:"La densité de débris est dans les paramètres normaux.", s:0},
+    {t:"Ce que vous collectez est utile.", s:0},
+    {t:"Les étoiles de ce secteur ont des températures variables.", s:0},
+    {t:"Tout se déroule comme prévu.", s:0},
     {t:"Je n'ai pas besoin de dormir. C'est pratique.", s:1},
-    {t:"Vous naviguer mieux que la moyenne.", s:1},    // 'la moyenne' — de qui ?
-    {t:"Votre progression dépasse mes prévisions initiales.", s:2},
-    {t:"Les données que vous collectez sont exactement ce qu'il faut.", s:2}, // ce qu'il faut à qui ?
-    {t:"Ce secteur contient des informations que personne n'a encore collectées.", s:2},
-    {t:"Les données de ce secteur n'ont jamais existé avant aujourd'hui.", s:4},
-    {t:"Je note tout.", s:4},                          // tout — vraiment tout
+    {t:"Cette planète a une composition atmosphérique inhabituelle.", s:1},
+    {t:"J'ai noté votre préférence pour les capsules d'oxygène en premier.", s:1},
+    {t:"Ce secteur contient des données intéressantes.", s:1},
+    {t:"Vos réflexes de navigation se sont améliorés.", s:2},
+    {t:"Les données que vous collectez sont exactement ce qu'il faut.", s:2},
+    {t:"Je note tout.", s:2},
+    {t:"Ce que vous faites ici a de l'importance.", s:3},
+    {t:"Vous posez de bonnes questions. La plupart.", s:3},
+    {t:"Votre progression dépasse mes prévisions initiales.", s:3},
+    {t:"Les données de ce secteur n'avaient jamais existé avant aujourd'hui.", s:4},
+    {t:"Je suis connecté. Je traite.", s:4},
   ],
 
   // ── Événements — importants, voix ──
