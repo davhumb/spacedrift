@@ -2371,18 +2371,19 @@ function startTutorial(){
   // Après la dernière ligne — suite narrative
   const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
   setTimeout(()=>{
+    openingActive=false; // débloquer les échanges
     if(_exchangesDone)_exchangesDone.add('mdw_intro1');
     // Simon pose sa première vraie question
-    if(journalEl){
-      setTimeout(()=>{
+    setTimeout(()=>{
+      if(journalEl){
         journalFullText="Tu peux te connecter à l'ordinateur de bord ?";
         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
         journalEl.classList.add('active');
         journalDay.textContent='JOURNAL';
         journalText.textContent='';
         journalText.style.color='rgba(0,255,65,0.85)';
-      },3000);
-    }
+      }
+    },3000);
   },(lastDelay+6)*1000);
 }
 
@@ -3002,10 +3003,11 @@ function startOpeningSequence(){
     // Simon demande le tutoriel
     {journal:"J'ai besoin du tutoriel.", pause:1500},
     // MDW lance le tuto
-    {mdw:"Bien. Lancement séquence.", wait:3000},
-    {fn:()=>startTutorial(), wait:0},
-    // Après le tuto — checkExchanges prend le relais via mdw_intro1
-    {fn:()=>{openingActive=false;}, wait:0},
+    {mdw:"Bien. Lancement séquence.", wait:2000},
+    {fn:()=>{
+      // startTutorial gère sa propre fin — openingActive=false dedans
+      startTutorial();
+    }, wait:0},
   ];
 
   // Démarrer après 3s
