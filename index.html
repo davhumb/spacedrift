@@ -818,7 +818,7 @@ function checkExchanges(){
       "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
   if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
     triggerExchange('mdw_pc',
-      "Tu peux te connecter au PC de bord ?",
+      "Tu peux te connecter au ordinateur de bord ?",
       "J'essaie...");
   if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
     triggerExchange('mdw_pc2',
@@ -2342,6 +2342,11 @@ function startTutorial(){
       }
     },t.delay*1000);
   });
+  // Après la dernière ligne — marquer intro1 comme fait, déclencher la suite narrative
+  const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
+  setTimeout(()=>{
+    if(_exchangesDone)_exchangesDone.add('mdw_intro1');
+  },(lastDelay+6)*1000);
 }
 
 // Narration phase 2 — transmissions adressées directement
@@ -2618,7 +2623,7 @@ const JOURNAL_ENTRIES={
   7:"MDW m'a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
   8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.",
   9:"MDW m'a dit que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.",
-  10:"MDW s'est connecté au PC de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
+  10:"MDW s'est connecté au ordinateur de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
   11:"J'ai ri aujourd'hui. Tout seul, dans le vide.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire. Il a dit : je vais noter ça.",
   12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.",
   13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note' il ne comprend pas mais il essaie.\nQuand il dit 'intéressant' il a trouvé quelque chose d'utile.",
@@ -2653,12 +2658,16 @@ const JOURNAL_ENTRIES={
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
 const MDW_TUTORIAL=[
-  {delay:2,  text:"Systèmes en ligne. Je vais vous guider."},
-  {delay:8,  text:"Les capsules lumineuses — approchez-vous pour les collecter. Oxygène, énergie, propergol."},
-  {delay:20, text:"Radar en haut à droite. Points verts : ressources. Points rouges : débris. Restez en mouvement."},
-  {delay:35, text:"Les planètes — approchez lentement, vitesse inférieure à 3 unités par seconde pour l'amarrage automatique."},
-  {delay:50, text:"Les trous de ver vous transportent vers d'autres secteurs. C'est notre meilleur vecteur de progression."},
-  {delay:65, text:"Séquence terminée. Bonne route, Simon Brent."},
+  {delay:2,  text:"Tutoriel en cours de traitement.\nVotre écran est tactile. Zoom et dézoom en pinçant l'écran."},
+  {delay:12, text:"En bas : quatre jauges. Oxygène — si elle atteint zéro, la coque commence à céder. Collectez les capsules vertes."},
+  {delay:22, text:"Propergol — carburant de propulsion. Tapez et maintenez pour vous diriger. La jauge remonte lentement."},
+  {delay:32, text:"Énergie — recharge automatiquement. Si elle est vide, la propulsion passe en mode urgence."},
+  {delay:42, text:"Coque — les débris la font baisser. Si elle atteint zéro, c'est la fin."},
+  {delay:52, text:"Radar en haut — points verts : ressources. Points rouges : débris. Losanges colorés : trous de ver."},
+  {delay:62, text:"Planètes — approchez lentement, vitesse inférieure à 3 unités par seconde. L'amarrage se fait automatiquement."},
+  {delay:72, text:"Trous de ver — ils vous transportent vers d'autres secteurs. Approchez-vous pour traverser."},
+  {delay:82, text:"Journal en haut à gauche — vos pensées. Bouton catalogue en bas à droite — tout ce que vous avez découvert."},
+  {delay:92, text:"Tutoriel terminé. Bonne route, Simon Brent."},
 ];
 
 // ── Logs des autres pilotes dans les épaves ───
