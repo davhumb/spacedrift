@@ -2072,6 +2072,7 @@ function updateWormhole(dt){
     // Persistance — reset environnement seulement, pas les ressources
     signalActive=false;signalPos=null;signalReached=false;
     planets=[];wrecks=[];phenomena=[];comets=[];enemies=[];
+    window._gravFieldsStatic=[];
     secondaryWormholes=[];gravWaves=[];darkMatterZones=[];
     ship.vx*=0.4;ship.vy*=0.4;
     for(let i=0;i<2;i++)spawnPlanet();
@@ -2619,8 +2620,7 @@ function generateMoons(type,planetR){
 }
 
 function updatePlanets(dt){
-  // Tracking des champs gravitationnels pour le rendu
-  window._gravFields=[];
+  // _gravFieldsStatic est permanent — ne pas reset à chaque frame
 
   for(const p of planets){
     if(!p.type)continue;
@@ -2672,9 +2672,15 @@ function updatePlanets(dt){
       }
     }
 
-    // Enregistrer le champ pour le rendu
-    if(dist<range){
-      window._gravFields.push({x:p.x,y:p.y,mass,range,dist,color:p.type.glowColor,r:p.r});
+    // Enregistrer le champ pour le rendu — position figée (pas de mise à jour à chaque frame)
+    // On utilise _gravFieldsStatic qui ne change que quand une planète est découverte
+    if(dist<range&&p._gravRegistered){
+      // Le trou noir est géré séparément — ici on skip
+    } else if(dist<range&&!p._gravRegistered){
+      p._gravRegistered=true;
+      p._gravX=p.x; p._gravY=p.y; // position gelée
+      window._gravFieldsStatic=window._gravFieldsStatic||[];
+      window._gravFieldsStatic.push({x:p._gravX,y:p._gravY,mass,range,r:p.r,isBH:false});
     }
 
     // Gravité + collision sur objets mobiles
@@ -5862,23 +5868,16 @@ function drawPhenomena(ts){
 }
 
 function drawGrid(){
-  const fields=window._gravFields||[];
-  if(fields.length===0)return;
+  const staticFields=window._gravFieldsStatic||[];
+  const bhField=(window._gravFields||[]).filter(f=>f.isBH);
+  const allFields=[...staticFields,...bhField];
+  if(allFields.length===0)return;
 
   const COLS=28, ROWS=28;
   const uColor=UNIVERSES[currentUniverse]?.primary||'#00ff41';
   const ur=parseInt(uColor.slice(1,3),16)||0;
   const ug=parseInt(uColor.slice(3,5),16)||255;
   const ub=parseInt(uColor.slice(5,7),16)||65;
-
-  // Champs statiques — on ne prend que les positions figées
-  // Seul le trou noir a sa masse mise à jour en temps réel
-  const staticFields=fields.map(f=>({
-    x:f.x, y:f.y,
-    mass:f.isBH?BODY_MASSES.blackhole:f.mass, // trou noir suit sa masse réelle
-    range:f.isBH?gravityRange(BODY_MASSES.blackhole):f.range,
-    r:f.r,
-  }));
 
   const pts=[];
   for(let row=0;row<=ROWS;row++){
@@ -5888,12 +5887,14 @@ function drawGrid(){
       const wx=camX+(col-COLS/2)*gs;
       const wy=camY+(row-ROWS/2)*gs;
       let dx_tot=0,dy_tot=0;
-      for(const f of staticFields){
+      for(const f of allFields){
+        const mass=f.isBH?BODY_MASSES.blackhole:f.mass;
+        const range=f.isBH?gravityRange(BODY_MASSES.blackhole):f.range;
         const ddx=wx-f.x,ddy=wy-f.y;
         const d2=ddx*ddx+ddy*ddy;
         const d=Math.sqrt(d2)+0.001;
-        if(d<f.range&&d>f.r*0.5){
-          const strength=Math.min(300,f.mass*G_CONST*8000/Math.max(d2,100));
+        if(d<range&&d>f.r*0.5){
+          const strength=Math.min(300,mass*G_CONST*8000/Math.max(d2,100));
           dx_tot-=ddx/d*strength;
           dy_tot-=ddy/d*strength;
         }
@@ -5927,8 +5928,10 @@ function drawGrid(){
   }
 }
 
-function drawGravIndicators(){  // Indicateurs de zone gravitationnelle autour du vaisseau
+function drawGravIndicators(){
   const [svx,svy]=worldToScreen(ship.x,ship.y);
+  const fields=[...(window._gravFieldsStatic||[]),...(window._gravFields||[]).filter(f=>f.isBH)];
+  if(!fields.length)return;
   for(const f of fields){
     const proximity=1-f.dist/f.range; // 0=bord 1=centre
     if(proximity<0.1)continue;
