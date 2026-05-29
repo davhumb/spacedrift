@@ -307,7 +307,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:6px;letter-spacing:2px;color:rgba(0,255,65,0.15);margin-top:3px;">v0.9.1</div>
+  <div style="font-size:6px;letter-spacing:2px;color:rgba(255,255,255,0.4);margin-top:3px;">v0.9.1</div>
 </div>
 
 <script>
@@ -419,7 +419,7 @@ function injectVeraFragment(wreck){
     writeGlitchText&&writeGlitchText(fragment.text,fragment.label);
     logEvent(`📖 FRAGMENT DE VERA ${fragment.id+1}/5`,'planet');
     if(typeof mdwActive!=='undefined'&&mdwActive&&fragment.id===4){
-      setTimeout(()=>mdwSpeak('Ce journal. Je connais VERA. Posez-vous la bonne question.',true),3000);
+      
     }
     if(fragment.id===4){
       unlockAchievement&&unlockAchievement('vera');
@@ -1194,11 +1194,7 @@ function checkMDWEmergency(){
 // ── Boucle méta MDW ───────────────────────────
 // Après plusieurs runs MDW commence à reconnaître le pilote
 const MDW_META_DIALOGS={
-  3:"Ce n'est pas votre premier run. Vous le savez maintenant.",
-  5:"Cinq expéditions avant vous. Vous êtes allé plus loin que la plupart.",
-  10:"Dix runs. Vous cherchez quelque chose de précis. Je commence à comprendre quoi.",
-  15:"Je peux vous dire quelque chose que je n'ai dit à aucun autre. Il y a des données au bord. Des données que personne n'a encore lues.",
-  20:"Vingt runs. Le programme ne prévoyait pas ça. Vous êtes hors protocole. C'est bien.",
+  // Désactivé — plus de références aux runs dans le nouveau lore
 };
 
 let mdwMetaSaid=new Set();
@@ -1397,9 +1393,9 @@ let pilotName='INCONNU';
 let totalRuns=0;
 let totalDays=0;
 const PILOT_LORE=[
-  // Secteur 0 — le pilote découvre sa situation, croit MDW
+  // Secteur 0 — Simon commence à douter
   {sector:0, day:3,
-   text:"Mon badge dit numéro 7. La mission : cartographier. MDW m'explique que chaque planète découverte est une donnée. Que les données sauvent des vies, un jour, quelque part. Je le crois."},
+   text:"MDW a catalogué cette planète avant même que je finisse de l'observer. Je lui ai demandé comment. Il a dit : mes capteurs sont plus rapides. C'est vrai. Mais j'ai quand même noté."},
   {sector:0, day:7,
    text:"MDW connaît ce vaisseau par cœur. Chaque défaut, chaque bruit. Il dit qu'il a été briefé avant le départ. Je ne me souviens pas de ce briefing. Il dit que c'est normal après un choc crânien."},
   {sector:0, day:12,
@@ -2289,8 +2285,9 @@ function triggerJournal(day){
   journalShownDays.add(day);
   journalFullText=entry;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
   journalEl.classList.add('active');
-  journalDay.textContent=`JOUR ${String(day).padStart(3,'0')} — JOURNAL`;
+  journalDay.textContent='JOURNAL';
   journalText.textContent='';
+  journalText.style.color='rgba(0,255,65,0.85)';
   // Tutorial MDW au jour 1
   if(day===1&&!tutorialDone){
     setTimeout(()=>startTutorial(),3000);
@@ -2308,8 +2305,9 @@ function updateJournal(dt){
     if(lines.length>2)text=lines.slice(0,2).join('\n');
     journalText.textContent=text;
   }
-  // Disparition rapide — 4s après la fin de l'écriture
-  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/30+4){
+  // Disparition — proportionnel à la longueur, min 5s max 12s
+  const readTime=Math.min(12, Math.max(5, journalFullText.length/30));
+  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/30+readTime){
     journalActive=false;journalEl.classList.remove('active');
   }
 }
@@ -3218,7 +3216,7 @@ let anomalyPlanet=null;
 
 // Transmissions radio fragmentées
 const TRANSMISSIONS=[
-  "Quelqu'un dérive dans ce secteur depuis plus longtemps que prévu. Je pense que c'est moi.",
+  "Ce secteur. Quelque chose attire ici. Pas les étoiles.",
   "N'approchez pas du pulsar nord. Pas à cause de la radiation. À cause de ce qu'il y a derrière.",
   "Le signal que vous cherchez n'est pas une sortie. Je l'ai atteint. Je suis toujours là.",
   "L'autre vaisseau. Il ne répond pas. Mais il nous suit depuis le secteur 2.",
@@ -5062,7 +5060,7 @@ function updatePhenomena(dt){
     for(const c of comets) applyGravityOnObject(dt,c,p.x,p.y,mass*0.7,p.r+5);
     const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     const range=gravityRange(mass);
-    if(dist<range) window._gravFields.push({x:p.x,y:p.y,mass,range,dist,color:p.color,r:p.r||15});
+    if(dist<range) window._gravFields.push({x:p.x,y:p.y,mass,range,dist,color:p.color,r:p.r||15,isBH:true});
   }
   phenomena=phenomena.filter(p=>{const dx=p.x-ship.x,dy=p.y-ship.y;return Math.sqrt(dx*dx+dy*dy)<Math.max(W,H)*2;});
 }
@@ -5867,49 +5865,46 @@ function drawGrid(){
   const fields=window._gravFields||[];
   if(fields.length===0)return;
 
-  // Résolution de la grille — plus fine près des corps massifs
   const COLS=28, ROWS=28;
   const uColor=UNIVERSES[currentUniverse]?.primary||'#00ff41';
   const ur=parseInt(uColor.slice(1,3),16)||0;
   const ug=parseInt(uColor.slice(3,5),16)||255;
   const ub=parseInt(uColor.slice(5,7),16)||65;
 
-  // Précalcul de tous les points déformés
+  // Champs statiques — on ne prend que les positions figées
+  // Seul le trou noir a sa masse mise à jour en temps réel
+  const staticFields=fields.map(f=>({
+    x:f.x, y:f.y,
+    mass:f.isBH?BODY_MASSES.blackhole:f.mass, // trou noir suit sa masse réelle
+    range:f.isBH?gravityRange(BODY_MASSES.blackhole):f.range,
+    r:f.r,
+  }));
+
   const pts=[];
   for(let row=0;row<=ROWS;row++){
     pts.push([]);
     for(let col=0;col<=COLS;col++){
-      // Position monde de ce point de grille
-      const gs=150; // espacement en unités monde
+      const gs=150;
       const wx=camX+(col-COLS/2)*gs;
       const wy=camY+(row-ROWS/2)*gs;
-
-      // Déformation gravitationnelle
       let dx_tot=0,dy_tot=0;
-      for(const f of fields){
+      for(const f of staticFields){
         const ddx=wx-f.x,ddy=wy-f.y;
         const d2=ddx*ddx+ddy*ddy;
         const d=Math.sqrt(d2)+0.001;
         if(d<f.range&&d>f.r*0.5){
-          // Déformation forte — inversement proportionnelle au carré
           const strength=Math.min(300,f.mass*G_CONST*8000/Math.max(d2,100));
-          // Direction vers le corps massif
           dx_tot-=ddx/d*strength;
           dy_tot-=ddy/d*strength;
         }
       }
-
-      // Convertir en coordonnées écran
       const [sx,sy]=worldToScreen(wx+dx_tot,wy+dy_tot);
       const deform=Math.sqrt(dx_tot*dx_tot+dy_tot*dy_tot);
       pts[row].push({sx,sy,deform});
     }
   }
 
-  // Dessiner segment par segment avec couleur selon déformation
   ctx.lineWidth=0.6;
-
-  // Lignes horizontales
   for(let row=0;row<=ROWS;row++){
     for(let col=0;col<COLS;col++){
       const p1=pts[row][col],p2=pts[row][col+1];
@@ -5920,8 +5915,6 @@ function drawGrid(){
       ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();
     }
   }
-
-  // Lignes verticales
   for(let col=0;col<=COLS;col++){
     for(let row=0;row<ROWS;row++){
       const p1=pts[row][col],p2=pts[row+1][col];
