@@ -7452,14 +7452,17 @@ function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
   ctx.fillStyle='#000902';ctx.fillRect(0,0,W,H);
 
-  if(state==='playing'||state==='dying'||state==='wormhole'){
+  if(state==='playing'||state==='dying'||state==='wormhole'||state==='cutscene'){
     if(state==='wormhole'){
-      // Animation trou de ver — rendu minimal + animation
       updateWormhole(dt);
       ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
       drawNebulae();drawStars(ts);
       drawShip();
       drawWormhole();
+    } else if(state==='cutscene'){
+      // Fins narratives — rendu géré par drawFinA/drawFinB via RAF
+      // On dessine juste le vaisseau si aucune fin active
+      if(!finAActive&&!finBActive)drawShip();
     } else {
       if(state==='playing'&&!cataloguePaused){
         gameTime+=dt;score+=dt*10*difficulty;
