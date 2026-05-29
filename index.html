@@ -618,7 +618,44 @@ function drawDockingUI(){
   ctx.restore();
 }
 
-// ── Wake Lock — écran reste allumé ───────────
+// ── Respiration Simon — O2 bas ────────────────
+let breathOscillator=null,breathGain=null,breathActive=false;
+
+function startBreathing(){
+  if(breathActive||!audioCtx)return;
+  breathActive=true;
+  breathGain=audioCtx.createGain();
+  breathGain.gain.setValueAtTime(0,audioCtx.currentTime);
+  breathGain.connect(audioCtx.destination);
+
+  function breathCycle(rate){
+    if(!breathActive)return;
+    const now=audioCtx.currentTime;
+    const osc=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(80+Math.random()*20,now);
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(0.08,now+rate*0.4);
+    g.gain.linearRampToValueAtTime(0,now+rate);
+    osc.connect(g);g.connect(breathGain);
+    osc.start(now);osc.stop(now+rate);
+    setTimeout(()=>breathCycle(Math.max(0.6,rate*0.92)),rate*800);
+  }
+  breathCycle(2.5); // commence lent
+}
+
+function stopBreathing(){
+  if(!breathActive)return;
+  breathActive=false;
+  if(breathGain)breathGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.5);
+}
+
+function updateBreathing(){
+  if(!audioCtx||state!=='playing')return;
+  if(oxygen<25&&!breathActive)startBreathing();
+  else if(oxygen>=30&&breathActive)stopBreathing();
+}
 let wakeLock=null;
 async function requestWakeLock(){
   try{
@@ -641,6 +678,8 @@ function haptic(type){
     magnetar:[100,20,60,20,40],wormhole:[50,30,80,30,120,30,200],
     godFlare:[400,100,200,50,100],collect:[15],
     danger:[60,40,60],drift:[20],dock:[30,20,30],silence:[200],
+    orbit:[5,200,5,200,5], // douce et continue — orbite stable
+    pickup:[8],            // clac sec — collecte capsule
   };
   try{navigator.vibrate(patterns[type]||[30]);}catch(e){}
 }
@@ -1105,7 +1144,24 @@ function updateAmbient(){
   musicInterval+=(targetInterval-musicInterval)*0.01;
   musicFeedback.gain.setTargetAtTime(0.55-danger*0.2,audioCtx.currentTime,1);
   musicDelay.delayTime.setTargetAtTime(0.6-danger*0.15,audioCtx.currentTime,1);
-  musicMaster.gain.setTargetAtTime(0.08+danger*0.06,audioCtx.currentTime,0.5);
+
+  // Dilatation temporelle sonore près du trou noir
+  let bhProximity=0;
+  for(const p of phenomena){
+    if(p.name==='TROU NOIR'){
+      const dx=ship.x-p.x,dy=ship.y-p.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const range=gravityRange(p.mass||BODY_MASSES.blackhole);
+      bhProximity=Math.max(0,1-dist/range);
+    }
+  }
+  // Plus on est proche — musique plus lente, plus grave, plus étirée
+  const bhFactor=bhProximity*0.8;
+  musicMaster.gain.setTargetAtTime(0.08+danger*0.06+bhFactor*0.04,audioCtx.currentTime,0.5);
+  if(bhProximity>0.2){
+    musicDelay.delayTime.setTargetAtTime(0.6+bhFactor*1.2,audioCtx.currentTime,2);
+    musicFeedback.gain.setTargetAtTime(0.7+bhFactor*0.2,audioCtx.currentTime,2);
+  }
 }
 
 function stopAmbient(){
@@ -1878,6 +1934,7 @@ function updateSecondaryWormholes(dt){
     if(!w.discovered&&dist<w.r+15){
       w.discovered=true;w.life=0;
       currentUniverse=w.targetUniverse;
+      triggerChromAber(8,0.5); // aberration forte au passage
       sectorCount++;
       // Effets des trous de ver sur Simon — à partir de la 5e traversée
       if(sectorCount>=5&&!_exchangesDone?.has('wormhole_effects')){
@@ -2392,6 +2449,18 @@ function initStars(){
       bright:Math.random(),
     });
   }
+  // Couche profonde — très loin, très sombre, parallaxe minimal
+  for(let i=0;i<180;i++){
+    stars.push({
+      x:Math.random()*10000-5000,y:Math.random()*10000-5000,
+      r:0.3+Math.random()*0.5,
+      layer:0.01+Math.random()*0.03, // parallaxe quasi nul — horizon cosmique
+      color:'#ffffff',
+      twinkle:Math.random()*Math.PI*2,
+      twinkleSpeed:0.2+Math.random()*0.5,
+      bright:0.1+Math.random()*0.2, // très sombres
+    });
+  }
   // Nébuleuses
   nebulae=[];
   for(let i=0;i<6;i++){
@@ -2582,10 +2651,12 @@ const JOURNAL_ENTRIES={
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
 const MDW_TUTORIAL=[
-  {delay:3,  text:"MDW. Je m'occupe des systèmes de navigation et de catalogage."},
-  {delay:18, text:"Les capsules lumineuses — collectez-les. Oxygène, énergie, propergol."},
-  {delay:35, text:"Chaque planète que vous approchez est automatiquement enregistrée dans la base de données. C'est le cœur de la mission."},
-  {delay:65, text:"Radar : vert = ressource, rouge = débris. Restez en mouvement."},
+  {delay:2,  text:"Systèmes en ligne. Je vais vous guider."},
+  {delay:8,  text:"Les capsules lumineuses — approchez-vous pour les collecter. Oxygène, énergie, propergol."},
+  {delay:20, text:"Radar en haut à droite. Points verts : ressources. Points rouges : débris. Restez en mouvement."},
+  {delay:35, text:"Les planètes — approchez lentement, vitesse inférieure à 3 unités par seconde pour l'amarrage automatique."},
+  {delay:50, text:"Les trous de ver vous transportent vers d'autres secteurs. C'est notre meilleur vecteur de progression."},
+  {delay:65, text:"Séquence terminée. Bonne route, Simon Brent."},
 ];
 
 // ── Logs des autres pilotes dans les épaves ───
@@ -2783,39 +2854,77 @@ function updatePlanets(dt){
     }
 
     // Danger si planète brûlante et très proche
-    if(p.type.isDangerous&&dist<p.r+30&&Math.random()<0.05*dt*60){
-      oxygen=Math.max(0,oxygen-2*drainMult*dt);
-      hull=Math.max(0,hull-1*drainMult*dt);
+    if(p.type.isDangerous){
+      if(dist<p.r+120){
+        // Warning visuel — halo rouge pulsant à l'écran
+        const warningAlpha=Math.max(0,0.15*(1-(dist-p.r)/120));
+        const [psx,psy]=worldToScreen(p.x,p.y);
+        const pr=p.r*viewZoom;
+        ctx.save();
+        const pulse=(Math.sin(Date.now()*0.006)+1)*0.5;
+        ctx.strokeStyle=`rgba(255,60,0,${warningAlpha*(0.5+pulse*0.5)})`;
+        ctx.lineWidth=2+pulse*2;ctx.shadowColor='#ff3300';ctx.shadowBlur=15+pulse*10;
+        ctx.beginPath();ctx.arc(psx,psy,pr+20+pulse*10,0,Math.PI*2);ctx.stroke();
+        ctx.restore();
+      }
+      if(dist<p.r+30&&Math.random()<0.05*dt*60){
+        oxygen=Math.max(0,oxygen-2*drainMult*dt);
+        hull=Math.max(0,hull-1*drainMult*dt);
+        triggerFlash('#ff4400',0.1);
+        haptic('debris');
+      }
+    }
+
+    // Haptic orbite stable — vibration douce
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    const orbitSpeed=Math.sqrt(G_CONST*mass/Math.max(dist,1));
+    if(Math.abs(speed-orbitSpeed)<1&&dist<p.r+200&&dist>p.r+30){
+      haptic('orbit');
     }
   }
 }
 
 // ── Start ────────────────────────────────────
 function startOpeningSequence(){
-  // Série 1 — avant MDW, espacée pour laisser le temps de lire
-  const lines=[
-    {text:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.", label:"JOURNAL", delay:3000},
-    {text:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.", label:"JOURNAL", delay:11000},
-    {text:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous\net certains indicateurs ont l'air d'être HS.", label:"JOURNAL", delay:19000},
-    {text:"J'ai une plaie au front et mon dos me fait souffrir.", label:"JOURNAL", delay:27000},
-  ];
-  lines.forEach(l=>{
-    setTimeout(()=>{
-      if(!journalEl)return;
-      journalFullText=l.text;
-      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-      journalEl.classList.add('active');
-      journalDay.textContent=l.label;
-      journalText.textContent='';
-      journalText.style.color='rgba(0,255,65,0.85)';
-    },l.delay);
-  });
+  const showJ=(text,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+
+  // Série 1 — avant MDW
+  showJ("Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.", 3000);
+  showJ("Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.", 12000);
+  showJ("Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.", 21000);
+  showJ("J'ai une plaie au front et mon dos me fait souffrir.", 30000);
+
+  // Simon trouve MDW dans le vaisseau
+  showJ("Il y a un robot au sol. Hors service.\nJe vais essayer de le remettre en état.", 39000);
+  showJ("J'ai travaillé dessus toute la nuit.\nIl semble intact. Je tente le démarrage.", 50000);
+
+  // MDW s'allume — protocole automatique
+  setTimeout(()=>{
+    mdwActive=true;mdwFound=true;
+    logEvent('🤖 MDW ACTIVÉ','planet');
+    unlockAchievement&&unlockAchievement('mdw');
+    mdwSpeak("MDW. À votre service.\nQue puis-je faire pour vous aujourd'hui ?",true);
+  },60000);
+
+  // Simon demande le tutoriel
+  setTimeout(()=>showJ("J'ai besoin du tutoriel.",0),62000);
+
+  // MDW lance le tutoriel
+  setTimeout(()=>{
+    mdwSpeak("Bien. Lancement séquence.",true);
+    setTimeout(()=>startTutorial(),3000);
+  },68000);
 }
 
 function startGame(){
   document.getElementById('hud').style.opacity='1';
   requestWakeLock();
-  // Séquence d'ouverture — textes de Simon dès le début
+  initMDW(); // MDW créé mais pas encore actif — activé par la séquence
   setTimeout(()=>startOpeningSequence(),1500);
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
@@ -2876,20 +2985,7 @@ function startGame(){
   // zenMode conservé — reset seulement si nouvelle partie normale
   if(!zenMode)zenMode=false;
   crackTimer=0;
-  // Épave garantie à portée radar — MDW dedans pour le tutorial
-  // Épave MDW — position aléatoire comme les autres épaves
-  const mdwAngle=Math.random()*Math.PI*2;
-  const mdwDist=400+Math.random()*300;
-  wrecks.push({
-    x:ship.x+Math.cos(mdwAngle)*mdwDist,
-    y:ship.y+Math.sin(mdwAngle)*mdwDist,
-    rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
-    name:'CSS EREBUS',
-    log:'Épave de programme. Robot MDW en hibernation. Durée indéterminée. Cargo intact.',
-    hasResources:true,moduleKey:null,
-    discovered:false,pulse:Math.random()*Math.PI*2,r:20,
-    isMDWWreck:true,
-  });
+  // MDW est dans le vaisseau — pas d'épave externe
 
   // Black box — épave du run précédent, plus loin
   if(lastBlackBox&&lastBlackBox.day>=3){
@@ -2975,7 +3071,11 @@ function fragmentDebris(d){
   }
   spawnParticles(d.x,d.y,'#00ff41',10,0.8);playFragment();
 }
-function spawnInitialDebris(){for(let i=0;i<6;i++)spawnDebris(false);}
+function spawnInitialDebris(){
+  // Moins de débris les premiers jours — Simon vient de se réveiller
+  const count=survivalDay<=3?2:6;
+  for(let i=0;i<count;i++)spawnDebris(false);
+}
 
 // ── Capsules ─────────────────────────────────
 const CAPSULE_TYPES=[
@@ -3022,7 +3122,35 @@ function logEvent(msg,type='ok'){
   setTimeout(()=>el.remove(),4000);
   if(eventLog.children.length>5)eventLog.firstChild.remove();
 }
-function triggerFlash(color='#ff2020',intensity=0.35){flash.style.background=color;flash.style.opacity=intensity;setTimeout(()=>{flash.style.opacity='0';},80);}
+function triggerFlash(color='#ff2020',intensity=0.35){
+  flash.style.background=color;flash.style.opacity=intensity;
+  setTimeout(()=>{flash.style.opacity='0';},80);
+}
+
+// Aberration chromatique — décalage RGB sur canvas
+let chromAberTimer=0;
+let chromAberIntensity=0;
+function triggerChromAber(intensity=4,duration=0.3){
+  chromAberIntensity=intensity;
+  chromAberTimer=duration;
+}
+
+function applyChromAber(){
+  if(chromAberTimer<=0||chromAberIntensity<=0)return;
+  const shift=chromAberIntensity*(chromAberTimer>0.1?1:chromAberTimer/0.1);
+  const imageData=ctx.getImageData(0,0,W,H);
+  const data=imageData.data;
+  const shifted=new Uint8ClampedArray(data.length);
+  for(let i=0;i<shifted.length;i++)shifted[i]=data[i];
+  // Décaler le canal rouge vers la droite
+  const s=Math.floor(shift)*4;
+  for(let i=0;i<data.length;i+=4){
+    if(i+s<data.length)shifted[i]=data[i+s]; // R décalé
+    if(i-s>=0)shifted[i+2]=data[i-s+2];      // B décalé inverse
+  }
+  const out=new ImageData(shifted,W,H);
+  ctx.putImageData(out,0,0);
+}
 function triggerShake(){document.body.classList.remove('shaking');void document.body.offsetWidth;document.body.classList.add('shaking');setTimeout(()=>document.body.classList.remove('shaking'),260);}
 
 // ── Combo ────────────────────────────────────
@@ -3127,8 +3255,7 @@ function updateDebris(dt){
     const dx=ship.x-d.x,dy=ship.y-d.y,dist=Math.sqrt(dx*dx+dy*dy);
     if(dist<d.r+10){
       hull=Math.max(0,hull-d.damage*0.15*drainMult*getModuleBonus('armor'));haptic('debris');
-      // Shake caméra selon l'impact
-      if(d.damage>3)triggerShake();
+      if(d.damage>3){triggerShake();triggerChromAber(3+d.damage*0.5,0.25);}
       ship.vx+=(dx/dist)*0.4;ship.vy+=(dy/dist)*0.4;
       d.vx-=(dx/dist)*0.5;d.vy-=(dy/dist)*0.5;
       spawnParticles(ship.x,ship.y,'#ff2020',8,2);
@@ -3150,6 +3277,7 @@ function updateCapsules(dt){
       addCombo();const bonus=Math.floor(100*(1+combo*0.5));score+=bonus;
       c.effect();spawnParticles(c.x,c.y,c.color,12,1.5);
       spawnFloatingText(c.x,c.y,'+'+bonus+(combo>1?' ×'+combo:''),c.color);
+      haptic('pickup');
       playCollect(combo);c.dead=true;
       // Mission counters
       if(currentMission){
@@ -4646,37 +4774,14 @@ function mdwSpeak(contextOrText, isRaw=false){
 }
 
 function initMDW(){
+  // MDW est créé au lancement du jeu — activé par la séquence d'ouverture
+  if(mdwEl)return; // déjà initialisé
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
-  mdwEl.style.cssText='display:none;'; // invisible — voix uniquement
+  mdwEl.style.cssText='display:none;';
   mdwEl.innerHTML='<div id="mdw-text"></div>';
   document.getElementById('hud').appendChild(mdwEl);
-  mdwActive=true;
-  mdwFound=true;
-
-  // Simon note la découverte — avant que MDW parle
-  setTimeout(()=>{
-    if(!journalEl)return;
-    journalFullText="J'ai récupéré ce robot MDW dans une épave.\nJe me demande si je peux le relancer. Il est en piteux état.";
-    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-    journalEl.classList.add('active');
-    journalDay.textContent='JOURNAL';
-    journalText.textContent='';
-    journalText.style.color='rgba(0,255,65,0.85)';
-  },500);
-
-  // Réveil MDW — sobre, juste les systèmes
-  const wakeUp=[
-    "MDW. Systèmes restaurés.",
-    "Je m'occupe du vaisseau.",
-  ];
-  wakeUp.forEach((l,i)=>setTimeout(()=>mdwSpeak(l,true),2000+i*5000));
-
-  // Tutorial après le réveil
-  setTimeout(()=>startTutorial(),16000);
-
-  logEvent('🤖 MDW ACTIVÉ','planet');
-  unlockAchievement&&unlockAchievement('mdw');
+  // mdwActive et mdwFound sont mis à true par startOpeningSequence
 }
 
 let mdwTypingActive=false;
@@ -6669,37 +6774,6 @@ function drawRadar(){
     rctx.beginPath();rctx.arc(cx,cy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
   }
 
-  // Point clignotant MDW — visible depuis le début même si pas encore trouvé
-  // MDW s'est mis en scène — son épave émet un signal
-  if(!mdwFound&&wrecks.length>0){
-    const mdwWreck=wrecks.find(w=>w.isMDWWreck);
-    if(mdwWreck){
-      const mx=(mdwWreck.x-ship.x)/RADAR_RANGE*RADAR_R;
-      const my=(mdwWreck.y-ship.y)/RADAR_RANGE*RADAR_R;
-      const md=Math.sqrt(mx*mx+my*my);
-      const pulse=Math.floor(Date.now()/300)%2===0;
-      if(md<=RADAR_R){
-        // Dans la portée — point ambre clignotant
-        if(pulse){
-          rctx.fillStyle='#ffaa00';rctx.shadowColor='#ffaa00';rctx.shadowBlur=8;
-          rctx.beginPath();rctx.arc(cx+mx,cy+my,4,0,Math.PI*2);rctx.fill();
-          rctx.shadowBlur=0;
-        }
-      } else {
-        // Hors portée — point directeur sur le cadre
-        const angle=Math.atan2(my,mx);
-        const bx=cx+Math.cos(angle)*(RADAR_R-2);
-        const by=cy+Math.sin(angle)*(RADAR_R-2);
-        if(pulse){
-          rctx.fillStyle='#ffaa00';rctx.globalAlpha=0.8;
-          rctx.shadowColor='#ffaa00';rctx.shadowBlur=6;
-          rctx.beginPath();rctx.arc(bx,by,3,0,Math.PI*2);rctx.fill();
-          rctx.globalAlpha=1;rctx.shadowBlur=0;
-        }
-      }
-    }
-  }
-
   // ── Points directeurs sur le cadre — trous de ver hors portée ──
   const allWormholes=[
     ...(secondaryWormholes||[]).map(w=>({x:w.x,y:w.y,color:UNIVERSES[w.targetUniverse]?.primary||'#ffffff'})),
@@ -6849,7 +6923,7 @@ function gameLoop(ts){
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
-        updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);
+        updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();
         updateAmbient();
         if(musicDelay){
@@ -6869,6 +6943,7 @@ function gameLoop(ts){
       drawParticles();drawDebris();drawCapsules();
       drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
+      if(chromAberTimer>0){chromAberTimer-=dt;applyChromAber();}
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
