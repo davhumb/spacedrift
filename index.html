@@ -309,7 +309,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.3</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.4</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -1903,25 +1903,6 @@ let sectorCount=0;
 let secondaryWormholes=[];
 let secondaryWormholeTimer=300; // premier après 5 min
 
-function spawnSecondaryWormhole(){
-  const angle=Math.random()*Math.PI*2;
-  const dist=600+Math.random()*600;
-  // TERMINAL (id:15) seulement après 10 secteurs traversés
-  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
-  const target=available[Math.floor(Math.random()*available.length)];
-  secondaryWormholes.push({
-    x:ship.x+Math.cos(angle)*dist,
-    y:ship.y+Math.sin(angle)*dist,
-    r:20,pulse:Math.random()*Math.PI*2,
-    rotAngle:0,
-    life:DAY_DURATION+(Math.random()*DAY_DURATION*0.5), // 1 à 1.5 jours
-    discovered:false,
-    targetUniverse:target.id,
-  });
-  
-  if(mdwActive)setTimeout(()=>mdwSpeak('Trou de ver. Non prévu. Destination inconnue.',true),800);
-}
-
 function updateSecondaryWormholes(dt){
   secondaryWormholeTimer-=dt;
   // Apparaissent dès le jour 4, rares — pas besoin d'avoir traversé un premier trou de ver
@@ -1937,6 +1918,10 @@ function updateSecondaryWormholes(dt){
     const dist=Math.sqrt(dx*dx+dy*dy);
     if(!w.discovered&&dist<w.r+15){
       w.discovered=true;w.life=0;
+      // Trou de ver retour → Fin A
+      if(w.isReturn){
+        triggerFinA();return;
+      }
       currentUniverse=w.targetUniverse;
       triggerChromAber(8,0.5); // aberration forte au passage
       sectorCount++;
@@ -3115,6 +3100,7 @@ function startGame(){
   auroraActive=false;auroraTimer=0;
   plasmaStreamActive=false;plasmaStreamTimer=0;
   sosTriggered=false;sosWreck=null;sosDocked=false;
+  finAActive=false;finBActive=false;returnWormholeSpawned=false;
   mdwDestroyed=false;mdwControlActive=false;
   TERMINAL_DIALOG.forEach(l=>delete l._shown);
   window._godMode=false;window._godEncounterStarted=false;
@@ -5380,7 +5366,213 @@ function checkDead(){
   }
 }
 
-// ── Séquence DIEU ─────────────────────────────
+// ── FIN A — La confiance ──────────────────────
+let finAActive=false;
+
+function triggerFinA(){
+  if(finAActive)return;
+  finAActive=true;
+  state='cutscene';
+  stopAmbient();
+  ship.vx=0;ship.vy=0;
+
+  // Journal Simon
+  setTimeout(()=>{
+    if(journalEl){
+      journalFullText="MDW avait raison.\nC'était le bon chemin.";
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+      journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+    }
+  },2000);
+
+  // Fondu vers le bleu — planète Terre
+  setTimeout(()=>{
+    let t=0;
+    const fadeInterval=setInterval(()=>{
+      t+=0.016;
+      ctx.fillStyle=`rgba(0,20,60,${Math.min(1,t*0.3)})`;
+      ctx.fillRect(0,0,W,H);
+      if(t>4){
+        clearInterval(fadeInterval);
+        drawFinA();
+      }
+    },16);
+  },6000);
+}
+
+function drawFinA(){
+  // Écran final — planète bleue, silence
+  const draw=()=>{
+    ctx.fillStyle='#000008';ctx.fillRect(0,0,W,H);
+    // Étoiles
+    for(let i=0;i<80;i++){
+      const x=(i*137.5)%W,y=(i*97.3)%H;
+      ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.beginPath();ctx.arc(x,y,0.5,0,Math.PI*2);ctx.fill();
+    }
+    // Planète bleue
+    const cx=W*0.5,cy=H*0.42,r=Math.min(W,H)*0.28;
+    const grad=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.1,cx,cy,r);
+    grad.addColorStop(0,'#4488ff');
+    grad.addColorStop(0.4,'#2255cc');
+    grad.addColorStop(0.7,'#1133aa');
+    grad.addColorStop(1,'#001155');
+    ctx.fillStyle=grad;ctx.shadowColor='#2255cc';ctx.shadowBlur=30;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    // Nuages
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.beginPath();ctx.ellipse(cx-r*0.2,cy-r*0.1,r*0.4,r*0.08,0.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx+r*0.1,cy+r*0.2,r*0.3,r*0.06,-0.2,0,Math.PI*2);ctx.fill();
+    // Halo atmosphérique
+    const atmo=ctx.createRadialGradient(cx,cy,r*0.95,cx,cy,r*1.08);
+    atmo.addColorStop(0,'rgba(100,160,255,0.3)');
+    atmo.addColorStop(1,'transparent');
+    ctx.fillStyle=atmo;ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(cx,cy,r*1.08,0,Math.PI*2);ctx.fill();
+    // Silence — pas de texte
+  };
+  draw();
+  // Après 8s — écran scores
+  setTimeout(()=>{
+    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+    upgradePoints+=earned;
+    hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
+    totalRuns=(totalRuns||0)+1;
+    saveGame();
+    setTimeout(()=>showUpgradeScreen(),500);
+  },8000);
+}
+
+// ── FIN B — La vérité ─────────────────────────
+let finBActive=false;
+
+function triggerFinB(){
+  if(finBActive)return;
+  finBActive=true;
+  // Séquence dieu remplacée par cimetière de lui-même
+  godSequenceActive=false;
+  state='cutscene';
+  stopAmbient();
+
+  // Générer des milliers d'épaves de son propre vaisseau
+  const wreckCount=60;
+  const selfWrecks=[];
+  for(let i=0;i<wreckCount;i++){
+    selfWrecks.push({
+      x:(Math.random()-0.5)*4000,
+      y:(Math.random()-0.5)*3000,
+      rot:Math.random()*Math.PI*2,
+      r:8+Math.random()*12,
+      pulse:Math.random()*Math.PI*2,
+    });
+  }
+
+  // Ralentir le vaisseau
+  ship.vx*=0.01;ship.vy*=0.01;
+
+  // Journal final
+  setTimeout(()=>{
+    if(journalEl){
+      journalFullText="Ce sont mes vaisseaux.\nJe suis tous ces pilotes.";
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+      journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+    }
+  },4000);
+
+  setTimeout(()=>{
+    if(journalEl){
+      journalFullText="Jour 1. Enfin si on peut dire.";
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+      journalText.textContent='';journalText.style.color='rgba(0,255,65,0.6)';
+    }
+  },12000);
+
+  // Rendu du cimetière — boucle
+  const drawB=()=>{
+    if(!finBActive)return;
+    ctx.fillStyle='rgba(0,2,0,0.3)';ctx.fillRect(0,0,W,H);
+    for(const w of selfWrecks){
+      w.pulse+=0.005;w.rot+=0.001;
+      const [sx,sy]=worldToScreen(w.x,w.y);
+      if(sx<-100||sx>W+100||sy<-100||sy>H+100)continue;
+      const pulse=(Math.sin(w.pulse)+1)*0.5;
+      const r=w.r*viewZoom;
+      ctx.save();ctx.translate(sx,sy);ctx.rotate(w.rot);
+      ctx.strokeStyle=`rgba(0,255,65,${0.1+pulse*0.08})`;
+      ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*0.3,-r*0.4);
+      ctx.lineTo(r*0.5,0);ctx.lineTo(-r*0.3,r*0.4);ctx.closePath();ctx.stroke();
+      ctx.restore();
+    }
+    requestAnimationFrame(drawB);
+  };
+  drawB();
+
+  // Fondu noir final
+  setTimeout(()=>{
+    finBActive=false;
+    let fade=0;
+    const fi=setInterval(()=>{
+      fade+=0.01;
+      ctx.fillStyle=`rgba(0,0,0,${Math.min(1,fade)})`;
+      ctx.fillRect(0,0,W,H);
+      if(fade>=1){
+        clearInterval(fi);
+        const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+        upgradePoints+=earned;
+        hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
+        totalRuns=(totalRuns||0)+1;
+        saveGame();
+        setTimeout(()=>showUpgradeScreen(),500);
+      }
+    },16);
+  },18000);
+}
+
+// ── Trou de ver retour — MDW le signale en acte 3 ──
+let returnWormholeSpawned=false;
+
+function spawnReturnWormhole(){
+  if(returnWormholeSpawned||sectorCount<3)return;
+  returnWormholeSpawned=true;
+
+  const angle=Math.random()*Math.PI*2;
+  const dist=600+Math.random()*400;
+  secondaryWormholes.push({
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    r:26,pulse:0,rotAngle:0,
+    ringAngles:[0,0.7,1.4],
+    particleAngle:0,
+    life:DAY_DURATION*3, // dure 3 jours
+    discovered:false,
+    targetUniverse:-1, // spécial — Fin A
+    isReturn:true,
+  });
+
+  // MDW le signale
+  setTimeout(()=>{
+    if(mdwActive){
+      mdwSpeak_voice("Ce trou de ver. Les coordonnées correspondent. C'est le chemin de retour.");
+      if(journalEl){
+        setTimeout(()=>{
+          journalFullText="MDW dit que c'est le bon chemin.\nIl en est certain.";
+          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+          journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+        },6000);
+      }
+    }
+  },3000);
+}
+
+function checkReturnWormhole(){
+  if(returnWormholeSpawned||sectorCount<3||survivalDay<20)return;
+  if(Math.random()<0.0005)spawnReturnWormhole();
+}
 let godSequenceActive=false;
 let godSequenceT=0;
 let godFlareActive=false;
@@ -5701,11 +5893,11 @@ function updateTerminalDialog(dt){
     logEvent('◈ MDW — HORS LIGNE','warn');
   }
 
-  // Fin du dialogue — démarrer la séquence dieu
+  // Fin du dialogue — Fin B
   if(terminalDialogT>=138){
     terminalDialogActive=false;
     TERMINAL_DIALOG.forEach(l=>delete l._shown);
-    setTimeout(()=>startGodSequence(),3000);
+    setTimeout(()=>triggerFinB(),3000);
   }
 }
 
@@ -5857,35 +6049,7 @@ function updateAurora(dt){
   if(auroraTimer<=0)auroraActive=false;
 }
 
-function drawAuroraEffect(){
-  if(!auroraActive)return;
-  const alpha=Math.min(0.12,Math.min(auroraTimer,5)/5*0.12);
-  const r=parseInt(auroraColor.slice(1,3),16);
-  const g=parseInt(auroraColor.slice(3,5),16);
-  const b=parseInt(auroraColor.slice(5,7),16);
-  // Rideaux ondulants en arrière-plan
-  ctx.save();
-  for(let i=0;i<5;i++){
-    const x=W*(i/4);
-    const wave=Math.sin(auroraPhase+i*0.7)*60;
-    const grad=ctx.createLinearGradient(x,0,x,H);
-    grad.addColorStop(0,'transparent');
-    grad.addColorStop(0.3+Math.sin(auroraPhase*0.5+i)*0.15,`rgba(${r},${g},${b},${alpha})`);
-    grad.addColorStop(1,'transparent');
-    ctx.fillStyle=grad;
-    ctx.beginPath();
-    ctx.moveTo(x-30+wave,0);
-    for(let y=0;y<=H;y+=20){
-      ctx.lineTo(x-30+Math.sin(auroraPhase+y*0.02+i)*25+wave,y);
-    }
-    ctx.lineTo(x+30+wave,H);
-    for(let y=H;y>=0;y-=20){
-      ctx.lineTo(x+30+Math.sin(auroraPhase+y*0.02+i+1)*25+wave,y);
-    }
-    ctx.closePath();ctx.fill();
-  }
-  ctx.restore();
-}
+function drawAuroraEffect(){} // désactivé
 
 // ── Courant de plasma ─────────────────────────
 let plasmaStreamActive=false,plasmaStreamTimer=0;
@@ -7145,7 +7309,7 @@ function gameLoop(ts){
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();
-        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();
+        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
