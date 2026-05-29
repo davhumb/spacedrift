@@ -309,7 +309,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.4</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.5</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -1918,12 +1918,10 @@ function updateSecondaryWormholes(dt){
     const dist=Math.sqrt(dx*dx+dy*dy);
     if(!w.discovered&&dist<w.r+15){
       w.discovered=true;w.life=0;
-      // Trou de ver retour → Fin A
-      if(w.isReturn){
-        triggerFinA();return;
-      }
+      if(w.isReturn){triggerFinA();return;}
       currentUniverse=w.targetUniverse;
-      triggerChromAber(8,0.5); // aberration forte au passage
+      drainSanity();
+      triggerChromAber(8,0.5);
       sectorCount++;
       // Effets des trous de ver sur Simon — à partir de la 5e traversée
       if(sectorCount>=5&&!_exchangesDone?.has('wormhole_effects')){
@@ -3101,6 +3099,7 @@ function startGame(){
   plasmaStreamActive=false;plasmaStreamTimer=0;
   sosTriggered=false;sosWreck=null;sosDocked=false;
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
+  sanity=100;ghostShipActive=false;
   mdwDestroyed=false;mdwControlActive=false;
   TERMINAL_DIALOG.forEach(l=>delete l._shown);
   window._godMode=false;window._godEncounterStarted=false;
@@ -5366,82 +5365,213 @@ function checkDead(){
   }
 }
 
-// ── FIN A — La confiance ──────────────────────
+// ── Système Sanity ────────────────────────────
+let sanity=100;
+const SANITY_DRAIN_PER_WORMHOLE=10;
+
+function updateSanity(dt){
+  if(state!=='playing')return;
+  // Remonte très lentement
+  sanity=Math.min(100,sanity+0.008*dt);
+
+  // Effets visuels sous 45
+  if(sanity<45){
+    const intensity=(45-sanity)/45;
+    // Légère aberration permanente
+    if(Math.random()<0.02*intensity){
+      triggerChromAber(intensity*2,0.1);
+    }
+    // Étoiles qui dérivent légèrement — via un offset global
+    window._sanityDrift=(window._sanityDrift||0)+dt*intensity*0.5;
+  }
+
+  // Journal paranoïaque sous 70 — géré dans JOURNAL_ENTRIES acte 3
+}
+
+function drainSanity(){
+  sanity=Math.max(0,sanity-SANITY_DRAIN_PER_WORMHOLE);
+  // Effet immédiat
+  if(sanity<45)triggerChromAber(4,0.3);
+  if(sanity<25){
+    // Vaisseau fantôme — aparaît brièvement
+    setTimeout(()=>spawnGhostShip(),2000);
+  }
+}
+
+let ghostShipActive=false,ghostShipT=0,ghostShipPos={x:0,y:0};
+function spawnGhostShip(){
+  if(ghostShipActive)return;
+  ghostShipActive=true;ghostShipT=0;
+  ghostShipPos={x:ship.x+Math.cos(ship.angle+0.5)*80,y:ship.y+Math.sin(ship.angle+0.5)*80};
+  setTimeout(()=>{ghostShipActive=false;},3000);
+}
+
+function drawGhostShip(){
+  if(!ghostShipActive)return;
+  ghostShipT+=0.016;
+  const alpha=Math.sin(ghostShipT*Math.PI/3)*0.3;
+  if(alpha<=0)return;
+  const [sx,sy]=worldToScreen(ghostShipPos.x,ghostShipPos.y);
+  ctx.save();ctx.translate(sx,sy);ctx.rotate(ship.angle);
+  ctx.globalAlpha=alpha;
+  ctx.strokeStyle='rgba(0,255,65,0.6)';ctx.lineWidth=1;
+  const sz=10*viewZoom;
+  ctx.beginPath();ctx.moveTo(sz,0);ctx.lineTo(-sz*0.6,-sz*0.5);ctx.lineTo(-sz*0.6,sz*0.5);ctx.closePath();ctx.stroke();
+  ctx.globalAlpha=1;ctx.restore();
+}
 let finAActive=false;
+
+// ── Constellations réelles ────────────────────
+const CONSTELLATIONS=[
+  {name:'Orion', color:'rgba(255,240,220,0.7)', stars:[
+    {x:0.52,y:0.28},{x:0.48,y:0.32},{x:0.50,y:0.36},
+    {x:0.46,y:0.41},{x:0.54,y:0.41},{x:0.44,y:0.48},{x:0.56,y:0.48},
+  ], lines:[[0,1],[1,2],[2,3],[2,4],[3,5],[4,6]]},
+  {name:'Grande Ourse', color:'rgba(200,220,255,0.7)', stars:[
+    {x:0.22,y:0.18},{x:0.26,y:0.22},{x:0.30,y:0.20},{x:0.34,y:0.18},
+    {x:0.36,y:0.14},{x:0.32,y:0.10},{x:0.28,y:0.12},
+  ], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]},
+  {name:'Cassiopée', color:'rgba(220,200,255,0.7)', stars:[
+    {x:0.72,y:0.12},{x:0.76,y:0.16},{x:0.80,y:0.12},{x:0.84,y:0.16},{x:0.88,y:0.12},
+  ], lines:[[0,1],[1,2],[2,3],[3,4]]},
+  {name:'Scorpion', color:'rgba(255,180,180,0.7)', stars:[
+    {x:0.68,y:0.72},{x:0.72,y:0.68},{x:0.76,y:0.72},{x:0.74,y:0.78},
+    {x:0.70,y:0.82},{x:0.66,y:0.86},{x:0.64,y:0.82},
+  ], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]]},
+  {name:'Pléiades', color:'rgba(180,210,255,0.8)', stars:[
+    {x:0.18,y:0.62},{x:0.22,y:0.60},{x:0.24,y:0.64},{x:0.20,y:0.66},
+    {x:0.16,y:0.64},{x:0.26,y:0.62},{x:0.21,y:0.63},
+  ], lines:[[0,1],[1,2],[2,3],[3,0],[1,5],[2,6]]},
+];
 
 function triggerFinA(){
   if(finAActive)return;
   finAActive=true;
   state='cutscene';
   stopAmbient();
-  ship.vx=0;ship.vy=0;
+  ship.vx=0.3;ship.vy=0.1; // dérive lente vers le soleil
 
-  // Journal Simon
-  setTimeout(()=>{
-    if(journalEl){
-      journalFullText="MDW avait raison.\nC'était le bon chemin.";
-      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-      journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-      journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-    }
-  },2000);
+  // Son doux — une note longue et chaude
+  if(audioCtx){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine';o.frequency.value=220;
+    g.gain.setValueAtTime(0,audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.06,audioCtx.currentTime+4);
+    g.gain.setValueAtTime(0.06,audioCtx.currentTime+70);
+    g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+80);
+    o.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+82);
+  }
 
-  // Fondu vers le bleu — planète Terre
+  const showJ=(text,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+
+  // Journal — reconnaissance progressive
+  showJ("Ces étoiles.\nJe les connais.", 5000);
+  showJ("C'est Orion.\nComment je sais ça ?", 18000);
+  showJ("La Grande Ourse.\nJe suis dans mon système.", 32000);
+  showJ("Je rentre.", 50000);
+
+  // MDW — une seule phrase
   setTimeout(()=>{
-    let t=0;
-    const fadeInterval=setInterval(()=>{
-      t+=0.016;
-      ctx.fillStyle=`rgba(0,20,60,${Math.min(1,t*0.3)})`;
+    if(mdwActive)mdwSpeak_voice("Oui.");
+  },54000);
+
+  // Démarrer le rendu
+  drawFinA(0);
+
+  // Fondu final et scores
+  setTimeout(()=>{
+    let fade=0;
+    const fi=setInterval(()=>{
+      fade+=0.005;
+      ctx.fillStyle=`rgba(255,250,240,${Math.min(1,fade)})`;
       ctx.fillRect(0,0,W,H);
-      if(t>4){
-        clearInterval(fadeInterval);
-        drawFinA();
+      if(fade>=1){
+        clearInterval(fi);
+        finAActive=false;
+        const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+        upgradePoints+=earned;
+        hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
+        totalRuns=(totalRuns||0)+1;
+        saveGame();
+        setTimeout(()=>showUpgradeScreen(),500);
       }
     },16);
-  },6000);
+  },65000);
 }
 
-function drawFinA(){
-  // Écran final — planète bleue, silence
-  const draw=()=>{
-    ctx.fillStyle='#000008';ctx.fillRect(0,0,W,H);
-    // Étoiles
-    for(let i=0;i<80;i++){
-      const x=(i*137.5)%W,y=(i*97.3)%H;
-      ctx.fillStyle='rgba(255,255,255,0.4)';
-      ctx.beginPath();ctx.arc(x,y,0.5,0,Math.PI*2);ctx.fill();
+function drawFinA(startT){
+  if(!finAActive)return;
+  const now=(Date.now()-startT)/1000;
+
+  ctx.fillStyle='#00050a';ctx.fillRect(0,0,W,H);
+
+  // Fond légèrement plus chaud que le jeu normal — on est "chez soi"
+  ctx.fillStyle='rgba(20,10,5,0.3)';ctx.fillRect(0,0,W,H);
+
+  // Étoiles de fond
+  for(let i=0;i<200;i++){
+    const x=(i*137.508)%W,y=(i*97.321)%H;
+    const bright=0.2+((i*31)%100)/300;
+    ctx.fillStyle=`rgba(255,255,240,${bright})`;
+    ctx.beginPath();ctx.arc(x,y,0.4+((i*7)%3)*0.3,0,Math.PI*2);ctx.fill();
+  }
+
+  // Soleil — au loin, à droite, qui attire
+  const sunX=W*0.85,sunY=H*0.3;
+  const sunR=12+Math.sin(now*0.5)*1.5;
+  const sunGrad=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*4);
+  sunGrad.addColorStop(0,'rgba(255,240,180,0.9)');
+  sunGrad.addColorStop(0.3,'rgba(255,200,80,0.4)');
+  sunGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=sunGrad;
+  ctx.beginPath();ctx.arc(sunX,sunY,sunR*4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,245,200,1)';ctx.shadowColor='#ffdd88';ctx.shadowBlur=20;
+  ctx.beginPath();ctx.arc(sunX,sunY,sunR,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+
+  // Constellations — apparaissent progressivement
+  CONSTELLATIONS.forEach((c,ci)=>{
+    const appearT=8+ci*10; // chaque constellation apparaît à 8, 18, 28, 38, 48s
+    if(now<appearT)return;
+    const alpha=Math.min(1,(now-appearT)/3); // fondu en 3s
+
+    // Lignes
+    ctx.strokeStyle=c.color.replace('0.7',`${0.2*alpha}`).replace('0.8',`${0.25*alpha}`);
+    ctx.lineWidth=0.5;
+    for(const [a,b] of c.lines){
+      const s1=c.stars[a],s2=c.stars[b];
+      ctx.beginPath();
+      ctx.moveTo(s1.x*W,s1.y*H);
+      ctx.lineTo(s2.x*W,s2.y*H);
+      ctx.stroke();
     }
-    // Planète bleue
-    const cx=W*0.5,cy=H*0.42,r=Math.min(W,H)*0.28;
-    const grad=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.1,cx,cy,r);
-    grad.addColorStop(0,'#4488ff');
-    grad.addColorStop(0.4,'#2255cc');
-    grad.addColorStop(0.7,'#1133aa');
-    grad.addColorStop(1,'#001155');
-    ctx.fillStyle=grad;ctx.shadowColor='#2255cc';ctx.shadowBlur=30;
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-    // Nuages
-    ctx.fillStyle='rgba(255,255,255,0.15)';
-    ctx.beginPath();ctx.ellipse(cx-r*0.2,cy-r*0.1,r*0.4,r*0.08,0.3,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.ellipse(cx+r*0.1,cy+r*0.2,r*0.3,r*0.06,-0.2,0,Math.PI*2);ctx.fill();
-    // Halo atmosphérique
-    const atmo=ctx.createRadialGradient(cx,cy,r*0.95,cx,cy,r*1.08);
-    atmo.addColorStop(0,'rgba(100,160,255,0.3)');
-    atmo.addColorStop(1,'transparent');
-    ctx.fillStyle=atmo;ctx.shadowBlur=0;
-    ctx.beginPath();ctx.arc(cx,cy,r*1.08,0,Math.PI*2);ctx.fill();
-    // Silence — pas de texte
-  };
-  draw();
-  // Après 8s — écran scores
-  setTimeout(()=>{
-    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
-    upgradePoints+=earned;
-    hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
-    totalRuns=(totalRuns||0)+1;
-    saveGame();
-    setTimeout(()=>showUpgradeScreen(),500);
-  },8000);
+
+    // Étoiles
+    for(const s of c.stars){
+      const twinkle=0.7+Math.sin(now*2+s.x*10)*0.3;
+      ctx.fillStyle=c.color.replace('0.7',`${alpha*twinkle}`).replace('0.8',`${alpha*twinkle}`);
+      ctx.shadowColor=c.color;ctx.shadowBlur=6*alpha;
+      ctx.beginPath();ctx.arc(s.x*W,s.y*H,1.5,0,Math.PI*2);ctx.fill();
+    }
+
+    // Nom de la constellation
+    if(alpha>0.5){
+      ctx.globalAlpha=(alpha-0.5)*2;
+      ctx.fillStyle='rgba(255,255,220,0.4)';
+      ctx.font=`9px 'Share Tech Mono'`;ctx.textAlign='left';ctx.shadowBlur=0;
+      const firstStar=c.stars[0];
+      ctx.fillText(c.name,firstStar.x*W+8,firstStar.y*H-5);
+      ctx.globalAlpha=1;
+    }
+  });
+
+  requestAnimationFrame(()=>drawFinA(startT||(Date.now()-now*1000)));
 }
 
 // ── FIN B — La vérité ─────────────────────────
@@ -7308,7 +7438,7 @@ function gameLoop(ts){
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
-        updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();
+        updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();
         updateAmbient();
         if(musicDelay){
@@ -7326,7 +7456,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
       if(chromAberTimer>0){chromAberTimer-=dt;applyChromAber();}
       if(nightMode)drawNightMode();
