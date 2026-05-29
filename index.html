@@ -2425,19 +2425,34 @@ function triggerJournal(day){
     setTimeout(()=>startTutorial(),3000);
   }
 }
+function playTypeSound(){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.type='square';
+  o.frequency.value=180+Math.random()*80;
+  g.gain.setValueAtTime(0.04,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.04);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+0.04);
+}
+
 function updateJournal(dt){
   if(!journalActive)return;
   journalWriteTimer+=dt;
   const target=Math.floor(journalWriteTimer*30);
   if(target>journalCharIdx&&journalCharIdx<journalFullText.length){
+    const prevIdx=journalCharIdx;
     journalCharIdx=Math.min(target,journalFullText.length);
-    // Limiter à 2 lignes — couper au 2e retour à la ligne
+    // Son à chaque nouveau caractère visible (pas les espaces ni les sauts de ligne)
+    const newChars=journalFullText.slice(prevIdx,journalCharIdx);
+    if(newChars.replace(/[\s\n]/g,'').length>0)playTypeSound();
+    // Limiter à 2 lignes
     let text=journalFullText.slice(0,journalCharIdx);
     const lines=text.split('\n');
     if(lines.length>2)text=lines.slice(0,2).join('\n');
     journalText.textContent=text;
   }
-  // Disparition — proportionnel à la longueur, min 5s max 12s
   const readTime=Math.min(12, Math.max(5, journalFullText.length/30));
   if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/30+readTime){
     journalActive=false;journalEl.classList.remove('active');
