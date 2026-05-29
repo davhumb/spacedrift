@@ -2351,12 +2351,11 @@ function startTutorial(){
   if(tutorialDone)return;
   tutorialDone=true;
 
+  // Jouer chaque ligne du tuto directement — bypass queue et openingActive
   MDW_TUTORIAL.forEach(t=>{
     setTimeout(()=>{
       if(!mdwActive)return;
-      // Parler directement — bypass la queue (openingActive bloque mdwSpeak)
       mdwSpeak_voice(t.text);
-      // Aussi afficher visuellement dans le journal
       if(journalEl){
         journalFullText=t.text;
         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
@@ -2368,23 +2367,61 @@ function startTutorial(){
     },t.delay*1000);
   });
 
-  // Après la dernière ligne — suite narrative
   const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
+  const afterTuto=(lastDelay+5)*1000;
+
+  // Séquence post-tuto — tout manuel, checkExchanges ne touche pas à ça
+  // 1. Simon demande de se connecter
   setTimeout(()=>{
-    openingActive=false; // débloquer les échanges
-    if(_exchangesDone)_exchangesDone.add('mdw_intro1');
-    // Simon pose sa première vraie question
-    setTimeout(()=>{
-      if(journalEl){
-        journalFullText="Tu peux te connecter à l'ordinateur de bord ?";
-        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');
-        journalDay.textContent='JOURNAL';
-        journalText.textContent='';
-        journalText.style.color='rgba(0,255,65,0.85)';
-      }
-    },3000);
-  },(lastDelay+6)*1000);
+    if(journalEl){
+      journalFullText="Tu peux te connecter à l'ordinateur de bord ?";
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');
+      journalDay.textContent='JOURNAL';
+      journalText.textContent='';
+      journalText.style.color='rgba(0,255,65,0.85)';
+    }
+  }, afterTuto);
+
+  // 2. MDW répond
+  setTimeout(()=>{
+    mdwSpeak_voice("J'essaie...");
+  }, afterTuto+5000);
+
+  // 3. MDW connecté — le lendemain
+  setTimeout(()=>{
+    mdwSpeak_voice("Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
+  }, afterTuto+12000);
+
+  // 4. Simon — comment rentrer
+  setTimeout(()=>{
+    if(journalEl){
+      journalFullText="MDW, comment on rentre sur Terre ?";
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');
+      journalDay.textContent='JOURNAL';
+      journalText.textContent='';
+      journalText.style.color='rgba(0,255,65,0.85)';
+    }
+  }, afterTuto+20000);
+
+  // 5. MDW répond
+  setTimeout(()=>{
+    mdwSpeak_voice("Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
+  }, afterTuto+25000);
+
+  // 6. Débloquer — la suite se déroule normalement
+  setTimeout(()=>{
+    openingActive=false;
+    // Marquer tous les échanges acte 1 comme faits — ils ont eu lieu manuellement
+    if(_exchangesDone){
+      _exchangesDone.add('mdw_intro1');
+      _exchangesDone.add('mdw_comment');
+      _exchangesDone.add('mdw_pc');
+      _exchangesDone.add('mdw_pc2');
+      _exchangesDone.add('mdw_rentrer');
+    }
+  }, afterTuto+32000);
 }
 
 // Narration phase 2 — transmissions adressées directement
@@ -2421,10 +2458,6 @@ function triggerJournal(day){
   journalDay.textContent='JOURNAL';
   journalText.textContent='';
   journalText.style.color='rgba(0,255,65,0.85)';
-  // Tutorial MDW au jour 1
-  if(day===1&&!tutorialDone){
-    setTimeout(()=>startTutorial(),3000);
-  }
 }
 function playTypeSound(){
   if(!audioCtx)return;
@@ -2998,16 +3031,13 @@ function startOpeningSequence(){
       mdwActive=true;mdwFound=true;
       logEvent('🤖 MDW ACTIVÉ','planet');
       unlockAchievement&&unlockAchievement('mdw');
-    }, wait:500},
-    {mdw:"MDW. À votre service.\nQue puis-je faire pour vous aujourd'hui ?", wait:5000},
+      mdwSpeak_voice("MDW. À votre service. Que puis-je faire pour vous aujourd'hui ?");
+    }, wait:6000},
     // Simon demande le tutoriel
     {journal:"J'ai besoin du tutoriel.", pause:1500},
     // MDW lance le tuto
-    {mdw:"Bien. Lancement séquence.", wait:2000},
-    {fn:()=>{
-      // startTutorial gère sa propre fin — openingActive=false dedans
-      startTutorial();
-    }, wait:0},
+    {fn:()=>mdwSpeak_voice("Bien. Lancement séquence."), wait:3000},
+    {fn:()=>startTutorial(), wait:0},
   ];
 
   // Démarrer après 3s
