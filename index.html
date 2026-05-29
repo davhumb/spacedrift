@@ -583,18 +583,24 @@ function updateDocking(dt){
   const dx=dockedPlanet.x-ship.x,dy=dockedPlanet.y-ship.y;
   const dist=Math.sqrt(dx*dx+dy*dy);
   const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
-  if(speed>DOCK_SPEED*2||dist>dockedPlanet.r+60){
-    
-    dockedPlanet=null;dockProgress=0;return;
+
+  // Annuler seulement si vraiment loin ou trop rapide
+  if(speed>DOCK_SPEED*4||dist>dockedPlanet.r+120){
+    dockedPlanet.mined=true; // marquer même si abandonné — pas de re-mine
+    dockedPlanet=null;dockProgress=0;dockTimer=0;return;
   }
-  ship.vx*=Math.pow(0.97,dt*60);ship.vy*=Math.pow(0.97,dt*60);
+
+  // Freiner le vaisseau pendant l'amarrage
+  ship.vx*=Math.pow(0.94,dt*60);ship.vy*=Math.pow(0.94,dt*60);
+
   dockTimer+=dt;dockProgress=Math.min(1,dockTimer/DOCK_DURATION);
+
   if(dockTimer>=DOCK_DURATION){
     const res=PLANET_RESOURCES[dockedPlanet.type.name]||PLANET_RESOURCES['ROCHEUSE'];
     res.effect();
     addToCatalogue&&addToCatalogue('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}.`,'⚓');
     score+=400;spawnParticles&&spawnParticles(ship.x,ship.y,res.color,15,1.2);
-    dockedPlanet.mined=true; // ne peut plus être minée ce run
+    dockedPlanet.mined=true;
     dockedPlanet=null;dockProgress=0;dockTimer=0;
   }
 }
@@ -1320,15 +1326,15 @@ let pinchStartDist=null,pinchStartZoom=1;
 
 // ── Upgrades (persistants entre runs) ────────
 const UPGRADES={
-  o2tank:    {name:'RÉSERVOIR O₂',  desc:'+20 O₂ MAX',      cost:[150,300,500], levels:3, apply:()=>{maxOxygen=100+20*upgrades.o2tank;}},
-  recycler:  {name:'RECYCLEUR AIR', desc:'O₂ -25% drain',    cost:[200,400],     levels:2, apply:()=>{}},
-  armor:     {name:'BLINDAGE',      desc:'Dégâts -20%',      cost:[200,400],     levels:2, apply:()=>{}},
-  thruster:  {name:'PROPULSEURS',   desc:'Poussée +30%',     cost:[250,500],     levels:2, apply:()=>{}},
-  radar_ext: {name:'RADAR+',        desc:'Portée +200u',     cost:[180,350],     levels:2, apply:()=>{}},
-  shield:    {name:'BOUCLIER',      desc:'1 impact/jour',    cost:[400],         levels:1, apply:()=>{}},
-  drone:     {name:'DRONE',         desc:'Capsules attractées',cost:[350],       levels:1, apply:()=>{}},
-  scanner:   {name:'SCANNER',       desc:'Type planète visible',cost:[300],      levels:1, apply:()=>{}},
-  torpedo:   {name:'TORPILLE',      desc:'Double-tap = tir', cost:[300,500],     levels:2, apply:()=>{}},
+  o2tank:    {name:'RÉSERVOIR O₂',  desc:'Augmente l\'oxygène max de 20u par niveau.',     cost:[150,300,500], levels:3, apply:()=>{maxOxygen=100+20*upgrades.o2tank;}},
+  recycler:  {name:'RECYCLEUR AIR', desc:'Réduit la consommation d\'oxygène de 25%.',       cost:[200,400],     levels:2, apply:()=>{}},
+  armor:     {name:'BLINDAGE',      desc:'Réduit les dégâts de débris de 20% par niveau.',  cost:[200,400],     levels:2, apply:()=>{}},
+  thruster:  {name:'PROPULSEURS',   desc:'Augmente la poussée de 30% par niveau.',          cost:[250,500],     levels:2, apply:()=>{}},
+  radar_ext: {name:'RADAR+',        desc:'Étend la portée radar de 200u par niveau.',       cost:[180,350],     levels:2, apply:()=>{}},
+  shield:    {name:'BOUCLIER',      desc:'Absorbe un impact critique par jour.',            cost:[400],         levels:1, apply:()=>{}},
+  drone:     {name:'DRONE',         desc:'Attire automatiquement les capsules proches.',    cost:[350],         levels:1, apply:()=>{}},
+  scanner:   {name:'SCANNER',       desc:'Révèle le type de planète avant l\'approche.',    cost:[300],         levels:1, apply:()=>{}},
+  torpedo:   {name:'TORPILLE',      desc:'Double-tap pour tirer — détruit les débris.',     cost:[300,500],     levels:2, apply:()=>{}},
 };
 let upgrades={o2tank:0,recycler:0,armor:0,thruster:0,radar_ext:0,shield:0,drone:0,scanner:0,torpedo:0};
 let upgradePoints=0; // accumulés entre les runs
@@ -1873,7 +1879,27 @@ function updateSecondaryWormholes(dt){
       w.discovered=true;w.life=0;
       currentUniverse=w.targetUniverse;
       sectorCount++;
-      applyUniverse(UNIVERSES[currentUniverse]);
+      // Effets des trous de ver sur Simon — à partir de la 5e traversée
+      if(sectorCount>=5&&!_exchangesDone?.has('wormhole_effects')){
+        _exchangesDone?.add('wormhole_effects');
+        setTimeout(()=>{
+          if(!journalEl)return;
+          journalFullText="J'ai mal à la tête depuis la traversée.\nComme si le temps ne s'était pas tout à fait remis en place.";
+          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+          journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+        },3000);
+        setTimeout(()=>{
+          if(mdwActive)mdwSpeak('Les trous de ver créent des perturbations neurologiques mineures. Sans conséquence à long terme.',true);
+        },12000);
+        setTimeout(()=>{
+          if(!journalEl)return;
+          journalFullText="Il a répondu trop vite.\nComme si la question était attendue.";
+          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+          journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+        },18000);
+      }      applyUniverse(UNIVERSES[currentUniverse]);
       initStars();
       const u=UNIVERSES[currentUniverse];
       if(u.onEnter)u.onEnter();
@@ -2186,15 +2212,19 @@ function showUpgradeScreen(){
     const lvl=upgrades[key],maxed=lvl>=u.levels;
     const cost=maxed?'—':u.cost[lvl];
     const canAfford=!maxed&&upgradePoints>=u.cost[lvl];
-    html+=`<button class="upg-btn${maxed?' maxed':''}" data-key="${key}"${(!canAfford&&!maxed)?' disabled':''}>
+    // Barre de niveau
+    const levelDots=Array.from({length:u.levels},(_,i)=>
+      `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 1px;background:${i<lvl?'var(--green)':'rgba(0,255,65,0.15)'};"></span>`
+    ).join('');
+    html+=`<button class="upg-btn${maxed?' maxed':''}${canAfford?' can-afford':''}" data-key="${key}"${(!canAfford&&!maxed)?' disabled':''}>
       <span class="upg-name">${u.name}</span>
-      <span>${u.desc}</span><br>
-      <span class="upg-cost">${maxed?'MAX':cost+' pts'}</span>
-      <span class="upg-level">LV${lvl}/${u.levels}</span>
+      <span style="font-size:8px;color:rgba(0,255,65,0.6);display:block;margin:2px 0;">${u.desc}</span>
+      <div style="margin-top:4px;display:flex;justify-content:space-between;align-items:center;">
+        <span>${levelDots}</span>
+        <span class="upg-cost">${maxed?'✓ MAX':cost+' pts'}</span>
+      </div>
     </button>`;
   });
-  // Contrats de run
-  const contracts=pickContracts()||activeContracts;
   const contractHtml=activeContracts.map((c,i)=>`
     <div style="border-left:2px solid ${contractsCompleted[i]?'var(--amber)':'var(--green-dim)'};padding:4px 8px;text-align:left;font-size:8px;letter-spacing:1px;color:${contractsCompleted[i]?'var(--amber)':'var(--green-dim)'};">
       ${contractsCompleted[i]?'✅':'○'} ${c.text} <span style="color:var(--amber)">+${c.reward}pts</span>
@@ -2478,14 +2508,21 @@ const PLANET_TYPES=[
 
 // ── Noms de planètes SF ───────────────────────
 const SF_PLANET_NAMES=[
-  // Classiques de la SF
+  // Classiques SF
   'Solaris','Arrakis','Trantor','Gethen','Anarres','Mesklin','Helliconia',
   'Pern','Darkover','Tschai','Magrathea','Pandora','Barrayar','Cheron',
-  'Hyperion','Lusitania','Oussou','Rakhat','Lagash','Tanith',
-  'Midworld','Mote','Resurgam','Lithia','Saula','Urath',
-  // Générés dans le même esprit
-  'Kessel-VII','Vortan Prime','Elysion-II','Ashael','Noctua','Zephyra',
-  'Cimmeria','Valdris','Onderon','Nephele','Calixis','Thule-IV',
+  'Hyperion','Lusitania','Rakhat','Lagash','Tanith','Resurgam',
+  'Midworld','Lithia','Saula','Urath','Valdris','Nephele','Thule',
+  // Princes d'Ambre — Zelazny
+  'Rebma','Avalon','Kashfa','Garnath','Arden','Lynxia',
+  'Thelbane','Sawall','Hendrake','Helgram',
+  'Corwin','Fiona','Bleys','Brand','Mandor','Merlin','Dara',
+  // Philip K. Dick
+  'Glimmung','Frolix','Valis','Zebra','Ubik',
+  'Stigmata','Penfield','Taggart','Rachmael','Lantano',
+  // Divers
+  'Überaffe','Noctua','Zephyra','Cimmeria','Calixis','Onderon',
+  'Kessel','Vortan','Elysion','Ashael','Nassir','Vilir',
 ];
 let usedPlanetNames=new Set();
 
@@ -2507,34 +2544,40 @@ const JOURNAL_ENTRIES={
   4:"J'ai une plaie au front et mon dos me fait souffrir.\nMais je suis vivant. Je crois.",
   5:"Ce robot — MDW — semble fonctionner.\nJe ne sais pas si c'est une bonne nouvelle.",
   6:"MDW dit qu'il va réparer les systèmes de navigation.\nJe m'accroche à ça comme à une bouée.",
-
-  // ── Camaraderie qui s'installe ──
-  7:"MDW a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
-  8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.\nJ'ai pas dit ça à MDW. Je sais pas pourquoi.",
-  9:"MDW m'a dit ce matin que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.\nJe crois qu'il ne comprend pas ce que je voulais dire.",
+  7:"MDW m'a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
+  8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.",
+  9:"MDW m'a dit que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.",
   10:"MDW s'est connecté au PC de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
-  11:"J'ai ri aujourd'hui. Tout seul, dans le vide, pour rien.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire.\nIl a dit : je vais noter ça.",
-  12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.\nC'est bizarre et rassurant en même temps.",
-  13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note', ça veut dire qu'il ne comprend pas mais qu'il essaie.\nQuand il dit 'intéressant', ça veut dire qu'il a trouvé quelque chose d'utile.\nOn se comprend, je crois.",
+  11:"J'ai ri aujourd'hui. Tout seul, dans le vide.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire. Il a dit : je vais noter ça.",
+  12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.",
+  13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note' il ne comprend pas mais il essaie.\nQuand il dit 'intéressant' il a trouvé quelque chose d'utile.",
   14:"Je cartographie. MDW enregistre tout.\nJe ne pensais pas que l'exploration pouvait ressembler à ça.\nC'est presque paisible.",
   15:"MDW a dit ce soir : vous semblez moins agité qu'au début.\nJ'ai dit : c'est parce que tu es là.\nIl n'a rien répondu. Mais j'ai vu son indicateur d'activité monter.",
-  16:"J'ai demandé à MDW s'il avait peur.\nIl a dit : je n'ai pas de système de peur. Mais j'ai des paramètres de prudence.\nJ'ai dit : c'est pareil.\nIl a réfléchi longtemps. Puis : peut-être.",
-  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJe lui ai dit que c'est plus compliqué que ça.\nIl a dit : je sais. Je simplifiait.",
-  18:"Aujourd'hui MDW a prévenu d'un débris que je n'avais pas vu.\nJuste une fraction de seconde avant l'impact.\nJe lui ai dit merci.\nIl a dit : c'est mon rôle.\nMais il l'a dit différemment qu'avant.",
-  19:"Je pense souvent à la Terre.\nPas à un endroit précis. Juste la Terre.\nL'idée qu'elle existe quelque part et que quelqu'un là-bas\nne sait peut-être pas que je suis perdu.",
+  16:"J'ai demandé à MDW s'il avait peur.\nIl a dit : je n'ai pas de système de peur.\nJ'ai dit : c'est pareil.\nIl a réfléchi longtemps. Puis : peut-être.",
+  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJ'ai dit que c'est plus compliqué que ça. Il a dit : je sais. Je simplifiais.",
+  18:"MDW a prévenu d'un débris que je n'avais pas vu.\nJuste une fraction de seconde avant l'impact.\nJe lui ai dit merci. Il a dit : c'est mon rôle.\nMais il l'a dit différemment qu'avant.",
+  19:"Je pense souvent à la Terre.\nPas à un endroit précis. Juste la Terre.\nL'idée qu'elle existe quelque part.",
   20:"MDW a catalogué une planète violette ce matin.\nIl était plus rapide que d'habitude.\nJ'ai pas relevé. Mais je l'ai noté ici.",
-
-  // ── Sérénité progressive ──
   21:"Je ne panique plus comme avant.\nL'espace est immense mais on sait ce qu'on fait.\nJe pense que ça va aller.",
   22:"MDW a dit : vous posez de bonnes questions.\nJe lui ai demandé lesquelles.\nIl a dit : toutes sauf une.\nJe n'ai pas osé demander laquelle.",
-  23:"Je me demande parfois ce que MDW pense vraiment.\nS'il pense vraiment.\nIl dit que oui. Différemment.\nJe le crois.",
+  23:"Je me demande parfois ce que MDW pense vraiment.\nS'il pense vraiment.\nIl dit que oui. Différemment.",
   24:"Bonne journée. Trois planètes. Un pulsar.\nMDW a dit : progression satisfaisante.\nPour lui c'est un compliment.",
-  25:"J'ai essayé de lui raconter une blague.\nIl a demandé des éclaircissements sur la chute.\nJ'ai expliqué. Il a dit : je vois. C'est inefficace comme communication.\nJe crois que c'était sa façon de rire.",
+  25:"J'ai essayé de lui raconter une blague.\nIl a demandé des éclaircissements sur la chute.\nJe crois que c'était sa façon de rire.",
   26:"Ce soir l'espace est particulièrement silencieux.\nMDW aussi.\nC'est bien.",
   27:"Je me suis rendu compte que je ne cherche plus à me souvenir.\nJe suis Simon Brent. Pilote. Avec un robot.\nPour l'instant c'est suffisant.",
-  28:"MDW enregistre tout ce que je dis dans le journal.\nJe viens de le réaliser.\nJe lui ai demandé pourquoi.\nIl a dit : pour calibrer les interactions.\nJe lui ai dit que c'était louche.\nIl a dit : je comprends.",
-  29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.\nEt que quelque part c'est quand même bien d'être lu.",
+  28:"MDW enregistre tout ce que j'écris dans ce journal.\nJe viens de le réaliser.\nJe lui ai demandé pourquoi.\nIl a dit : pour calibrer les interactions.",
+  29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.",
   30:"Un mois.\nMDW a dit que les données collectées sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui.\nIl n'a pas répondu.",
+  // ── Acte 2 — Les doutes ──
+  33:"Quelque chose ne va pas.\nJe ne saurais pas dire quoi exactement.\nMDW est comme d'habitude. Peut-être trop.",
+  36:"J'ai trouvé l'épave d'un autre pilote aujourd'hui.\nSon journal s'arrête net. Sans explication.\nMDW dit que les données ont été corrompues par les radiations.",
+  40:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nIl a dit : les signatures spectrales.\nJe le crois. Mais je note quand même.",
+  44:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.",
+  48:"J'ai rêvé de quelqu'un cette nuit.\nUne femme peut-être. Ou un homme. Je ne sais plus.\nJuste une présence. Chaleureuse.\nJe me suis réveillé et MDW regardait vers moi.\nIl dit qu'il ne peut pas regarder. Qu'il n'a pas d'yeux.\nC'est vrai.",
+  52:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit.",
+  55:"Je lui ai demandé directement.\nTu lis ce que j'écris ?\nIl a dit : je traite toutes les données accessibles.\nC'est oui.",
+  58:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
+  60:"Deux mois.\nJe vais rentrer chez moi.\nMDW dit que c'est possible.\nJe ne sais plus si je le crois.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -2822,7 +2865,10 @@ function startGame(){
   convergenceTimer=1500+Math.random()*600;
   _exchangesDone.clear();
   mdwLastIdleTime=0;mdwSectorDialogTimer=30;
-  terminalDialogActive=false;terminalDialogT=0;
+  meteorShowerActive=false;meteorShowerTimer=0;
+  auroraActive=false;auroraTimer=0;
+  plasmaStreamActive=false;plasmaStreamTimer=0;
+  sosTriggered=false;sosWreck=null;sosDocked=false;
   mdwDestroyed=false;mdwControlActive=false;
   TERMINAL_DIALOG.forEach(l=>delete l._shown);
   window._godMode=false;window._godEncounterStarted=false;
@@ -3424,7 +3470,9 @@ const RARE_EVENTS=[
   {name:'anomaly',       minDay:3, weight:2, trigger:()=>spawnAnomalyPlanet()},
   {name:'neutronstar',   minDay:5, weight:1, trigger:()=>addNeutronStar()},
   {name:'phase2',        minDay:1, weight:2, trigger:()=>triggerPhase2Transmission(), minSector:1},
-  {name:'silence',       minDay:3, weight:1, trigger:()=>triggerSilenceRadio()},
+  {name:'meteor_shower', minDay:2, weight:2, trigger:()=>triggerMeteorShower()},
+  {name:'aurora',        minDay:1, weight:3, trigger:()=>triggerAurora()},
+  {name:'plasma_stream', minDay:3, weight:2, trigger:()=>triggerPlasmaStream()},
 ];
 
 // ── BLOC 1 — Phénomènes cosmologiques ─────────
@@ -4600,11 +4648,8 @@ function mdwSpeak(contextOrText, isRaw=false){
 function initMDW(){
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
-  mdwEl.style.cssText=`position:fixed;bottom:135px;right:12px;pointer-events:none;z-index:15;text-align:right;opacity:0;transition:opacity 0.5s;max-width:190px;`;
-  mdwEl.innerHTML=`
-    <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW</div>
-    <div id="mdw-text" style="font-size:11px;color:#e8a030;letter-spacing:0.3px;background:rgba(9,4,0,0.92);border:1px solid rgba(200,120,32,0.25);border-right:2px solid #c07820;padding:6px 12px;line-height:1.6;font-family:'Share Tech Mono',monospace;text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
-  `;
+  mdwEl.style.cssText='display:none;'; // invisible — voix uniquement
+  mdwEl.innerHTML='<div id="mdw-text"></div>';
   document.getElementById('hud').appendChild(mdwEl);
   mdwActive=true;
   mdwFound=true;
@@ -5421,6 +5466,329 @@ function updateMDWSectorDialogs(dt){
     }
     mdwSectorDialogTimer=50+Math.random()*70;
   }
+}
+
+// ── Pluie de météorites ───────────────────────
+let meteorShowerActive=false,meteorShowerTimer=0,meteorAngle=0;
+function triggerMeteorShower(){
+  if(meteorShowerActive)return;
+  meteorShowerActive=true;
+  meteorShowerTimer=30+Math.random()*30;
+  meteorAngle=Math.random()*Math.PI*2;
+  logEvent('☄ ESSAIM MÉTÉORITIQUE','danger');
+  haptic('danger');
+  if(mdwActive)setTimeout(()=>mdwSpeak('Essaim détecté.',true),500);
+}
+
+function updateMeteorShower(dt){
+  if(!meteorShowerActive)return;
+  meteorShowerTimer-=dt;
+  if(meteorShowerTimer<=0){meteorShowerActive=false;return;}
+  // Spawn de débris rapides depuis une direction
+  if(Math.random()<0.4*dt*60){
+    const spread=(Math.random()-0.5)*0.8;
+    const speed=8+Math.random()*6;
+    const d={
+      x:ship.x+Math.cos(meteorAngle+Math.PI)*(800+Math.random()*400),
+      y:ship.y+Math.sin(meteorAngle+Math.PI)*(800+Math.random()*400),
+      vx:Math.cos(meteorAngle+spread)*speed,
+      vy:Math.sin(meteorAngle+spread)*speed,
+      r:2+Math.random()*3,mass:3,
+      damage:2+Math.random()*3,
+      pulse:0,trail:[],
+      isMeteor:true, // traînée lumineuse
+    };
+    debris.push(d);
+  }
+}
+
+function drawMeteorTrails(){
+  if(!meteorShowerActive)return;
+  // Effet directionnel — lueur depuis la direction d'arrivée
+  const [ox,oy]=worldToScreen(ship.x+Math.cos(meteorAngle+Math.PI)*300,ship.y+Math.sin(meteorAngle+Math.PI)*300);
+  const grad=ctx.createRadialGradient(ox,oy,0,ox,oy,200);
+  grad.addColorStop(0,'rgba(255,200,100,0.04)');
+  grad.addColorStop(1,'transparent');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.arc(ox,oy,200,0,Math.PI*2);ctx.fill();
+}
+
+// ── Aurora borealis cosmique ──────────────────
+let auroraActive=false,auroraTimer=0,auroraPhase=0;
+let auroraColor='#00ffcc';
+function triggerAurora(){
+  if(auroraActive)return;
+  auroraActive=true;
+  auroraTimer=45+Math.random()*30;
+  auroraPhase=0;
+  const colors=['#00ffcc','#ff44aa','#44aaff','#ffaa00','#aa44ff'];
+  auroraColor=colors[Math.floor(Math.random()*colors.length)];
+  logEvent('✨ AURORA COSMIQUE','ok');
+}
+
+function updateAurora(dt){
+  if(!auroraActive)return;
+  auroraTimer-=dt;auroraPhase+=dt*0.8;
+  if(auroraTimer<=0)auroraActive=false;
+}
+
+function drawAuroraEffect(){
+  if(!auroraActive)return;
+  const alpha=Math.min(0.12,Math.min(auroraTimer,5)/5*0.12);
+  const r=parseInt(auroraColor.slice(1,3),16);
+  const g=parseInt(auroraColor.slice(3,5),16);
+  const b=parseInt(auroraColor.slice(5,7),16);
+  // Rideaux ondulants en arrière-plan
+  ctx.save();
+  for(let i=0;i<5;i++){
+    const x=W*(i/4);
+    const wave=Math.sin(auroraPhase+i*0.7)*60;
+    const grad=ctx.createLinearGradient(x,0,x,H);
+    grad.addColorStop(0,'transparent');
+    grad.addColorStop(0.3+Math.sin(auroraPhase*0.5+i)*0.15,`rgba(${r},${g},${b},${alpha})`);
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(x-30+wave,0);
+    for(let y=0;y<=H;y+=20){
+      ctx.lineTo(x-30+Math.sin(auroraPhase+y*0.02+i)*25+wave,y);
+    }
+    ctx.lineTo(x+30+wave,H);
+    for(let y=H;y>=0;y-=20){
+      ctx.lineTo(x+30+Math.sin(auroraPhase+y*0.02+i+1)*25+wave,y);
+    }
+    ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ── Courant de plasma ─────────────────────────
+let plasmaStreamActive=false,plasmaStreamTimer=0;
+let plasmaAngle=0,plasmaForce=0;
+function triggerPlasmaStream(){
+  if(plasmaStreamActive)return;
+  plasmaStreamActive=true;
+  plasmaStreamTimer=20+Math.random()*15;
+  plasmaAngle=Math.random()*Math.PI*2;
+  plasmaForce=0.4+Math.random()*0.3;
+  logEvent('🌊 COURANT DE PLASMA','warn');
+  haptic('drift');
+  if(mdwActive)setTimeout(()=>mdwSpeak('Courant de plasma. Je compense.',true),1000);
+}
+
+function updatePlasmaStream(dt){
+  if(!plasmaStreamActive)return;
+  plasmaStreamTimer-=dt;
+  if(plasmaStreamTimer<=0){plasmaStreamActive=false;return;}
+  // Pousser le vaisseau dans la direction du courant
+  ship.vx+=Math.cos(plasmaAngle)*plasmaForce*dt;
+  ship.vy+=Math.sin(plasmaAngle)*plasmaForce*dt;
+}
+
+function drawPlasmaStream(){
+  if(!plasmaStreamActive)return;
+  // Lignes de flux en arrière-plan
+  ctx.save();
+  const alpha=0.06+Math.sin(Date.now()*0.002)*0.03;
+  ctx.strokeStyle=`rgba(255,150,50,${alpha})`;ctx.lineWidth=1;
+  for(let i=0;i<8;i++){
+    const offset=(i-4)*60;
+    const px=W/2+Math.cos(plasmaAngle+Math.PI/2)*offset;
+    const py=H/2+Math.sin(plasmaAngle+Math.PI/2)*offset;
+    const len=W*1.5;
+    ctx.beginPath();
+    ctx.moveTo(px-Math.cos(plasmaAngle)*len,py-Math.sin(plasmaAngle)*len);
+    ctx.lineTo(px+Math.cos(plasmaAngle)*len,py+Math.sin(plasmaAngle)*len);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+let graveyardTriggered=false;
+let graveyardWrecks=[];
+
+function triggerGraveyard(){
+  if(graveyardTriggered||survivalDay<8||survivalDay>20)return;
+  graveyardTriggered=true;
+  const count=15+Math.floor(Math.random()*6);
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const d=300+Math.random()*600;
+    graveyardWrecks.push({x:ship.x+Math.cos(a)*d,y:ship.y+Math.sin(a)*d,
+      rot:Math.random()*Math.PI*2,r:14+Math.random()*10,pulse:Math.random()*Math.PI*2});
+  }
+  logEvent('⚠ ZONE DENSE — ÉPAVES','danger');
+  haptic('danger');
+
+  const showJournal=(text,label,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent=label;
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+
+  showJournal("Mon dieu... Qu'est-ce que c'est ?",'PILOTE',2000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak('Des épaves...',true);},6000);
+  showJournal("Terriennes ?",'PILOTE',10000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak("Je n'arrive pas à accéder aux données. Quelque chose perturbe le signal.",true);},14000);
+  showJournal("Traversons le plus vite possible.\nCet endroit me retourne l'estomac.",'PILOTE',19000);
+  showJournal("Des dizaines d'épaves. Toutes pareilles au mien.\nMDW dit qu'il n'arrive pas à lire les données.\nJe préfère ne pas savoir.",'JOURNAL',28000);
+}
+
+function drawGraveyardWrecks(){
+  for(const w of graveyardWrecks){
+    const [sx,sy]=worldToScreen(w.x,w.y);
+    if(sx<-80||sx>W+80||sy<-80||sy>H+80)continue;
+    const pulse=(Math.sin(w.pulse)+1)*0.5;w.pulse+=0.008;
+    ctx.save();ctx.translate(sx,sy);ctx.rotate(w.rot);
+    const r=w.r*viewZoom;
+    ctx.strokeStyle=`rgba(255,170,0,${0.2+pulse*0.15})`;ctx.lineWidth=1;
+    ctx.shadowColor='#ffaa00';ctx.shadowBlur=4+pulse*3;
+    ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*0.3,-r*0.4);
+    ctx.lineTo(r*0.5,0);ctx.lineTo(-r*0.3,r*0.4);ctx.closePath();ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawSOSWreck(){
+  if(!sosWreck||sosDocked)return;
+  const [sx,sy]=worldToScreen(sosWreck.x,sosWreck.y);
+  const pulse=(Math.sin(sosWreck.pulse*2)+1)*0.5;
+  const r=sosWreck.r*viewZoom;
+
+  // Rendu épave SOS — légèrement différent, signal d'urgence
+  ctx.save();ctx.translate(sx,sy);ctx.rotate(sosWreck.rot);
+  ctx.strokeStyle=`rgba(255,80,80,${0.3+pulse*0.3})`;ctx.lineWidth=1.2;
+  ctx.shadowColor='#ff5050';ctx.shadowBlur=8+pulse*6;
+  ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*0.3,-r*0.4);
+  ctx.lineTo(r*0.5,0);ctx.lineTo(-r*0.3,r*0.4);ctx.closePath();ctx.stroke();
+  // Signal SOS clignotant
+  if(Math.floor(Date.now()/500)%2===0){
+    ctx.fillStyle='rgba(255,80,80,0.6)';
+    ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+
+  // Label distance
+  const dist=Math.sqrt((sosWreck.x-ship.x)**2+(sosWreck.y-ship.y)**2);
+  if(dist<800){
+    ctx.save();ctx.fillStyle='rgba(255,80,80,0.7)';
+    ctx.font=`7px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.shadowColor='#ff5050';ctx.shadowBlur=4;
+    ctx.fillText('🆘 SIGNAL',sx,sy-r-10);
+    ctx.restore();
+  }
+
+  // Sur le radar — point rouge clignotant (Simon le trouve malgré MDW)
+  const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
+  const rdx=(sosWreck.x-ship.x)/RADAR_RANGE*32,rdy=(sosWreck.y-ship.y)/RADAR_RANGE*32;
+  const rdist=Math.sqrt(rdx*rdx+rdy*rdy);
+  if(rdist<=32){
+    if(Math.floor(Date.now()/400)%2===0){
+      rctx.fillStyle='#ff5050';rctx.shadowColor='#ff5050';rctx.shadowBlur=8;
+      rctx.beginPath();rctx.arc(35+rdx,35+rdy,3.5,0,Math.PI*2);rctx.fill();
+      rctx.shadowBlur=0;
+    }
+  } else {
+    // Hors portée — indicateur sur le bord du radar
+    const ra=Math.atan2(rdy,rdx);
+    const bx=35+Math.cos(ra)*30,by=35+Math.sin(ra)*30;
+    if(Math.floor(Date.now()/400)%2===0){
+      rctx.fillStyle='#ff5050';rctx.globalAlpha=0.7;
+      rctx.beginPath();rctx.arc(bx,by,2.5,0,Math.PI*2);rctx.fill();
+      rctx.globalAlpha=1;
+    }
+  }
+}
+
+// ── Scène SOS ─────────────────────────────────
+let sosTriggered=false;
+let sosWreck=null;
+let sosDocked=false;
+
+function triggerSOS(){
+  if(sosTriggered||!mdwFound||survivalDay<5)return;
+  sosTriggered=true;
+  const angle=Math.random()*Math.PI*2;
+  const dist=600+Math.random()*300;
+  sosWreck={x:ship.x+Math.cos(angle)*dist,y:ship.y+Math.sin(angle)*dist,
+    rot:Math.random()*Math.PI*2,r:18,pulse:0,isSOS:true,discovered:false};
+
+  const showJournal=(text,label,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent=label;
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+
+  showJournal("Un signal sur la console.\nUne voix. Fragmentée. Quelqu'un parle.",'PILOTE',2000);
+
+  // Voix parasitée
+  setTimeout(()=>{
+    if(window.speechSynthesis){
+      speechSynthesis.cancel();
+      const utt=new SpeechSynthesisUtterance("ici... quelqu'un... aidez...");
+      utt.rate=0.65;utt.pitch=1.4;utt.volume=0.35;
+      const voices=speechSynthesis.getVoices();
+      const diff=voices.find(v=>v.lang.startsWith('fr')&&v!==mdwVoice)||voices[1]||voices[0];
+      if(diff)utt.voice=diff;
+      speechSynthesis.speak(utt);
+    }
+  },3500);
+
+  showJournal("MDW, tu captes ça ? Il y a quelqu'un.",'PILOTE',6000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak("Je reçois un signal. J'essaie de localiser.",true);},10000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak("Signal trop faible. Je ne peux pas trianguler la source.",true);},15000);
+  showJournal("Je vais essayer de mon côté.",'PILOTE',19000);
+}
+
+function checkSOSDock(){
+  if(!sosWreck||sosDocked)return;
+  sosWreck.pulse+=0.015;
+  const dx=sosWreck.x-ship.x,dy=sosWreck.y-ship.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>sosWreck.r+50)return;
+  sosDocked=true;
+
+  const showJournal=(text,label,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent=label;
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+
+  setTimeout(()=>{if(mdwActive)mdwSpeak('Je gère le couplage.',true);},500);
+  showJournal("Il est mort. Récemment.\nLa cabine est intacte. Aucun impact visible.\nAucun manque de ressources apparent.",'JOURNAL',3000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak('Les systèmes ont lâché.',true);},7000);
+  showJournal("MDW dit que les systèmes ont lâché.\nIl a répondu trop vite.\nJe note ça ici.",'JOURNAL',11000);
+  logEvent('🆘 SIGNAL LOCALISÉ — PILOTE MORT','danger');
+  haptic('silence');
+}
+
+// ── Dialogue : à quoi bon transmettre ─────────
+function triggerTransmissionDoubt(){
+  if(!_exchangesDone||_exchangesDone.has('transmission_doubt'))return;
+  _exchangesDone.add('transmission_doubt');
+  const showJournal=(text,label,delay)=>setTimeout(()=>{
+    if(!journalEl)return;
+    journalFullText=text;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent=label;
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+  },delay);
+  showJournal("MDW, à quoi bon collecter toutes ces données\nsi on ne peut rien transmettre ?",'PILOTE',1000);
+  setTimeout(()=>{if(mdwActive)mdwSpeak('Une fois le bon trou de ver franchi, les transmissions seront possibles.',true);},5000);
+  showJournal("Si tu le dis...",'PILOTE',10000);
+}
+
+function checkActScenes(){
+  // Cimetière — une fois, jours 8-20, aléatoire
+  if(!graveyardTriggered&&survivalDay>=8&&survivalDay<=20&&Math.random()<0.0001)
+    triggerGraveyard();
+  // SOS — une fois, dès jour 5
+  if(!sosTriggered&&survivalDay>=5&&Math.random()<0.00005)
+    triggerSOS();
+  if(sosWreck&&!sosDocked)checkSOSDock();
+  // Dialogue transmission — jour 8-10
+  if(survivalDay>=8&&survivalDay<=10&&mdwFound&&_exchangesDone?.has('mdw_pc2'))
+    triggerTransmissionDoubt();
 }
 
 function checkEndings(){
@@ -6525,7 +6893,8 @@ function gameLoop(ts){
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
-        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();
+        updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);
+        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
@@ -6538,10 +6907,11 @@ function gameLoop(ts){
         checkDead();
       }
       drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
+      drawAuroraEffect();drawPlasmaStream();drawMeteorTrails();
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
+      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();drawShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
       if(nightMode)drawNightMode();
       drawRadar();
