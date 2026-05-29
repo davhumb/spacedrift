@@ -309,7 +309,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.6</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -2801,6 +2801,111 @@ function spawnPlanet(){
   });
 }
 
+// ── Petits systèmes solaires ──────────────────
+let solarSystems=[];
+
+function spawnSolarSystem(){
+  const angle=Math.random()*Math.PI*2;
+  const dist=1000+Math.random()*1200;
+  const cx=ship.x+Math.cos(angle)*dist;
+  const cy=ship.y+Math.sin(angle)*dist;
+  const starR=25+Math.random()*20;
+  const starColors=['#fff8dc','#ffd700','#ff9900','#ffe4b5','#ffffff'];
+  const starColor=starColors[Math.floor(Math.random()*starColors.length)];
+
+  const sys={
+    x:cx,y:cy,
+    r:starR,
+    color:starColor,
+    pulse:Math.random()*Math.PI*2,
+    planets:[],
+  };
+
+  // 2-4 planètes en orbite
+  const count=2+Math.floor(Math.random()*3);
+  for(let i=0;i<count;i++){
+    const orbitR=starR*(2.5+i*1.8+Math.random()*0.8);
+    const available=PLANET_TYPES.filter(t=>!t.isDangerous||i>1);
+    const type=available[Math.floor(Math.random()*available.length)];
+    const pr=8+Math.random()*14;
+    sys.planets.push({
+      orbitR,
+      angle:Math.random()*Math.PI*2,
+      speed:(0.001+Math.random()*0.002)*(Math.random()<0.5?1:-1),
+      r:pr,type,
+      name:generatePlanetName(),
+      pulse:Math.random()*Math.PI*2,
+      discovered:false,mined:false,
+    });
+  }
+  solarSystems.push(sys);
+}
+
+function updateSolarSystems(dt){
+  for(const sys of solarSystems){
+    sys.pulse+=dt*0.5;
+    for(const p of sys.planets){
+      p.angle+=p.speed*dt*60;
+      p.pulse+=dt*0.8;
+      // Position monde
+      p.x=sys.x+Math.cos(p.angle)*p.orbitR;
+      p.y=sys.y+Math.sin(p.angle)*p.orbitR;
+    }
+  }
+}
+
+function drawSolarSystems(){
+  for(const sys of solarSystems){
+    const [sx,sy]=worldToScreen(sys.x,sys.y);
+    if(sx<-400||sx>W+400||sy<-400||sy>H+400)continue;
+    const pulse=(Math.sin(sys.pulse)+1)*0.5;
+
+    // Étoile centrale
+    const r=sys.r*viewZoom;
+    const grad=ctx.createRadialGradient(sx,sy,0,sx,sy,r*2.5);
+    grad.addColorStop(0,sys.color);
+    grad.addColorStop(0.4,sys.color+'88');
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle=grad;ctx.shadowColor=sys.color;ctx.shadowBlur=20+pulse*8;
+    ctx.beginPath();ctx.arc(sx,sy,r*2.5,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+
+    // Orbites en pointillés
+    for(const p of sys.planets){
+      ctx.strokeStyle='rgba(255,255,255,0.05)';
+      ctx.lineWidth=0.5;ctx.setLineDash([3,6]);
+      ctx.beginPath();ctx.arc(sx,sy,p.orbitR*viewZoom,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Planète
+      const [px,py]=worldToScreen(p.x,p.y);
+      const pr=p.r*viewZoom;
+      ctx.fillStyle=p.type?.glowColor||'#8888ff';
+      ctx.shadowColor=p.type?.glowColor||'#8888ff';ctx.shadowBlur=4;
+      ctx.beginPath();ctx.arc(px,py,Math.max(2,pr),0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+
+      // Découverte si proche
+      const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+      if(!p.discovered&&dist<p.r+80){
+        p.discovered=true;discoveredPlanets++;
+        addToCatalogue&&addToCatalogue('planet',p.name,`Système solaire. Classe ${p.type?.name}. Jour ${survivalDay}.`,'⭐');
+        score+=150;
+      }
+
+      // Sur le radar
+      const RADAR_RANGE=getRadarRange();
+      const rdx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,rdy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
+      if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R){
+        const col=p.type?.glowColor||'#8888ff';
+        rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=3;
+        rctx.beginPath();rctx.arc(35+rdx,35+rdy,2,0,Math.PI*2);rctx.fill();
+        rctx.shadowBlur=0;
+      }
+    }
+  }
+}
+
 function generateMoons(type,planetR){
   const moonChance={
     'GAZEUSE':0.8,'ROCHEUSE':0.4,'GLACÉE':0.3,
@@ -2840,38 +2945,9 @@ function updatePlanets(dt){
     // Gravité sur le vaisseau
     applyGravity(dt,p.x,p.y,mass,p.r+8);
 
-    // ── Collision vaisseau / surface planète ──
-    const shipR=14; // rayon effectif du vaisseau
-    if(dist<p.r+shipR){
-      // Repousser le vaisseau hors de la surface
-      const nx=dx/dist,ny=dy/dist; // normale = vecteur planète→vaisseau (inversé)
-      const nx2=-nx,ny2=-ny; // normale vers l'extérieur (vaisseau←planète)
-      // Repositionner à la surface
-      ship.x=p.x-nx*(p.r+shipR+1);
-      ship.y=p.y-ny*(p.r+shipR+1);
-      // Composante normale de la vitesse
-      const vn=ship.vx*nx2+ship.vy*ny2;
-      if(vn<0){ // seulement si on s'enfonce
-        const restitution=0.3; // rebond partiel
-        const impactSpeed=Math.abs(vn);
-        // Rebond
-        ship.vx-=(1+restitution)*vn*nx2;
-        ship.vy-=(1+restitution)*vn*ny2;
-        // Friction tangentielle (atmosphère)
-        ship.vx*=0.85;ship.vy*=0.85;
-        // Dégâts selon vitesse d'impact
-        if(impactSpeed>0.3){
-          const dmg=Math.floor(impactSpeed*8*drainMult);
-          hull=Math.max(0,hull-dmg);
-          if(dmg>3){
-            triggerFlash(p.type.glowColor,0.2);
-            logEvent(`🪐 IMPACT SOL -${dmg} HULL`,'danger');
-            addHullMark(impactSpeed/2);
-            spawnParticles(ship.x,ship.y,p.type.glowColor,6,0.8);
-          }
-        }
-      }
-    }
+    // ── Survol planète — pas de collision, la gravité courbe la trajectoire ──
+    // Le vaisseau passe au-dessus, attiré puis relâché
+    // Aucun dégât de collision — sauf les planètes brûlantes via chaleur
 
     // Enregistrer le champ pour le rendu — position figée (pas de mise à jour à chaque frame)
     // On utilise _gravFieldsStatic qui ne change que quand une planète est découverte
@@ -3100,6 +3176,7 @@ function startGame(){
   sosTriggered=false;sosWreck=null;sosDocked=false;
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
   sanity=100;ghostShipActive=false;
+  solarSystems=[];
   mdwDestroyed=false;mdwControlActive=false;
   TERMINAL_DIALOG.forEach(l=>delete l._shown);
   window._godMode=false;window._godEncounterStarted=false;
@@ -3720,7 +3797,7 @@ const RARE_EVENTS=[
   {name:'anomaly',       minDay:3, weight:2, trigger:()=>spawnAnomalyPlanet()},
   {name:'neutronstar',   minDay:5, weight:1, trigger:()=>addNeutronStar()},
   {name:'phase2',        minDay:1, weight:2, trigger:()=>triggerPhase2Transmission(), minSector:1},
-  {name:'meteor_shower', minDay:2, weight:2, trigger:()=>triggerMeteorShower()},
+  {name:'solar_system', minDay:1, weight:2, trigger:()=>spawnSolarSystem()},
   {name:'aurora',        minDay:1, weight:3, trigger:()=>triggerAurora()},
   {name:'plasma_stream', minDay:3, weight:2, trigger:()=>triggerPlasmaStream()},
 ];
@@ -7277,20 +7354,26 @@ function drawRadar(){
     rctx.fillStyle=p.color;rctx.shadowColor=p.color;rctx.shadowBlur=4;
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,4,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
   }
-  // Planètes — point coloré selon type, pulsant si non découverte
+  // Planètes — point coloré selon type
   for(const p of planets){
     if(!p.type)continue;
     const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
     if(Math.sqrt(dx*dx+dy*dy)>RADAR_R)continue;
-    // Couleur selon type — fallback robuste
-    const col=p.type.glowColor||p.type.colors?.[0]||'#a070ff';
-    const sz=p.discovered?2:3;
+    const col=p.type.glowColor||p.type.color||'#a070ff';
+    // Extraire RGB du glowColor
+    let r=160,g=112,b=255;
+    if(col.startsWith('#')&&col.length===7){
+      r=parseInt(col.slice(1,3),16);
+      g=parseInt(col.slice(3,5),16);
+      b=parseInt(col.slice(5,7),16);
+    }
     const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
-    rctx.globalAlpha=p.discovered?0.35:(0.5+pulse*0.4);
-    rctx.fillStyle=col;
-    rctx.shadowColor=col;rctx.shadowBlur=p.discovered?2:4;
+    const sz=p.discovered?2.5:4;
+    const alpha=p.discovered?0.5:(0.6+pulse*0.4);
+    rctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+    rctx.shadowColor=col;rctx.shadowBlur=p.discovered?3:6;
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,sz,0,Math.PI*2);rctx.fill();
-    rctx.globalAlpha=1;rctx.shadowBlur=0;
+    rctx.shadowBlur=0;
   }
   // Debris
   for(const d of debris){
@@ -7450,7 +7533,22 @@ function updateOrbitalIndicator(){
 let globalTs=0;
 function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
-  ctx.fillStyle='#000902';ctx.fillRect(0,0,W,H);
+  // Fond de l'univers courant
+  const curU=UNIVERSES[currentUniverse]||UNIVERSES[0];
+  ctx.fillStyle=curU.bg||'#000902';ctx.fillRect(0,0,W,H);
+
+  // Effet ambiant selon univers — superposé au fond
+  if(currentUniverse===4){ // LUMEN — légère surexposition
+    ctx.fillStyle='rgba(255,255,220,0.04)';ctx.fillRect(0,0,W,H);
+  } else if(currentUniverse===1){ // IGNIS — chaleur
+    ctx.fillStyle='rgba(60,10,0,0.06)';ctx.fillRect(0,0,W,H);
+  } else if(currentUniverse===2){ // GLACIUS — froid bleuté
+    ctx.fillStyle='rgba(0,10,30,0.05)';ctx.fillRect(0,0,W,H);
+  } else if(currentUniverse===10){ // VIDE — noir absolu
+    ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(0,0,W,H);
+  } else if(currentUniverse===5){ // NÉCROS — gris cendres
+    ctx.fillStyle='rgba(5,5,5,0.1)';ctx.fillRect(0,0,W,H);
+  }
 
   if(state==='playing'||state==='dying'||state==='wormhole'||state==='cutscene'){
     if(state==='wormhole'){
@@ -7472,6 +7570,7 @@ function gameLoop(ts){
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
+        updateSolarSystems(dt);
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();
         updateAmbient();
         if(musicDelay){
@@ -7486,7 +7585,7 @@ function gameLoop(ts){
       }
       drawNebulae();if(!voidSectorActive){drawStars(ts);drawQuasars(ts);}drawCosmology();drawGrid();
       drawAuroraEffect();drawPlasmaStream();drawMeteorTrails();
-      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawPlanets();
+      drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawSolarSystems();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
       drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
