@@ -30,7 +30,7 @@
   #journal.active{display:block;}
   #journal-inner{background:transparent;padding:4px 0;}
   #journal-day{font-size:7px;letter-spacing:2px;color:var(--green-dim);margin-bottom:3px;opacity:0.6;}
-  #journal-text{font-size:10px;color:var(--green);line-height:1.6;letter-spacing:0.2px;opacity:0.85;text-shadow:0 0 8px rgba(0,255,65,0.3);}
+  #journal-text{font-size:14px;color:var(--green);line-height:1.8;letter-spacing:0.2px;opacity:0.9;text-shadow:0 0 8px rgba(0,255,65,0.3);}
 
   /* GAUGES */
   #gauges{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:16px;padding:8px 12px;background:rgba(0,9,2,0.7);}
@@ -151,16 +151,18 @@
   #catalogue-panel{position:fixed;inset:0;z-index:200;background:rgba(0,9,2,0.97);display:none;flex-direction:column;overflow:hidden;}
   #catalogue-panel.open{display:flex;}
   #cat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(0,255,65,0.2);}
-  #cat-tabs{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(0,255,65,0.1);flex-wrap:wrap;}
-  .cat-tab{background:transparent;border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.4);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:4px 8px;cursor:pointer;}
+  #journal-text{font-size:14px;color:var(--green);line-height:1.8;letter-spacing:0.2px;opacity:0.9;text-shadow:0 0 8px rgba(0,255,65,0.3);}
+  #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:4px;opacity:0.6;}
+  #cat-tabs{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid rgba(0,255,65,0.1);flex-wrap:wrap;}
+  .cat-tab{background:transparent;border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 12px;cursor:pointer;}
   .cat-tab.active{border-color:rgba(0,255,65,0.7);color:rgba(0,255,65,0.9);}
-  #cat-content{flex:1;overflow-y:auto;padding:10px 14px;}
-  .cat-entry{border-left:2px solid rgba(0,255,65,0.2);padding:6px 10px;margin-bottom:8px;}
-  .cat-entry-title{font-size:9px;letter-spacing:1px;color:var(--green);}
-  .cat-entry-body{font-size:9px;color:rgba(0,255,65,0.55);margin-top:3px;line-height:1.6;white-space:pre-line;}
+  #cat-content{flex:1;overflow-y:auto;padding:12px 16px;}
+  .cat-entry{border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;margin-bottom:10px;}
+  .cat-entry-title{font-size:12px;letter-spacing:1px;color:var(--green);}
+  .cat-entry-body{font-size:12px;color:rgba(0,255,65,0.65);margin-top:5px;line-height:1.8;white-space:pre-line;}
   .cat-entry.journal{border-left-color:rgba(255,170,0,0.4);}
   .cat-entry.journal .cat-entry-title{color:var(--amber);}
-  .cat-entry.journal .cat-entry-body{color:rgba(255,170,0,0.65);}
+  .cat-entry.journal .cat-entry-body{color:rgba(255,170,0,0.75);}
   #cat-mdw-panel{border-top:1px solid rgba(0,255,65,0.15);padding:10px 14px;max-height:220px;overflow-y:auto;}
   .cat-question-btn{display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(0,255,65,0.15);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:5px 8px;margin-bottom:4px;cursor:pointer;}
   .cat-question-btn:active{background:rgba(0,255,65,0.05);color:rgba(0,255,65,0.8);}
