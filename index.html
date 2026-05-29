@@ -2339,17 +2339,39 @@ const MDW_TUTORIAL=[
 function startTutorial(){
   if(tutorialDone)return;
   tutorialDone=true;
+
   MDW_TUTORIAL.forEach(t=>{
     setTimeout(()=>{
-      if(state==='playing'&&mdwActive){
-        mdwSpeak(t.text,true);
+      if(!mdwActive)return;
+      // Parler directement — bypass la queue (openingActive bloque mdwSpeak)
+      mdwSpeak_voice(t.text);
+      // Aussi afficher visuellement dans le journal
+      if(journalEl){
+        journalFullText=t.text;
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');
+        journalDay.textContent='MDW';
+        journalText.textContent='';
+        journalText.style.color='rgba(255,170,0,0.85)';
       }
     },t.delay*1000);
   });
-  // Après la dernière ligne — marquer intro1 comme fait, déclencher la suite narrative
+
+  // Après la dernière ligne — suite narrative
   const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
   setTimeout(()=>{
     if(_exchangesDone)_exchangesDone.add('mdw_intro1');
+    // Simon pose sa première vraie question
+    if(journalEl){
+      setTimeout(()=>{
+        journalFullText="Tu peux te connecter à l'ordinateur de bord ?";
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');
+        journalDay.textContent='JOURNAL';
+        journalText.textContent='';
+        journalText.style.color='rgba(0,255,65,0.85)';
+      },3000);
+    }
   },(lastDelay+6)*1000);
 }
 
@@ -2942,8 +2964,8 @@ function startOpeningSequence(){
     {journal:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.", pause:500},
     {journal:"J'ai une plaie au front et mon dos me fait souffrir.", pause:1000},
     // Simon trouve MDW
-    {journal:"Il y a un robot au sol. Hors service.\nJe vais essayer de le remettre en état.", pause:500},
-    {journal:"J'ai travaillé dessus toute la nuit.\nIl semble intact. Je tente le démarrage.", pause:2000},
+    {journal:"Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux.", pause:500},
+    {journal:"Je tente le démarrage.", pause:2000},
     // MDW s'allume
     {fn:()=>{
       mdwActive=true;mdwFound=true;
