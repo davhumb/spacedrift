@@ -309,7 +309,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.2</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.3</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -2335,16 +2335,16 @@ function applyUpgrades(){
 let tutorialDone=false;
 
 const MDW_TUTORIAL=[
-  {delay:2,  text:"Tutoriel en cours de traitement.\nVotre écran est tactile. Zoom et dézoom en pinçant l'écran."},
-  {delay:7,  text:"En bas : quatre jauges. Oxygène — si elle atteint zéro, la coque commence à céder. Collectez les capsules vertes."},
-  {delay:12, text:"Propergol — carburant de propulsion. Tapez et maintenez pour vous diriger. La jauge remonte lentement."},
-  {delay:17, text:"Énergie — recharge automatiquement. Si elle est vide, la propulsion passe en mode urgence."},
-  {delay:22, text:"Coque — les débris la font baisser. Si elle atteint zéro, c'est la fin."},
-  {delay:27, text:"Radar en haut — points verts : ressources. Points rouges : débris. Losanges colorés : trous de ver."},
-  {delay:32, text:"Planètes — approchez lentement. Vitesse inférieure à 3 unités par seconde pour l'amarrage automatique."},
-  {delay:37, text:"Trous de ver — ils vous transportent vers d'autres secteurs. Approchez-vous pour traverser."},
-  {delay:42, text:"Journal en haut à gauche — vos pensées. Bouton catalogue en bas à droite — tout ce que vous avez découvert."},
-  {delay:47, text:"Tutoriel terminé. Bonne route, Simon Brent."},
+  {delay:2,  text:"Tutoriel en cours de traitement. Votre écran est tactile. Zoom et dézoom en pinçant l'écran."},
+  {delay:12, text:"En bas : quatre jauges. Oxygène — si elle atteint zéro, la coque commence à céder. Collectez les capsules vertes."},
+  {delay:22, text:"Propergol — carburant de propulsion. Tapez et maintenez pour vous diriger. La jauge remonte lentement."},
+  {delay:32, text:"Énergie — recharge automatiquement. Si elle est vide, la propulsion passe en mode urgence."},
+  {delay:42, text:"Coque — les débris la font baisser. Si elle atteint zéro, c'est la fin."},
+  {delay:52, text:"Radar en haut — points verts : ressources. Points rouges : débris. Losanges colorés : trous de ver."},
+  {delay:62, text:"Planètes — approchez lentement. Vitesse inférieure à 3 unités par seconde pour l'amarrage automatique."},
+  {delay:72, text:"Trous de ver — ils vous transportent vers d'autres secteurs. Approchez-vous pour traverser."},
+  {delay:82, text:"Journal en haut à gauche — vos pensées. Bouton catalogue en bas à droite — tout ce que vous avez découvert."},
+  {delay:92, text:"Tutoriel terminé. Bonne route, Simon Brent."},
 ];
 
 function startTutorial(){
@@ -2461,11 +2461,24 @@ function triggerJournal(day){
 }
 function playTypeSound(){
   if(!audioCtx)return;
+  // Modulation selon l'environnement — trou noir, courant de plasma
+  let freqMod=1, volumeMod=1;
+  if(phenomena){
+    for(const p of phenomena){
+      if(p.name==='TROU NOIR'){
+        const dx=ship.x-p.x,dy=ship.y-p.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        const prox=Math.max(0,1-dist/2000);
+        freqMod=1-prox*0.4; // plus grave près du trou noir
+        volumeMod=1+prox*0.3;
+      }
+    }
+  }
   const o=audioCtx.createOscillator();
   const g=audioCtx.createGain();
   o.type='square';
-  o.frequency.value=180+Math.random()*80;
-  g.gain.setValueAtTime(0.04,audioCtx.currentTime);
+  o.frequency.value=(180+Math.random()*80)*freqMod;
+  g.gain.setValueAtTime(0.02*volumeMod,audioCtx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.04);
   o.connect(g);g.connect(audioCtx.destination);
   o.start();o.stop(audioCtx.currentTime+0.04);
@@ -7395,12 +7408,26 @@ function initVoice(){
 
 function mdwSpeak_voice(text){
   if(!voiceEnabled||!window.speechSynthesis)return;
-  speechSynthesis.cancel(); // annuler si déjà en train de parler
+  speechSynthesis.cancel();
   const utt=new SpeechSynthesisUtterance(text);
   if(mdwVoice)utt.voice=mdwVoice;
-  utt.rate=1.15;   // plus rapide — moins humain
-  utt.pitch=0.3;   // très grave — robotique
-  utt.volume=0.9;
+
+  // Modulation selon proximité trou noir
+  let pitchMod=0,rateMod=0;
+  if(typeof phenomena!=='undefined'){
+    for(const p of phenomena){
+      if(p.name==='TROU NOIR'&&ship){
+        const dx=ship.x-p.x,dy=ship.y-p.y;
+        const prox=Math.max(0,1-Math.sqrt(dx*dx+dy*dy)/2000);
+        pitchMod-=prox*0.15;
+        rateMod-=prox*0.1;
+      }
+    }
+  }
+
+  utt.rate=Math.max(0.6,1.15+rateMod);
+  utt.pitch=Math.max(0.1,0.3+pitchMod);
+  utt.volume=0.35;
   speechSynthesis.speak(utt);
 }
 
@@ -7417,7 +7444,7 @@ if(voiceTestEl)voiceTestEl.addEventListener('click',()=>{
     speechSynthesis.cancel();
     const utt=new SpeechSynthesisUtterance('MDW. Systèmes restaurés. La mission : cartographier. Chaque planète compte.');
     if(mdwVoice)utt.voice=mdwVoice;
-    utt.rate=1.15;utt.pitch=0.3;utt.volume=0.55;
+    utt.rate=1.15;utt.pitch=0.3;utt.volume=0.35;
     speechSynthesis.speak(utt);
   };
   // Les voix sont chargées de façon async sur certains navigateurs
