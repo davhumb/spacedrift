@@ -16,7 +16,7 @@
 
   /* TOP BAR — juste le compteur de jour, discret */
   #top-bar{position:absolute;top:6px;right:10px;pointer-events:none;text-align:right;}
-  #day-block .day-label{font-size:6px;letter-spacing:3px;color:var(--green-dim);}
+  #day-block .day-label{font-size:9px;letter-spacing:3px;color:var(--green-dim);}
   #day-block .day-val{font-family:'VT323',monospace;font-size:20px;color:var(--amber);text-shadow:0 0 6px var(--amber);letter-spacing:2px;}
 
   /* RADAR — haut gauche */
@@ -92,8 +92,8 @@
   /* MISSION HUD — sous le radar */
   #mission-bar{position:absolute;top:88px;left:6px;text-align:left;pointer-events:none;opacity:0;transition:opacity 0.5s;max-width:175px;}
   #mission-bar.visible{opacity:1;}
-  #mission-bar .m-label{font-size:6px;letter-spacing:2px;color:var(--green-dim);}
-  #mission-bar .m-text{font-size:8px;letter-spacing:1px;color:var(--green);margin-top:2px;line-height:1.4;}
+  #mission-bar .m-label{font-size:9px;letter-spacing:2px;color:var(--green-dim);}
+  #mission-bar .m-text{font-size:10px;letter-spacing:1px;color:var(--green);margin-top:2px;line-height:1.4;}
   #mission-bar .m-prog{font-family:'VT323',monospace;font-size:14px;color:var(--amber);letter-spacing:1px;}
 
   /* SIGNAL FINAL */
@@ -219,10 +219,6 @@
     <div class="combo-label">COMBO</div>
   </div>
   <div id="boss-warning"><div class="warn-text">⚠ INCOMING ⚠</div></div>
-  <div id="planet-banner">
-    <div class="pb-title" id="pb-title">🪐 PLANÈTE DÉCOUVERTE</div>
-    <div class="pb-sub" id="pb-sub">CLASSE ROCHEUSE · +25 HULL</div>
-  </div>
 
   <div id="event-log"></div>
   <button id="catalogue-btn">📋</button>
@@ -309,7 +305,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.6</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.7</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -324,10 +320,9 @@ const flash=document.getElementById('flash'),screen=document.getElementById('scr
 const eventLog=document.getElementById('event-log'),comboDisplay=document.getElementById('combo-display');
 const comboX=document.getElementById('combo-x'),bossWarning=document.getElementById('boss-warning');
 const journalEl=document.getElementById('journal'),journalText=document.getElementById('journal-text');
-const journalDay=document.getElementById('journal-day'),planetBanner=document.getElementById('planet-banner');
+const journalDay=document.getElementById('journal-day');
 const dayPop=document.getElementById('day-pop'),dpNum=document.getElementById('dp-num');
 const cosmoOverlay=document.getElementById('cosmo-overlay');
-const pbTitle=document.getElementById('pb-title'),pbSub=document.getElementById('pb-sub');
 const pcVal=document.getElementById('pc-val'),diffBadge=document.getElementById('diff-badge');
 const achEl=document.getElementById('achievement');
 const achIcon=document.getElementById('ach-icon'),achName=document.getElementById('ach-name'),achDesc=document.getElementById('ach-desc');
@@ -634,30 +629,35 @@ function startBreathing(){
   function breathCycle(rate){
     if(!breathActive)return;
     const now=audioCtx.currentTime;
+    // Volume proportionnel au manque d'O2
+    const urgency=Math.max(0,1-(oxygen/40));
+    const vol=0.1+urgency*0.2;
     const osc=audioCtx.createOscillator();
     const g=audioCtx.createGain();
     osc.type='sine';
-    osc.frequency.setValueAtTime(80+Math.random()*20,now);
+    osc.frequency.setValueAtTime(90+Math.random()*15,now);
     g.gain.setValueAtTime(0,now);
-    g.gain.linearRampToValueAtTime(0.08,now+rate*0.4);
+    g.gain.linearRampToValueAtTime(vol,now+rate*0.35);
     g.gain.linearRampToValueAtTime(0,now+rate);
     osc.connect(g);g.connect(breathGain);
     osc.start(now);osc.stop(now+rate);
-    setTimeout(()=>breathCycle(Math.max(0.6,rate*0.92)),rate*800);
+    // S'accélère avec l'urgence
+    const nextRate=Math.max(0.5,rate*(0.88+urgency*0.04));
+    setTimeout(()=>breathCycle(nextRate),nextRate*900);
   }
-  breathCycle(2.5); // commence lent
+  breathCycle(2.2);
 }
 
 function stopBreathing(){
   if(!breathActive)return;
   breathActive=false;
-  if(breathGain)breathGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.5);
+  if(breathGain)breathGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.8);
 }
 
 function updateBreathing(){
   if(!audioCtx||state!=='playing')return;
-  if(oxygen<25&&!breathActive)startBreathing();
-  else if(oxygen>=30&&breathActive)stopBreathing();
+  if(oxygen<40&&!breathActive)startBreathing();
+  else if(oxygen>=45&&breathActive)stopBreathing();
 }
 let wakeLock=null;
 async function requestWakeLock(){
@@ -2999,15 +2999,19 @@ function updatePlanets(dt){
       pcVal.textContent=discoveredPlanets;
       if(currentMission&&currentMission.text.includes('PLANÈTE'))missionCounter++;
       p.type.effect();
-      pbTitle.textContent=`🪐 ${p.name}`;
-      pbSub.textContent=`CLASSE ${p.type.name}`;
-      pbTitle.style.color=p.type.glowColor;
-      planetBanner.classList.add('visible');
       spawnParticles(p.x,p.y,p.type.glowColor,20,1.5);
-      logEvent(`🪐 ${p.name} — ${p.type.name}`,'planet');
       addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
-      setTimeout(()=>planetBanner.classList.remove('visible'),3000);
-      // Réaction MDW — légèrement différente pour les planètes violettes
+      // Notification discrète dans le journal — pas de banner
+      setTimeout(()=>{
+        if(!journalEl)return;
+        journalFullText=`${p.name} — ${p.type.name}`;
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');
+        journalDay.textContent='🪐';
+        journalText.textContent='';
+        journalText.style.color=p.type.glowColor||'rgba(0,255,65,0.7)';
+      },300);
+      // Réaction MDW
       if(p.type.name==='VIOLETTE'){
         setTimeout(()=>{if(mdwActive)mdwSpeak('Celle-là. Enregistrez ses coordonnées précises.',true);},1200);
       } else {
@@ -3152,7 +3156,7 @@ function startGame(){
   camX=0;camY=0;
   comboDisplay.classList.remove('visible');
   bossWarning.classList.remove('visible');
-  planetBanner.classList.remove('visible');
+  
   dayPop.classList.remove('show');
   tradePosts=[];tradePostTimer=120;tradePostOpen=false;
   shownLoreEntries=new Set();
@@ -7335,7 +7339,12 @@ function drawEventBanner(){
 
 // ── Radar ────────────────────────────────────
 const RADAR_R=32;
-function getRadarRange(){return 500+(upgrades.radar_ext*200)+(window._radarBonus||0)+getModuleBonus('radarRange')-500;}
+function getRadarRange(){
+  const base=500+(upgrades.radar_ext*200)+(window._radarBonus||0)+getModuleBonus('radarRange')-500;
+  // La portée augmente quand on dézoom — le radar reflète ce qu'on voit
+  const zoomFactor=Math.max(0.5,Math.min(2,1/viewZoom));
+  return base*zoomFactor;
+}
 function drawRadar(){
   const RADAR_RANGE=getRadarRange();
   rctx.clearRect(0,0,70,70);
