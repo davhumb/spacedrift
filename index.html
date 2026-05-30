@@ -314,7 +314,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.6</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.7</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -4859,12 +4859,11 @@ function getRandomModule(){
 
 function startInstallModule(moduleKey,wreck){
   if(installingModule)return;
+  if(!SHIP_MODULES[moduleKey]){logEvent('Module inconnu','warn');return;}
   installingModule={key:moduleKey,wreck,timer:INSTALL_DURATION};
   installTimer=INSTALL_DURATION;
   logEvent(`🔧 MDW INSTALLE ${SHIP_MODULES[moduleKey].name}`,'warn');
-  // MDW parle
-  if(mdwActive)setTimeout(()=>mdwSpeak(SHIP_MODULES[moduleKey].mdwLine,true),300);
-  // Ralentir légèrement le vaisseau
+  if(mdwActive)setTimeout(()=>mdwSpeak(SHIP_MODULES[moduleKey]?.mdwLine||'Installation en cours.',true),300);
   ship.vx*=0.3;ship.vy*=0.3;
 }
 
@@ -5747,25 +5746,23 @@ function checkDead(){
 }
 
 function skipIntroduction(){
-  // Annuler tous les timeouts de la séquence d'ouverture
   openingActive=false;
+  // Annuler tous les timeouts en cours
+  const highId=setTimeout(()=>{},0);
+  for(let i=0;i<highId;i++)clearTimeout(i);
   // Activer MDW immédiatement
   mdwActive=true;mdwFound=true;tutorialDone=true;
   unlockAchievement&&unlockAchievement('mdw');
-  // Marquer tous les échanges acte 1 comme faits
   if(_exchangesDone){
     ['mdw_intro1','mdw_comment','mdw_pc','mdw_pc2','mdw_rentrer','mdw_memory',
-     'mdw_capsule','mdw_scan_tip'].forEach(k=>_exchangesDone.add(k));
+     'mdw_capsule','mdw_scan_tip','mdw_silence','mdw_scan_tip','mdw_trust_early',
+     'mdw_stars','mdw_laughter','mdw_fear'].forEach(k=>_exchangesDone.add(k));
   }
-  // Supprimer le bouton si encore là
   document.getElementById('btn-skip-intro')?.remove();
-  // Journal discret
-  if(journalEl){
-    journalFullText="Introduction passée.";
-    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-    journalEl.classList.add('active');journalDay.textContent='SYS';
-    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.4)';
-  }
+  // Fermer le journal immédiatement
+  journalActive=false;
+  if(journalEl)journalEl.classList.remove('active');
+  speechSynthesis?.cancel();
 }
 let sanity=100;
 const SANITY_DRAIN_PER_WORMHOLE=10;
