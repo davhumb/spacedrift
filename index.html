@@ -306,7 +306,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.9</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.0</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -5038,7 +5038,39 @@ function getMDWDialog(context){
 }
 
 function getMDWIdle(){
-  // Filtrer par secteur courant
+  const sanityState=getSanityState();
+
+  // Répliques spéciales selon état mental de Simon
+  if(sanityState==='PARANOÏAQUE'||sanityState==='PERDU'){
+    const parano=[
+      'Les données sont cohérentes.',
+      'Je surveille les systèmes. Tout est normal.',
+      'Vous semblez fatigué. Essayez de vous reposer.',
+      'Je suis ici.',
+      'Les lectures sont stables.',
+    ].filter(t=>!mdwRecentLines.has(t));
+    if(parano.length&&Math.random()<0.5){
+      const pick=parano[Math.floor(Math.random()*parano.length)];
+      mdwRecentLines.add(pick);
+      if(mdwRecentLines.size>8)mdwRecentLines.delete(mdwRecentLines.values().next().value);
+      return pick;
+    }
+  }
+
+  if(sanityState==='INSTABLE'&&Math.random()<0.3){
+    const attentif=[
+      'Votre rythme respiratoire a changé.',
+      'Prenez le temps de vérifier vos jauges.',
+      'Je suis là si vous avez besoin.',
+    ].filter(t=>!mdwRecentLines.has(t));
+    if(attentif.length){
+      const pick=attentif[Math.floor(Math.random()*attentif.length)];
+      mdwRecentLines.add(pick);
+      return pick;
+    }
+  }
+
+  // Répliques normales
   const available=MDW_DB.idle.filter(d=>{
     if((d.s||0)>sectorCount)return false;
     if(mdwRecentLines.has(d.t))return false;
@@ -5540,32 +5572,91 @@ function checkDead(){
 let sanity=100;
 const SANITY_DRAIN_PER_WORMHOLE=10;
 
+function getSanityState(){
+  if(sanity>80)return'STABLE';
+  if(sanity>60)return'TENDU';
+  if(sanity>40)return'INSTABLE';
+  if(sanity>25)return'PARANOÏAQUE';
+  return'PERDU';
+}
+
 function updateSanity(dt){
   if(state!=='playing')return;
-  // Remonte très lentement
   sanity=Math.min(100,sanity+0.008*dt);
 
-  // Effets visuels sous 45
+  // Effets progressifs selon niveau
+  if(sanity<70){
+    // Teinte journal plus chaude/parano
+    if(journalEl){
+      const intensity=(70-sanity)/70;
+      const g=Math.floor(255-intensity*80);
+      journalText.style.color=`rgba(255,${g},${Math.floor(g*0.4)},0.85)`;
+    }
+  }
+
   if(sanity<45){
     const intensity=(45-sanity)/45;
-    // Légère aberration permanente
-    if(Math.random()<0.02*intensity){
-      triggerChromAber(intensity*2,0.1);
-    }
-    // Étoiles qui dérivent légèrement — via un offset global
+    if(Math.random()<0.02*intensity)triggerChromAber(intensity*2,0.1);
     window._sanityDrift=(window._sanityDrift||0)+dt*intensity*0.5;
   }
 
-  // Journal paranoïaque sous 70 — géré dans JOURNAL_ENTRIES acte 3
+  if(sanity<30){
+    // Hallucination violette aléatoire
+    if(Math.random()<0.003){
+      triggerFlash('#aa77ff',0.25);
+      logEvent("J'ai déjà vu cet endroit...",'danger');
+    }
+  }
+
+  if(sanity<20){
+    // MDW semble parler alors qu'il ne dit rien
+    if(Math.random()<0.001&&mdwActive&&!ghostShipActive){
+      spawnGhostShip();
+    }
+  }
 }
 
 function drainSanity(){
-  sanity=Math.max(0,sanity-SANITY_DRAIN_PER_WORMHOLE);
-  // Effet immédiat
+  sanity=Math.max(5,sanity-SANITY_DRAIN_PER_WORMHOLE);
+
+  // Mal de crâne sous 75
+  if(sanity<75&&Math.random()<0.4){
+    logEvent('Mal de crâne violent','warn');
+  }
+
+  // Effets immédiats selon niveau
   if(sanity<45)triggerChromAber(4,0.3);
-  if(sanity<25){
-    // Vaisseau fantôme — aparaît brièvement
-    setTimeout(()=>spawnGhostShip(),2000);
+  if(sanity<35){
+    triggerFlash('#aa77ff',0.2);
+    setTimeout(()=>{
+      if(journalEl){
+        journalFullText="Je me souviens de ce secteur.\nJe n'y suis jamais venu.";
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+        journalText.textContent='';
+      }
+    },2000);
+  }
+  if(sanity<25)setTimeout(()=>spawnGhostShip(),2000);
+
+  // MDW réagit selon l'état de Simon
+  const state_sanity=getSanityState();
+  if(state_sanity==='INSTABLE'||state_sanity==='PARANOÏAQUE'){
+    setTimeout(()=>{
+      if(!mdwActive)return;
+      const mdwCare=[
+        'Vous semblez fatigué.',
+        'Prenez le temps de vous stabiliser.',
+        'Je surveille les systèmes.',
+        'Votre rythme cardiaque est élevé.',
+      ];
+      mdwSpeak_voice(mdwCare[Math.floor(Math.random()*mdwCare.length)]);
+    },4000+Math.random()*6000);
+  }
+  if(state_sanity==='PERDU'){
+    setTimeout(()=>{
+      if(mdwActive)mdwSpeak_voice('Simon. Concentrez-vous sur les jauges.');
+    },3000);
   }
 }
 
