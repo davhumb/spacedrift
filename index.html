@@ -2895,6 +2895,19 @@ const SF_PLANET_NAMES=[
   // Divers
   'Überaffe','Noctua','Zephyra','Cimmeria','Calixis','Onderon',
   'Kessel','Vortan','Elysion','Ashael','Nassir','Vilir',
+  // Hip-hop / MF DOOM universe
+  'Geedorah','Planet X','Madvillainy','Vaudeville','Doomsday',
+  'Zev','Figaro','Viktor','Caligula','Dumile',
+  // Blade Runner
+  'Tyrell','Nexus','Batty','Pris','Zhora','Gaff','Offworld','Syd',
+  // Dark City
+  'Shell Beach','Tuning','Anamnesis','Murdoch','Bumstead',
+  // 12 Monkeys
+  'Cassandra','Divergent','Markridge','Cole','Railly',
+  // Futurama
+  'Omicron','Vergon','Eternium','Trisol','Wormulon',
+  'Nimbus','Decapod','Chapek','Morbo','Kif',
+  'Zoidberg','Calculon','Hypnotoad','Wernstrom','Angleyne',
 ];
 let usedPlanetNames=new Set();
 
@@ -4618,7 +4631,7 @@ let torpedoCooldown=0;
 let torpedoHeld=false;
 let torpedoHoldTime=0;
 const TORPEDO_COOLDOWN=4;
-const torpedoBar=document.getElementById('torpedo-bar');
+const torpedoBar=document.getElementById('boost-bar'); // renommé
 const torpedoChargeDom=document.getElementById('torpedo-charge');
 
 function fireTorpedo(){
@@ -4667,7 +4680,7 @@ function updateTorpedoes(dt){
 
   // HUD torpille
   if(upgrades.torpedo>0){
-    torpedoBar.classList.add('visible');
+    // torpille supprimée
     if(torpedoReady){
       torpedoChargeDom.textContent=torpedoHeld?'●'.repeat(Math.floor(torpedoHoldTime*5)+1):'PRÊTE';
       torpedoChargeDom.style.color=torpedoHeld?'#ffffff':'var(--amber)';
@@ -4676,7 +4689,7 @@ function updateTorpedoes(dt){
       torpedoChargeDom.style.color='var(--green-dim)';
     }
   }else{
-    torpedoBar.classList.remove('visible');
+    // torpille supprimée
   }
 }
 
