@@ -306,7 +306,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.3</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.4</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -3253,6 +3253,19 @@ function runSequence(steps, idx=0){
 function startOpeningSequence(){
   openingActive=true;
 
+  // Bouton PASSER — visible si pas le premier run
+  if((totalRuns||0)>0){
+    const skipBtn=document.createElement('button');
+    skipBtn.id='btn-skip-intro';
+    skipBtn.textContent='[ PASSER ]';
+    skipBtn.style.cssText=`position:fixed;bottom:80px;right:12px;z-index:50;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 12px;cursor:pointer;pointer-events:all;`;
+    skipBtn.addEventListener('click',()=>{
+      skipIntroduction();
+      skipBtn.remove();
+    });
+    document.getElementById('hud').appendChild(skipBtn);
+  }
+
   const steps=[
     // Textes Simon — dans l'ordre, séquentiels
     {journal:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.", pause:1000},
@@ -3291,6 +3304,7 @@ function startGame(){
   oxygen=Math.min(100,maxOxygen);energy=100;hull=100;propellant=maxPropellant;
   openingActive=false;
   tutorialDone=false;
+  document.getElementById('btn-skip-intro')?.remove();
   combo=0;comboTimer=0;comboHideTimer=0;
   bossTimer=60;bossActive=false;bossWarningShown=false;
   survivalDay=1;dayTimer=0;inDayTransition=false;
@@ -3501,20 +3515,14 @@ function triggerChromAber(intensity=4,duration=0.3){
 }
 
 function applyChromAber(){
-  if(chromAberTimer<=0||chromAberIntensity<=0)return;
-  const shift=chromAberIntensity*(chromAberTimer>0.1?1:chromAberTimer/0.1);
-  const imageData=ctx.getImageData(0,0,W,H);
-  const data=imageData.data;
-  const shifted=new Uint8ClampedArray(data.length);
-  for(let i=0;i<shifted.length;i++)shifted[i]=data[i];
-  // Décaler le canal rouge vers la droite
-  const s=Math.floor(shift)*4;
-  for(let i=0;i<data.length;i+=4){
-    if(i+s<data.length)shifted[i]=data[i+s]; // R décalé
-    if(i-s>=0)shifted[i+2]=data[i-s+2];      // B décalé inverse
+  if(chromAberTimer<=0||chromAberIntensity<=0){
+    canvas.style.filter='';return;
   }
-  const out=new ImageData(shifted,W,H);
-  ctx.putImageData(out,0,0);
+  const shift=chromAberIntensity*(chromAberTimer>0.1?1:chromAberTimer/0.1);
+  // CSS filter — GPU accéléré, zéro getImageData
+  const hue=Math.floor(shift*8);
+  const sat=Math.min(150,100+shift*10);
+  canvas.style.filter=`hue-rotate(${hue}deg) saturate(${sat}%) contrast(1.05)`;
 }
 function triggerShake(){document.body.classList.remove('shaking');void document.body.offsetWidth;document.body.classList.add('shaking');setTimeout(()=>document.body.classList.remove('shaking'),260);}
 
@@ -5640,7 +5648,27 @@ function checkDead(){
   }
 }
 
-// ── Système Sanity ────────────────────────────
+function skipIntroduction(){
+  // Annuler tous les timeouts de la séquence d'ouverture
+  openingActive=false;
+  // Activer MDW immédiatement
+  mdwActive=true;mdwFound=true;tutorialDone=true;
+  unlockAchievement&&unlockAchievement('mdw');
+  // Marquer tous les échanges acte 1 comme faits
+  if(_exchangesDone){
+    ['mdw_intro1','mdw_comment','mdw_pc','mdw_pc2','mdw_rentrer','mdw_memory',
+     'mdw_capsule','mdw_scan_tip'].forEach(k=>_exchangesDone.add(k));
+  }
+  // Supprimer le bouton si encore là
+  document.getElementById('btn-skip-intro')?.remove();
+  // Journal discret
+  if(journalEl){
+    journalFullText="Introduction passée.";
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');journalDay.textContent='SYS';
+    journalText.textContent='';journalText.style.color='rgba(0,255,65,0.4)';
+  }
+}
 let sanity=100;
 const SANITY_DRAIN_PER_WORMHOLE=10;
 
@@ -7924,6 +7952,7 @@ function gameLoop(ts){
       drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
       if(chromAberTimer>0){chromAberTimer-=dt;applyChromAber();}
+      else if(canvas.style.filter)canvas.style.filter='';
       if(nightMode)drawNightMode();
       drawRadar();
       if(state==='playing')updateHUD();
