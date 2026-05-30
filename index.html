@@ -272,6 +272,7 @@
   <div id="cat-tabs">
     <button class="cat-tab active" data-tab="journal">PILOTE</button>
     <button class="cat-tab" data-tab="planets">PLANÈTES</button>
+    <button class="cat-tab" data-tab="ship">VAISSEAU</button>
     <button class="cat-tab" data-tab="phenomena">PHÉNOMÈNES</button>
     <button class="cat-tab" data-tab="sectors">SECTEURS</button>
   </div>
@@ -305,7 +306,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.9</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -659,6 +660,25 @@ function updateBreathing(){
   if(oxygen<40&&!breathActive)startBreathing();
   else if(oxygen>=45&&breathActive)stopBreathing();
 }
+// ── Boost d'urgence ───────────────────────────
+let boostCooldown=0,boostActive=false,boostTimer=0;
+
+function triggerEmergencyBoost(){
+  if(!upgrades.boost||boostCooldown>0||boostActive)return;
+  boostActive=true;boostTimer=1.0;boostCooldown=60;
+  const angle=ship.angle+Math.PI;
+  ship.vx+=Math.cos(angle)*12;ship.vy+=Math.sin(angle)*12;
+  triggerFlash('#00ff41',0.3);haptic('wormhole');
+  triggerChromAber(3,0.2);
+  spawnParticles(ship.x,ship.y,'#00ff41',20,2);
+  logEvent('⚡ BOOST','warn');
+}
+
+function updateBoost(dt){
+  if(boostActive){boostTimer-=dt;if(boostTimer<=0)boostActive=false;}
+  if(boostCooldown>0)boostCooldown=Math.max(0,boostCooldown-dt);
+}
+
 let wakeLock=null;
 async function requestWakeLock(){
   try{
@@ -1419,9 +1439,9 @@ const UPGRADES={
   shield:    {name:'BOUCLIER',      desc:'Absorbe un impact critique par jour.',            cost:[400],         levels:1, apply:()=>{}},
   drone:     {name:'DRONE',         desc:'Attire automatiquement les capsules proches.',    cost:[350],         levels:1, apply:()=>{}},
   scanner:   {name:'SCANNER',       desc:'Révèle le type de planète avant l\'approche.',    cost:[300],         levels:1, apply:()=>{}},
-  torpedo:   {name:'TORPILLE',      desc:'Double-tap pour tirer — détruit les débris.',     cost:[300,500],     levels:2, apply:()=>{}},
+  boost:     {name:'BOOST D\'URGENCE', desc:'Double-tap — propulsion massive 1s. Recharge 60s.\nDernier recours face à un objet massif.', cost:[400], levels:1, apply:()=>{}},
 };
-let upgrades={o2tank:0,recycler:0,armor:0,thruster:0,radar_ext:0,shield:0,drone:0,scanner:0,torpedo:0};
+let upgrades={o2tank:0,recycler:0,armor:0,thruster:0,radar_ext:0,shield:0,drone:0,scanner:0,boost:0};
 let upgradePoints=0; // accumulés entre les runs
 let shieldActive=false;
 let maxOxygen=100;
@@ -1948,6 +1968,33 @@ function updateSecondaryWormholes(dt){
       currentUniverse=w.targetUniverse;
       drainSanity();
       triggerChromAber(8,0.5);
+      // Journal Simon — note l'univers traversé
+      const uDest=UNIVERSES[w.targetUniverse];
+      if(uDest&&journalEl){
+        const uNotes={
+          1:"Chaleur. L'air sent le brûlé.\nMême ici.",
+          2:"Froid immédiat. Les instruments hésitent.\nOn est loin.",
+          3:"Obscurité. Le radar peine.\nJe n'aime pas cet endroit.",
+          4:"Lumière aveuglante. MDW dit que c'est normal.\nRien n'est normal.",
+          5:"Tout est gris. Même les étoiles.\nComme si l'espace était mort ici.",
+          6:"L'espace semble se dédoubler.\nJe préfère ne pas regarder trop longtemps.",
+          7:"Dense. Trop de gravité.\nOn peine à avancer.",
+          8:"Vieux. Tout ici est vieux.\nLes étoiles meurent sous mes yeux.",
+          9:"Des signaux partout. Parasites.\nMDW essaie de filtrer. Il n'y arrive pas.",
+          10:"Rien.\nPas une étoile. Pas un signal. Rien.",
+          12:"L'espace tremble.\nMDW dit que ce sont des interférences. Ça ne ressemble pas à ça.",
+          13:"Trop chaud. La coque chauffe.\nOn ne reste pas.",
+          14:"Beau. Dangereusement beau.\nJe dois me concentrer.",
+        };
+        const note=uNotes[w.targetUniverse];
+        if(note){
+          setTimeout(()=>{
+            journalFullText=note;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+            journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+            journalText.textContent='';journalText.style.color='rgba(0,255,65,0.8)';
+          },3000);
+        }
+      }
       sectorCount++;
       // Effets des trous de ver sur Simon — à partir de la 5e traversée
       if(sectorCount>=5&&!_exchangesDone?.has('wormhole_effects')){
@@ -3221,6 +3268,7 @@ function startGame(){
   plasmaStreamActive=false;plasmaStreamTimer=0;
   sosTriggered=false;sosWreck=null;sosDocked=false;
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
+  boostCooldown=0;boostActive=false;boostTimer=0;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
   mdwDestroyed=false;mdwControlActive=false;
@@ -7589,17 +7637,85 @@ function gameLoop(ts){
   const curU=UNIVERSES[currentUniverse]||UNIVERSES[0];
   ctx.fillStyle=curU.bg||'#000902';ctx.fillRect(0,0,W,H);
 
-  // Effet ambiant selon univers — superposé au fond
-  if(currentUniverse===4){ // LUMEN — légère surexposition
-    ctx.fillStyle='rgba(255,255,220,0.04)';ctx.fillRect(0,0,W,H);
-  } else if(currentUniverse===1){ // IGNIS — chaleur
-    ctx.fillStyle='rgba(60,10,0,0.06)';ctx.fillRect(0,0,W,H);
-  } else if(currentUniverse===2){ // GLACIUS — froid bleuté
-    ctx.fillStyle='rgba(0,10,30,0.05)';ctx.fillRect(0,0,W,H);
-  } else if(currentUniverse===10){ // VIDE — noir absolu
-    ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(0,0,W,H);
-  } else if(currentUniverse===5){ // NÉCROS — gris cendres
-    ctx.fillStyle='rgba(5,5,5,0.1)';ctx.fillRect(0,0,W,H);
+  // Effets ambiants distincts par univers
+  switch(currentUniverse){
+    case 1:{ // IGNIS — chaleur rouge pulsante
+      const heat=(Math.sin(Date.now()*0.0008)+1)*0.5;
+      ctx.fillStyle=`rgba(80,15,0,${0.08+heat*0.05})`;ctx.fillRect(0,0,W,H);
+      // Particules de cendres
+      if(Math.random()<0.15){
+        const cx=Math.random()*W,cy=Math.random()*H;
+        ctx.fillStyle=`rgba(255,80,0,${Math.random()*0.3})`;
+        ctx.beginPath();ctx.arc(cx,cy,Math.random()*1.5,0,Math.PI*2);ctx.fill();
+      }
+      break;
+    }
+    case 2:{ // GLACIUS — froid bleuté cristallisé
+      ctx.fillStyle='rgba(0,15,40,0.06)';ctx.fillRect(0,0,W,H);
+      // Cristaux hexagonaux en fond
+      if(Math.random()<0.05){
+        const hx=Math.random()*W,hy=Math.random()*H,hr=3+Math.random()*6;
+        ctx.strokeStyle=`rgba(100,180,255,${Math.random()*0.15})`;ctx.lineWidth=0.5;
+        ctx.beginPath();
+        for(let i=0;i<6;i++){ctx.lineTo(hx+hr*Math.cos(i*Math.PI/3),hy+hr*Math.sin(i*Math.PI/3));}
+        ctx.closePath();ctx.stroke();
+      }
+      break;
+    }
+    case 3:{ // UMBRA — voile violet oppressant
+      ctx.fillStyle='rgba(20,0,30,0.12)';ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 4:{ // LUMEN — surexposé, éblouissant
+      const glow=(Math.sin(Date.now()*0.001)+1)*0.5;
+      ctx.fillStyle=`rgba(255,255,220,${0.05+glow*0.04})`;ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 5:{ // NÉCROS — gris mort, aucun reflet
+      ctx.fillStyle='rgba(10,10,10,0.15)';ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 6:{ // MIROIR — effet dupliqué rose/cyan
+      const t=Date.now()*0.0005;
+      ctx.fillStyle=`rgba(${Math.floor(40+Math.sin(t)*20)},0,${Math.floor(40+Math.cos(t)*20)},0.06)`;
+      ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 7:{ // DENSE — saturé, étouffant
+      ctx.fillStyle='rgba(0,20,5,0.1)';ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 8:{ // ANCIEN — ocre chaud, nébuleuses mourantes
+      ctx.fillStyle='rgba(30,15,0,0.08)';ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 9:{ // SIGNAL — lignes de données cyan
+      if(Math.random()<0.08){
+        const ly=Math.random()*H;
+        ctx.strokeStyle=`rgba(0,200,200,${Math.random()*0.12})`;ctx.lineWidth=0.5;
+        ctx.beginPath();ctx.moveTo(0,ly);ctx.lineTo(W,ly);ctx.stroke();
+      }
+      break;
+    }
+    case 10:{ // VIDE — noir absolu
+      ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 12:{ // BRUIT — glitch permanent léger
+      if(Math.random()<0.03)triggerChromAber(1,0.05);
+      break;
+    }
+    case 13:{ // CHAUD — orange intense
+      const pulse2=(Math.sin(Date.now()*0.001)+1)*0.5;
+      ctx.fillStyle=`rgba(60,20,0,${0.06+pulse2*0.04})`;ctx.fillRect(0,0,W,H);
+      break;
+    }
+    case 14:{ // CRISTAL — prismatique
+      const t2=Date.now()*0.001;
+      const r=Math.floor(50+Math.sin(t2)*30),b=Math.floor(150+Math.cos(t2)*50);
+      ctx.fillStyle=`rgba(${r},${r+20},${b},0.06)`;ctx.fillRect(0,0,W,H);
+      break;
+    }
   }
 
   if(state==='playing'||state==='dying'||state==='wormhole'||state==='cutscene'){
@@ -7622,7 +7738,7 @@ function gameLoop(ts){
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
-        updateSolarSystems(dt);
+        updateSolarSystems(dt);updateBoost(dt);
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();
         updateAmbient();
         if(musicDelay){
@@ -7716,9 +7832,9 @@ function handlePointerDown(e){
       tapCount=0;lastTapTime=0;return;
     }
     if(tapCount>=2){
-      // Double tap — 2 notes + torpille si upgrade
       playTapNote(2);
-      if(upgrades.torpedo>0){fireTorpedo();tapCount=0;lastTapTime=0;return;}
+      // Double tap — boost d'urgence si upgrade
+      if(upgrades.boost>0){triggerEmergencyBoost();tapCount=0;lastTapTime=0;return;}
     }
   }else{
     tapCount=1;
@@ -7820,7 +7936,80 @@ function renderCatTab(tab){
     return;
   }
 
-  // Filtrer le catalogue par type
+  if(tab==='ship'){
+    // Plan du vaisseau avec modules installés
+    content.innerHTML=`
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:10px;">ÉTAT DU VAISSEAU</div>
+        <canvas id="ship-plan-canvas" width="240" height="300" style="display:block;margin:0 auto;"></canvas>
+        <div id="ship-modules-list" style="margin-top:12px;text-align:left;padding:0 8px;"></div>
+      </div>`;
+    // Dessiner le plan
+    const spc=document.getElementById('ship-plan-canvas');
+    const sctx=spc.getContext('2d');
+    sctx.clearRect(0,0,240,300);
+    const cx=120,cy=150;
+    // Fond
+    sctx.fillStyle='#000902';sctx.fillRect(0,0,240,300);
+    // Grille légère
+    sctx.strokeStyle='rgba(0,255,65,0.05)';sctx.lineWidth=0.5;
+    for(let x=0;x<240;x+=20){sctx.beginPath();sctx.moveTo(x,0);sctx.lineTo(x,300);sctx.stroke();}
+    for(let y=0;y<300;y+=20){sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(240,y);sctx.stroke();}
+    // Corps du vaisseau
+    const sz=40;
+    sctx.strokeStyle='rgba(0,255,65,0.8)';sctx.lineWidth=1.5;sctx.shadowColor='#00ff41';sctx.shadowBlur=8;
+    sctx.beginPath();sctx.moveTo(cx+sz,cy);sctx.lineTo(cx-sz*0.6,cy-sz*0.5);
+    sctx.lineTo(cx-sz*0.4,cy);sctx.lineTo(cx-sz*0.6,cy+sz*0.5);sctx.closePath();sctx.stroke();
+    // Modules installés — dessinés sur le vaisseau
+    const mods=upgrades;
+    if(mods.thruster>0){ // tuyères
+      sctx.strokeStyle='rgba(255,150,0,0.8)';sctx.lineWidth=2;sctx.shadowColor='#ff9900';
+      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy-sz*0.3);sctx.lineTo(cx-sz*0.9,cy-sz*0.3);sctx.stroke();
+      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy+sz*0.3);sctx.lineTo(cx-sz*0.9,cy+sz*0.3);sctx.stroke();
+    }
+    if(mods.armor>0){ // plaques blindage
+      sctx.strokeStyle='rgba(100,150,255,0.6)';sctx.lineWidth=1;sctx.shadowColor='#6699ff';
+      sctx.beginPath();sctx.rect(cx-sz*0.3,cy-sz*0.4,sz*0.4,sz*0.8);sctx.stroke();
+    }
+    if(mods.radar_ext>0){ // antenne radar
+      sctx.strokeStyle='rgba(0,255,200,0.8)';sctx.lineWidth=1;sctx.shadowColor='#00ffc8';
+      sctx.beginPath();sctx.moveTo(cx,cy-sz*0.5);sctx.lineTo(cx,cy-sz*0.9);sctx.stroke();
+      sctx.beginPath();sctx.arc(cx,cy-sz*0.9,4,0,Math.PI*2);sctx.stroke();
+    }
+    if(mods.drone>0){ // pod drone
+      sctx.strokeStyle='rgba(255,200,0,0.7)';sctx.lineWidth=1;sctx.shadowColor='#ffcc00';
+      sctx.beginPath();sctx.arc(cx+sz*0.3,cy+sz*0.6,6,0,Math.PI*2);sctx.stroke();
+    }
+    if(mods.shield>0){ // bouclier
+      sctx.strokeStyle='rgba(0,150,255,0.4)';sctx.lineWidth=1;sctx.shadowColor='#0099ff';
+      sctx.setLineDash([3,3]);
+      sctx.beginPath();sctx.arc(cx,cy,sz*1.2,0,Math.PI*2);sctx.stroke();
+      sctx.setLineDash([]);
+    }
+    if(mods.boost>0){ // boost d'urgence
+      sctx.strokeStyle='rgba(0,255,65,0.9)';sctx.lineWidth=2;sctx.shadowColor='#00ff41';
+      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy);sctx.lineTo(cx-sz*1.1,cy);sctx.stroke();
+      sctx.beginPath();sctx.moveTo(cx-sz*1.1,cy-sz*0.2);sctx.lineTo(cx-sz*1.1,cy+sz*0.2);sctx.stroke();
+    }
+    sctx.shadowBlur=0;
+    // Liste modules
+    const modNames={
+      o2tank:'Réservoir O₂',recycler:'Recycleur Air',armor:'Blindage',
+      thruster:'Propulseurs',radar_ext:'Radar+',shield:'Bouclier',
+      drone:'Drone',scanner:'Scanner',boost:'Boost d\'urgence',
+    };
+    const modList=document.getElementById('ship-modules-list');
+    const installed=Object.entries(mods).filter(([k,v])=>v>0);
+    if(!installed.length){
+      modList.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:10px;">Aucun module installé.</div>';
+    } else {
+      modList.innerHTML=installed.map(([k,v])=>`
+        <div style="font-size:10px;color:rgba(0,255,65,0.75);border-left:2px solid rgba(0,255,65,0.3);padding:3px 8px;margin-bottom:4px;">
+          ◈ ${modNames[k]||k} <span style="color:rgba(0,255,65,0.4)">LV${v}</span>
+        </div>`).join('');
+    }
+    return;
+  }
   const typeMap={planets:'planet',phenomena:'phenomene',sectors:'univers'};
   const filtered=(catalogueEntries||[]).filter(e=>e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')));
   if(!filtered.length){content.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:9px;padding:8px">Rien encore.</div>';return;}
