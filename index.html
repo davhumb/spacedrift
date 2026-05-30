@@ -314,7 +314,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.6</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -2007,16 +2007,24 @@ const UNIVERSES=[
    gravMult:0.5, debrisMult:0.1,
    isTerminal:true,
    onEnter:()=>{
-     // MDW devient silencieux — pause dramatique
-     setTimeout(()=>{
-       if(mdwActive)mdwSpeak('Je ne sais pas ce qui est devant nous.',true);
-     },5000);
-     setTimeout(()=>{
-       if(mdwActive)mdwSpeak('Dans toutes mes données. Dans toutes les expéditions. Personne n\'est allé plus loin.',true);
-     },15000);
-     writeGlitchText&&writeGlitchText('Les étoiles s\'éteignent. Une par une. MDW ne dit rien. Pour la première fois depuis le début, il ne dit rien.','◈ SECTEUR TERMINAL');
-     // Fond qui blanchit progressivement — géré dans drawBackground
+     setTimeout(()=>{if(mdwActive)mdwSpeak('Je ne sais pas ce qui est devant nous.',true);},5000);
+     setTimeout(()=>{if(mdwActive)mdwSpeak("Dans toutes mes données. Dans toutes les expéditions. Personne n'est allé plus loin.",true);},15000);
+     writeGlitchText&&writeGlitchText("Les étoiles s'éteignent. Une par une. MDW ne dit rien. Pour la première fois depuis le début, il ne dit rien.",'◈ SECTEUR TERMINAL');
      window._terminalWhiten=0;
+   }},
+  {id:16, name:'LES VORACES',   bg:'#020000', primary:'#ff2000', dim:'#880000', accent:'#ff6020',
+   starColors:['#ff4020','#ff2000','#aa1000','#880000'],
+   nebulaColors:['rgba(150,20,0,','rgba(100,10,0,'],
+   scan:'rgba(255,30,0,0.08)',
+   lore:"Des trous noirs. Partout. Ils convergent. Le secteur se referme.",
+   gravMult:3.0, debrisMult:0.2,
+   isVoraces:true,
+   onEnter:()=>{
+     setTimeout(()=>{if(mdwActive)mdwSpeak_voice('Vite.');},2000);
+     logEvent('⚠ VORACES — TROUS NOIRS CONVERGENTS','danger');
+     haptic('danger');
+     // Spawner 3 trous noirs autour du vaisseau
+     setTimeout(()=>spawnVoraces(),3000);
    }},
 ];
 
@@ -2803,17 +2811,71 @@ function applyGravityOnObject(dt, obj, objX, objY, mass, minDist=0){
 }
 
 const PLANET_TYPES=[
-  {name:'ROCHEUSE', massKey:'planet_rocheuse', color:'#c0906050',glowColor:'#c09060',ring:false,
+  {name:'ROCHEUSE',  massKey:'planet_rocheuse', color:'#c0906050',glowColor:'#c09060',ring:false,
    effect:()=>{hull=Math.min(100,hull+25);logEvent('🪐 MATÉRIAUX — +25 HULL','planet');}},
-  {name:'GAZEUSE',  massKey:'planet_gazeuse',  color:'#4080ff60',glowColor:'#6090ff',ring:true,
+  {name:'GAZEUSE',   massKey:'planet_gazeuse',  color:'#4080ff60',glowColor:'#6090ff',ring:true,
    effect:()=>{energy=Math.min(100,energy+40);logEvent('🌀 ATMOSPHÈRE — +40 ENERGY','planet');}},
-  {name:'GLACÉE',   massKey:'planet_glacee',   color:'#80d0ff50',glowColor:'#a0e0ff',ring:false,
+  {name:'GLACÉE',    massKey:'planet_glacee',   color:'#80d0ff50',glowColor:'#a0e0ff',ring:false,
    effect:()=>{oxygen=Math.min(maxOxygen,oxygen+35);logEvent('❄ GLACE — +35 OXYGEN','planet');}},
-  {name:'BRÛLANTE', massKey:'planet_brulante', color:'#ff600040',glowColor:'#ff8040',ring:false,
+  {name:'BRÛLANTE',  massKey:'planet_brulante', color:'#ff600040',glowColor:'#ff8040',ring:false,
    isDangerous:true,
    effect:()=>{oxygen=Math.max(0,oxygen-20);hull=Math.max(0,hull-10);logEvent('🔥 IRRADIATION !','danger');}},
-  {name:'VIOLETTE', massKey:'planet_violette', color:'#c060ff50',glowColor:'#d080ff',ring:true,
+  {name:'VIOLETTE',  massKey:'planet_violette', color:'#c060ff50',glowColor:'#d080ff',ring:true,
    effect:()=>{score+=300;logEvent('✨ CRISTAUX — +300 SCORE','planet');}},
+  // ── Planètes mémorables ──
+  {name:'CHANTANTE', massKey:'planet_rocheuse', color:'#40ffcc50',glowColor:'#40ffcc',ring:false,
+   rare:true,
+   onApproach:(p)=>{
+     // Émet un signal sonore étrange via Web Audio
+     if(!audioCtx)return;
+     const freqs=[220,277,330,415,523];
+     freqs.forEach((f,i)=>{
+       setTimeout(()=>{
+         const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+         o.type='sine';o.frequency.value=f;
+         g.gain.setValueAtTime(0,audioCtx.currentTime);
+         g.gain.linearRampToValueAtTime(0.04,audioCtx.currentTime+0.3);
+         g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+1.5);
+         o.connect(g);g.connect(audioCtx.destination);
+         o.start();o.stop(audioCtx.currentTime+1.6);
+       },i*400);
+     });
+     setTimeout(()=>{if(mdwActive)mdwSpeak_voice("Je ne comprends pas. Ce signal n'est pas naturel.");},2500);
+   },
+   effect:()=>{score+=500;oxygen=Math.min(maxOxygen,oxygen+20);logEvent('🎵 SIGNAL MUSICAL — +500','planet');}},
+  {name:'MÉMOIRE',   massKey:'planet_violette', color:'#ffaa4450',glowColor:'#ffaa44',ring:false,
+   rare:true,
+   onApproach:(p)=>{
+     // Déclenche un fragment de mémoire de Simon
+     const memories=[
+       "Une cuisine. Une odeur de café.\nQuelqu'un chante dans la pièce d'à côté.",
+       "La pluie sur une vitre.\nJe regardais les gouttes descendre.\nJe ne sais plus pourquoi.",
+       "Un prénom. Je l'avais. Il est parti.\nMDW demande si ça va. Je dis oui.",
+       "Des mains. Petites. Qui tenaient les miennes.\nJe ne sais plus qui.",
+     ];
+     const mem=memories[Math.floor(Math.random()*memories.length)];
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText=mem;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='MÉMOIRE';
+         journalText.textContent='';journalText.style.color='rgba(255,170,68,0.85)';
+       }
+     },1000);
+     setTimeout(()=>{if(mdwActive)mdwSpeak_voice("Vos constantes biologiques ont changé. Ça va ?");},8000);
+   },
+   effect:()=>{sanity=Math.min(100,sanity+15);score+=400;logEvent('💛 RÉSONANCE — +400 SANITY+','planet');}},
+  {name:'DILATÉE',   massKey:'planet_gazeuse',  color:'#8844ff50',glowColor:'#8844ff',ring:true,
+   rare:true,
+   onApproach:(p)=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Le temps se comporte différemment ici. Je mesure une dilatation locale."),1500);
+   },
+   effect:()=>{
+     // Ralentit le drain des jauges pendant 60s
+     window._dilatationActive=true;
+     setTimeout(()=>{window._dilatationActive=false;logEvent('⏱ DILATATION TERMINÉE','warn');},60000);
+     logEvent('⏱ DILATATION TEMPORELLE — DRAIN -50%','planet');
+     score+=350;
+   }},
 ];
 
 // ── Noms de planètes SF ───────────────────────
@@ -2946,10 +3008,13 @@ const VERA_FRAGMENTS=[
 function spawnPlanet(){
   const angle=Math.random()*Math.PI*2;
   const dist=600+Math.random()*800;
-  // Planètes brûlantes seulement après jour 3
-  const available=survivalDay<3?PLANET_TYPES.filter(t=>!t.isDangerous):PLANET_TYPES;
-  if(!available.length)return; // sécurité
-  const type=available[Math.floor(Math.random()*available.length)];
+  const normalTypes=PLANET_TYPES.filter(t=>!t.isDangerous&&!t.rare);
+  const rareTypes=PLANET_TYPES.filter(t=>t.rare);
+  const baseAvail=survivalDay<3?normalTypes:PLANET_TYPES.filter(t=>!t.rare);
+  // 12% de chance d'une planète rare après le jour 5
+  const type=survivalDay>=5&&Math.random()<0.12&&rareTypes.length?
+    rareTypes[Math.floor(Math.random()*rareTypes.length)]:
+    baseAvail[Math.floor(Math.random()*baseAvail.length)];
   if(!type)return;
   const r=35+Math.random()*40;
   planets.push({
@@ -3169,17 +3234,16 @@ function updatePlanets(dt){
       p.type.effect();
       spawnParticles(p.x,p.y,p.type.glowColor,20,1.5);
       addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
-      // Notification discrète dans le journal — pas de banner
+      // Notification discrète dans le journal
       setTimeout(()=>{
         if(!journalEl)return;
         journalFullText=`${p.name} — ${p.type.name}`;
         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');
-        journalDay.textContent='🪐';
-        journalText.textContent='';
-        journalText.style.color=p.type.glowColor||'rgba(0,255,65,0.7)';
+        journalEl.classList.add('active');journalDay.textContent='🪐';
+        journalText.textContent='';journalText.style.color=p.type.glowColor||'rgba(0,255,65,0.7)';
       },300);
-      // Réaction MDW
+      // onApproach pour les planètes spéciales
+      if(p.type.onApproach)p.type.onApproach(p);
       if(p.type.name==='VIOLETTE'){
         setTimeout(()=>{if(mdwActive)mdwSpeak('Celle-là. Enregistrez ses coordonnées précises.',true);},1200);
       } else {
@@ -3371,6 +3435,8 @@ function startGame(){
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
   boostCooldown=0;boostActive=false;boostTimer=0;
   scanHintShown=false;
+  artifactSpawned=false;artifact=null;
+  voracesActive=false;voracesTimer=0;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
   mdwDestroyed=false;mdwControlActive=false;
@@ -3621,8 +3687,9 @@ function updateShip(dt){
 }
 
 function updateResources(dt){
-  // Geler si catalogue ouvert ou trade
   if(state==='trade')return;
+  // Dilatation temporelle — planète DILATÉE
+  const timeDilation=window._dilatationActive?0.5:1;
   const dilDt=dt*timeDilation;
   const recyclerBonus=getModuleBonus('o2drain');
   const earlyBonus=survivalDay<=2?0.6:1.0;
@@ -6528,6 +6595,45 @@ function updateMDWSectorDialogs(dt){
   }
 }
 
+// ── Univers VORACES ───────────────────────────
+let voracesActive=false,voracesTimer=0;
+
+function spawnVoraces(){
+  if(currentUniverse!==16)return;
+  voracesActive=true;voracesTimer=0;
+  const bhPositions=[{dx:-1200,dy:-800},{dx:1200,dy:-800},{dx:0,dy:1200}];
+  for(const pos of bhPositions){
+    phenomena.push({
+      x:ship.x+pos.dx,y:ship.y+pos.dy,
+      r:25,name:'TROU NOIR',
+      mass:BODY_MASSES?.blackhole||2000,
+      pulse:Math.random()*Math.PI*2,
+      glowColor:'#ff2000',
+      isVorax:true,
+      vx:-pos.dx*0.0003,vy:-pos.dy*0.0003,
+    });
+  }
+}
+
+function updateVoraces(dt){
+  if(!voracesActive||currentUniverse!==16){voracesActive=false;return;}
+  voracesTimer+=dt;
+  for(const p of phenomena){
+    if(!p.isVorax)continue;
+    p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;
+    p.vx*=1.0005;p.vy*=1.0005;
+    const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+    if(dist<350&&Math.random()<0.008&&mdwActive){
+      const lines=['Accélérez.','Le trou de ver est à portée.','Maintenant.','Restez concentré.'];
+      mdwSpeak_voice(lines[Math.floor(Math.random()*lines.length)]);
+    }
+  }
+  // Fond rouge pulsant d'urgence
+  const pulse=(Math.sin(voracesTimer*3)+1)*0.5;
+  ctx.fillStyle=`rgba(60,0,0,${0.03+pulse*0.04})`;
+  ctx.fillRect(0,0,W,H);
+}
+
 // ── Pluie de météorites ───────────────────────
 let meteorShowerActive=false,meteorShowerTimer=0,meteorAngle=0;
 function triggerMeteorShower(){
@@ -6634,6 +6740,66 @@ function drawPlasmaStream(){
   }
   ctx.restore();
 }
+// ── Artefact inconnu ──────────────────────────
+let artifactSpawned=false,artifact=null;
+
+function spawnArtifact(){
+  if(artifactSpawned||survivalDay<8)return;
+  artifactSpawned=true;
+  const angle=Math.random()*Math.PI*2,dist=700+Math.random()*400;
+  artifact={x:ship.x+Math.cos(angle)*dist,y:ship.y+Math.sin(angle)*dist,
+    r:12,pulse:0,discovered:false,rot:0};
+  logEvent('◈ OBJET INCONNU DÉTECTÉ','warn');
+}
+
+function updateArtifact(dt){
+  if(!artifact)return;
+  artifact.pulse+=dt*1.2;artifact.rot+=dt*0.3;
+  if(artifact.discovered)return;
+  const dist=Math.sqrt((artifact.x-ship.x)**2+(artifact.y-ship.y)**2);
+  if(dist<artifact.r+60){
+    artifact.discovered=true;
+    setTimeout(()=>{if(mdwActive)mdwSpeak_voice("Je n'ai pas de données sur cet objet.");},1000);
+    setTimeout(()=>{if(mdwActive)mdwSpeak_voice("...");},8000);
+    setTimeout(()=>{
+      if(journalEl){
+        journalFullText="MDW s'est tu pendant presque dix minutes.\nIl n'a pas dit ce que c'était.\nPour la première fois, il ne sait pas.";
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+        journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+      }
+    },4000);
+    score+=600;
+    addToCatalogue('phenomene','ARTEFACT INCONNU',
+      "Objet non répertorié. Ni épave, ni planète, ni phénomène connu.\nMDW n'a pas de données. C'est la première fois.",'◈');
+  }
+}
+
+function drawArtifact(){
+  if(!artifact)return;
+  const [sx,sy]=worldToScreen(artifact.x,artifact.y);
+  if(sx<-50||sx>W+50||sy<-50||sy>H+50)return;
+  const pulse=(Math.sin(artifact.pulse)+1)*0.5;
+  const r=artifact.r*viewZoom;
+  ctx.save();ctx.translate(sx,sy);ctx.rotate(artifact.rot);
+  ctx.strokeStyle=`rgba(255,255,255,${0.4+pulse*0.4})`;
+  ctx.lineWidth=1;ctx.shadowColor='#ffffff';ctx.shadowBlur=10+pulse*8;
+  for(let i=0;i<5;i++){
+    const a1=i*Math.PI*2/5-Math.PI/2,a2=((i+2)%5)*Math.PI*2/5-Math.PI/2;
+    ctx.beginPath();ctx.moveTo(Math.cos(a1)*r,Math.sin(a1)*r);
+    ctx.lineTo(Math.cos(a2)*r,Math.sin(a2)*r);ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(0,0,r*0.3,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+  // Radar
+  const RADAR_RANGE=getRadarRange();
+  const rdx=(artifact.x-ship.x)/RADAR_RANGE*RADAR_R,rdy=(artifact.y-ship.y)/RADAR_RANGE*RADAR_R;
+  if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R&&Math.floor(Date.now()/500)%2===0){
+    rctx.fillStyle='#ffffff';rctx.shadowColor='#ffffff';rctx.shadowBlur=6;
+    rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
+  }
+}
+
 let graveyardTriggered=false;
 let graveyardWrecks=[];
 
@@ -7976,8 +8142,9 @@ function gameLoop(ts){
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
-        updateSolarSystems(dt);updateBoost(dt);
+        updateSolarSystems(dt);updateBoost(dt);updateVoraces(dt);updateArtifact(dt);
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
+        if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
@@ -7994,7 +8161,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawSolarSystems();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();drawCapsules();
-      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
+      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawTradePosts();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
       if(finBActive)drawFinB();else drawShip();
       drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
