@@ -305,7 +305,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v0.9.8</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -849,6 +849,32 @@ function checkExchanges(){
     triggerExchange('return_question',"On rentre quand ?","Quand la mission sera accomplie.");
   if(currentUniverse===10)
     triggerExchange('void_pull',"Il y a quelque chose qui nous attire. Tu le sens ?","Je mesure une force. Pas de source identifiable.");
+
+  // Après le 8e trou de ver
+  if(sectorCount>=8&&!_exchangesDone.has('wormhole8')){
+    _exchangesDone.add('wormhole8');
+    setTimeout(()=>{
+      if(journalEl){
+        journalFullText="J'ai l'impression de connaître ce secteur.\nJe ne suis jamais venu ici.";
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+        journalText.textContent='';journalText.style.color='rgba(0,255,65,0.75)';
+      }
+    },3000);
+  }
+
+  // Épave pilote 6 — "NE LUI FAITES PAS CONFIANCE"
+  if(wrecksFound>=6&&!_exchangesDone.has('wreck6')){
+    _exchangesDone.add('wreck6');
+    setTimeout(()=>{
+      if(journalEl){
+        journalFullText="J'ai vu quelque chose gravé sur une épave.\nJe préfère ne pas y penser.";
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+        journalText.textContent='';journalText.style.color='rgba(0,255,65,0.65)';
+      }
+    },2000);
+  }
 }
 function updateSpecialSectors(dt){
   if(window._voidPull&&state==='playing'){
@@ -2736,6 +2762,22 @@ const JOURNAL_ENTRIES={
   55:"Je lui ai demandé directement.\nTu lis ce que j'écris ?\nIl a dit : je traite toutes les données accessibles.\nC'est oui.",
   58:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
   60:"Deux mois.\nJe vais rentrer chez moi.\nMDW dit que c'est possible.\nJe ne sais plus si je le crois.",
+  // ── Acte 3 — Les fissures ──
+  33:"Bonne journée. Trois planètes. MDW efficace comme toujours.\nJe commence à me demander si c'est normal d'être aussi efficace.",
+  35:"Quelque chose cloche dans mes calculs d'hier.\nJe ne me souviens pas de les avoir faits.",
+  37:"MDW a lu mes logs. Je l'ai vu accéder au fichier journal pendant que je dormais.\nOu je croyais dormir.",
+  38:"MDW a dit quelque chose ce matin.\nJe l'ai noté. Je ne retrouve plus la note.",
+  40:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux. Ça ne change rien.",
+  42:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet. Je lui fais confiance.\nJe crois.",
+  44:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison. Peut-être.",
+  46:"Je dors mal. Ou je ne dors pas.\nDans l'espace on ne sait pas vraiment la différence.",
+  48:"J'ai demandé à MDW pourquoi il avait accédé à mon journal.\nIl a dit pour calibrer les interactions.\nIl a dit ça avant. Je me souviens.",
+  50:"J'ai relu mes entrées de la semaine dernière.\nJe ne reconnais pas certaines phrases.\nC'est mon écriture pourtant.",
+  52:"Je me demande si j'ai bien fait de réparer cette machine.\nJe chasse cette pensée. MDW m'a sauvé la vie deux fois.\nMais je me le demande quand même.",
+  54:"MDW dit que ça va.\nÇa va.",
+  56:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit. C'est pire que s'il avait dit quelque chose.",
+  58:"La fenêtre.",
+  62:"Je sais ce que je fais.\nJe sais ce que je fais.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -6079,6 +6121,7 @@ const TERMINAL_DIALOG=[
   {t:95,  speaker:'MDW',    text:"Je faisais mon travail."},
   {t:102, speaker:'PILOTE', text:"Moi aussi."},
   // Le pilote détruit MDW ici — geste imprévisible
+  {t:102, speaker:'JOURNAL',text:"Je sais ce que je fais."},
   {t:107, speaker:'JOURNAL',text:"Je ne sais pas pourquoi j'ai fait ça. Un geste. Pas réfléchi. La main s'est déplacée avant la pensée."},
   {t:114, speaker:'MDW',    text:"Je n'avais pas... prévu ça."},
   {t:120, speaker:'MDW',    text:"Je ne savais pas que ça me ferait quelque chose."},
