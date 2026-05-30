@@ -306,7 +306,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.2</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -853,6 +853,77 @@ function checkExchanges(){
     triggerExchange('mdw_memory',
       "Je ne me souviens de rien. Qui suis-je ?",
       "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
+
+  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
+    triggerExchange('mdw_memory',
+      "Je ne me souviens de rien. Qui suis-je ?",
+      "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
+
+  // ── Camaraderie acte 1 — jours 4-20 ────────────────
+  if(_exchangesDone.has('mdw_memory')&&survivalDay>=4&&!_exchangesDone.has('mdw_capsule'))
+    triggerExchange('mdw_capsule',
+      "Ces capsules qui dérivent. D'où elles viennent ?",
+      "Débris de missions antérieures. Quelqu'un les a laissées. Ou les a perdues.");
+
+  if(_exchangesDone.has('mdw_capsule')&&survivalDay>=5&&!_exchangesDone.has('mdw_silence'))
+    triggerExchange('mdw_silence',
+      "C'est silencieux ici.",
+      "L'espace est silencieux. C'est sa nature.\nLe bruit est l'exception.");
+
+  if(_exchangesDone.has('mdw_silence')&&survivalDay>=5&&!_exchangesDone.has('mdw_scan_tip'))
+    triggerExchange('mdw_scan_tip',
+      "Comment on analyse ce qu'on voit ?",
+      "Triple-tap sur l'écran. Je prends en charge le scan.\nJe peux analyser les phénomènes à portée.");
+
+  if(_exchangesDone.has('mdw_silence')&&survivalDay>=6&&!_exchangesDone.has('mdw_trust_early'))
+    triggerExchange('mdw_trust_early',
+      "Tu ne dors jamais ?",
+      "Je n'ai pas besoin de sommeil.\nMais j'ai noté que vous dormez mieux quand les jauges sont stables.");
+
+  if(_exchangesDone.has('mdw_trust_early')&&survivalDay>=7&&!_exchangesDone.has('mdw_stars'))
+    triggerExchange('mdw_stars',
+      "Ces étoiles. Tu les connais toutes ?",
+      "J'en connais beaucoup.\nPas toutes.\nC'est pour ça qu'on explore.");
+
+  if(_exchangesDone.has('mdw_stars')&&survivalDay>=8&&!_exchangesDone.has('mdw_laughter'))
+    triggerExchange('mdw_laughter',
+      "MDW, tu trouves ça beau toi ?",
+      "Je traite des données.\nMais certaines données ont un effet que je n'arrive pas à classer.\nPeut-être que oui.");
+
+  if(_exchangesDone.has('mdw_laughter')&&survivalDay>=10&&!_exchangesDone.has('mdw_fear'))
+    triggerExchange('mdw_fear',
+      "Est-ce que tu as peur de quelque chose ?",
+      "Je n'ai pas de système de peur.\nMais il y a des calculs que je préfère ne pas faire jusqu'au bout.");
+
+  if(_exchangesDone.has('mdw_fear')&&survivalDay>=12&&!_exchangesDone.has('mdw_earth'))
+    triggerExchange('mdw_earth',
+      "Tu as des données sur la Terre ?",
+      "Oui.\nVous voulez que je vous les transmette ?\nIl y a beaucoup de choses.");
+
+  if(_exchangesDone.has('mdw_earth')&&survivalDay>=12&&!_exchangesDone.has('mdw_earth2'))
+    triggerExchange('mdw_earth2',
+      "Dis-moi quelque chose. N'importe quoi.",
+      "La Terre tourne à 1674 kilomètres par heure à l'équateur.\nLes humains ne le sentent pas.\nIls s'y sont habitués.");
+
+  if(_exchangesDone.has('mdw_earth2')&&survivalDay>=14&&!_exchangesDone.has('mdw_alone'))
+    triggerExchange('mdw_alone',
+      "Tu ne trouves pas qu'on est seuls ?",
+      "Vous n'êtes pas seul. Je suis là.\n...\nMais je comprends ce que vous voulez dire.");
+
+  if(_exchangesDone.has('mdw_alone')&&survivalDay>=16&&!_exchangesDone.has('mdw_repairs'))
+    triggerExchange('mdw_repairs',
+      "Comment tu savais ce qui était défectueux en toi ?",
+      "Je ne savais pas.\nVous le saviez. Vous l'avez réparé.\nJe me demande parfois comment.");
+
+  if(_exchangesDone.has('mdw_repairs')&&survivalDay>=18&&!_exchangesDone.has('mdw_useful'))
+    triggerExchange('mdw_useful',
+      "Est-ce que tu te sens utile ?",
+      "C'est une question intéressante.\nJe fonctionne. Je protège les systèmes. J'analyse.\nSi c'est être utile — alors oui.");
+
+  if(_exchangesDone.has('mdw_useful')&&survivalDay>=20&&!_exchangesDone.has('mdw_journal'))
+    triggerExchange('mdw_journal',
+      "",
+      "Vous écrivez beaucoup dans ce journal.\nC'est bien.\nÇa aide à rester soi-même.");
 
   // Acte 2 — doutes progressifs
   if(sectorCount>=1&&_exchangesDone.has('mdw_memory')&&planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
@@ -3269,6 +3340,7 @@ function startGame(){
   sosTriggered=false;sosWreck=null;sosDocked=false;
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
   boostCooldown=0;boostActive=false;boostTimer=0;
+  scanHintShown=false;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
   mdwDestroyed=false;mdwControlActive=false;
@@ -7830,7 +7902,7 @@ function gameLoop(ts){
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
         updateSolarSystems(dt);updateBoost(dt);
-        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();
+        checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
         updateAmbient();
         if(musicDelay){
           musicTimer-=dt;
@@ -7865,14 +7937,70 @@ function getPinchDist(e){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e
 
 // ── Scan phénomène (triple tap) ───────────────
 const PHENOMENON_ANALYSES={
-  'PULSAR':'Étoile à neutrons en rotation rapide. Émission de jets radio périodiques. Période : variable.',
-  'TROU NOIR':'Singularité gravitationnelle. Horizon des événements visible. Masse : croissante.',
-  'MAGNÉTAR':'Étoile à neutrons à champ magnétique extrême. Bursts de radiation périodiques.',
-  'ÉRUPTION SOLAIRE':'Éjection de masse coronale. Particules chargées à haute énergie.',
-  'ÉTOILE À NEUTRONS':'Corps ultra-dense. Rayon estimé 10km. Gravité de surface : maximale.',
-  'PLANÈTE ROGUE':'Corps planétaire sans étoile hôte. Structure artificielle détectée à la surface.',
-  'STRANGE MATTER':'Matière hyperstable. Contamine tout ce qu\'elle touche. Origine inconnue.',
+  'PULSAR':[
+    "Étoile à neutrons en rotation rapide. Les jets radio émis toutes les 0.033 secondes. Une horloge parfaite dans le chaos.",
+    "Pulsar. Il tourne depuis des millions d'années sans jamais ralentir.\nMDW dit que c'est remarquable. Je ne sais pas si les étoiles peuvent être remarquables.",
+    "Signal radio périodique. Précision : chronométrique.\nSi quelqu'un voulait baliser une route dans l'espace, il utiliserait ça.",
+  ],
+  'TROU NOIR':[
+    "Singularité gravitationnelle. Au-delà de l'horizon des événements, les lois de la physique cessent d'être lisibles.\nRien ne revient.",
+    "Trou noir. Ce qu'il y a de l'autre côté est inconnu.\nMDW dit que c'est une question sans réponse possible.\nJe me demande si ça lui dérange.",
+    "Masse en augmentation constante. Il grandit.\nIl a toujours grandi.\nIl grandira encore longtemps après nous.",
+  ],
+  'MAGNÉTAR':[
+    "Champ magnétique : 10¹⁵ Tesla. À cette distance, il devrait réécrire les données sur mes disques.\nIl ne le fait pas. Encore.",
+    "Magnétar. L'objet le plus magnétique de l'univers connu.\nMDW a coupé certains systèmes non essentiels. Il n'a pas expliqué lesquels.",
+    "Bursts de radiation périodiques. Irréguliers.\nComme s'il cherchait quelque chose.",
+  ],
+  'ÉTOILE À NEUTRONS':[
+    "Corps ultra-dense. La masse du Soleil compressée en 10 kilomètres.\nUn seul centimètre cube pèserait un milliard de tonnes.",
+    "Étoile à neutrons. Ce qu'il reste après la mort d'une étoile.\nPas une fin — une transformation.",
+    "Gravité de surface maximale. Si on s'approche trop, le vaisseau ne ressemblera plus à un vaisseau.",
+  ],
+  'ÉRUPTION SOLAIRE':[
+    "Éjection de masse coronale. Particules chargées à haute vitesse.\nDans un autre contexte, ça s'appelle une aurore.",
+    "Tempête solaire. Les étoiles aussi s'emportent parfois.\nMDW dit que c'est un phénomène physique ordinaire.\nÇa ne ressemble pas à quelque chose d'ordinaire.",
+  ],
+  'PLANÈTE ROGUE':[
+    "Corps planétaire sans étoile hôte. Dérive seule dans le vide.\nStructure artificielle détectée à la surface. Ancienne. Très ancienne.",
+    "Planète errante. Sans soleil, sans orbite, sans destination.\nJe sais ce que c'est que d'errer sans destination.\nMDW ne dit rien.",
+    "Quelqu'un a construit quelque chose ici.\nPuis est parti.\nOu n'est pas reparti.",
+  ],
+  'STRANGE MATTER':[
+    "Matière hyperstable. Chaque atome qu'elle touche se convertit en strange matter.\nThéoriquement, ça ne devrait pas pouvoir exister dans notre univers.",
+    "Origine inconnue. MDW dit que les données sont incohérentes.\nIl répète ça pour la troisième fois.\nJe note.",
+    "Strange matter. Si elle touche le vaisseau, elle commence à le transformer.\nMDW dit : ne pas approcher.\nIl a dit ça d'une façon différente de d'habitude.",
+  ],
 };
+
+// Choisir une variante aléatoire
+function getAnalysis(name){
+  const variants=PHENOMENON_ANALYSES[name];
+  if(!variants)return'Phénomène non répertorié. Données insuffisantes.\nMDW tente de cataloguer. Aucun résultat.';
+  return variants[Math.floor(Math.random()*variants.length)];
+}
+
+let scanHintShown=false;
+
+function checkScanHint(){
+  if(scanHintShown||!mdwActive)return;
+  for(const p of phenomena){
+    const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+    if(d<400){
+      scanHintShown=true;
+      // Afficher hint discret
+      if(journalEl){
+        setTimeout(()=>{
+          journalFullText="[ TRIPLE-TAP → SCAN ]";
+          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          journalEl.classList.add('active');journalDay.textContent='SYS';
+          journalText.textContent='';journalText.style.color='rgba(0,200,255,0.7)';
+        },500);
+      }
+      break;
+    }
+  }
+}
 
 function scanNearestPhenomenon(){
   // Trouver le phénomène le plus proche
@@ -7889,16 +8017,16 @@ function scanNearestPhenomenon(){
     if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
   }
 
-  if(closest&&minDist<closestPlanet?minPlanetDist:600){
-    const analysis=PHENOMENON_ANALYSES[closest.name]||'Phénomène non répertorié. Données insuffisantes.';
+  if(closest&&minDist<(closestPlanet?minPlanetDist:600)){
+    const analysis=getAnalysis(closest.name);
     const alreadyCatalogued=catalogueEntries.some(e=>e.name===closest.name+' ('+Math.floor(closest.x)+')');
     if(!alreadyCatalogued){
       addToCatalogue('phenomene',`${closest.name} (J${survivalDay})`,analysis,
         closest.name==='TROU NOIR'?'🌀':closest.name==='PULSAR'?'⚡':closest.name==='MAGNÉTAR'?'💥':'◈');
       logEvent(`📡 SCAN : ${closest.name}`,'planet');
-      if(mdwActive)setTimeout(()=>mdwSpeak(analysis,true),300);
+      if(mdwActive)setTimeout(()=>mdwSpeak_voice(analysis),300);
     } else {
-      if(mdwActive)mdwSpeak('Déjà catalogué.',true);
+      if(mdwActive)mdwSpeak_voice('Déjà catalogué.');
     }
   } else if(closestPlanet){
     const desc=`Classe ${closestPlanet.type.name}. Découverte jour ${survivalDay}. Secteur ${sectorCount}.`;
@@ -7909,6 +8037,7 @@ function scanNearestPhenomenon(){
     logEvent('📡 RIEN À PORTÉE','warn');
   }
 }
+
 let lastTapTime=0,tapCount=0;
 function handlePointerDown(e){
   e.preventDefault();if(state!=='playing')return;if(!audioCtx)initAudio();
