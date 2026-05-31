@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.8 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.0 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.0</div>
 </div>
 
 <script>
@@ -831,12 +831,8 @@ const _exchangesDone=new Set();
 
 function pilotMDWExchange(pilotLine, mdwLine, delay=2500){
   if(!journalEl)return;
-  journalFullText=pilotLine;
-  journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-  journalEl.classList.add('active');
-  journalDay.textContent='PILOTE';
-  journalText.textContent='';
-  if(mdwActive)setTimeout(()=>mdwSpeak(mdwLine,true),delay);
+  if(pilotLine)showSimonJournal(pilotLine,'PILOTE');
+  if(mdwActive)setTimeout(()=>showMDWLine(mdwLine,true),delay);
 }
 
 function triggerExchange(id, pilotLine, mdwLine, delay=2500){
@@ -970,10 +966,7 @@ function checkExchanges(){
     _exchangesDone.add('wormhole8');
     setTimeout(()=>{
       if(journalEl){
-        journalFullText="J'ai l'impression de connaître ce secteur.\nJe ne suis jamais venu ici.";
-        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-        journalText.textContent='';journalText.style.color='rgba(0,255,65,0.75)';
+        showSimonJournal("J'ai l'impression de connaître ce secteur.\nJe ne suis jamais venu ici.");
       }
     },3000);
   }
@@ -983,10 +976,7 @@ function checkExchanges(){
     _exchangesDone.add('wreck6');
     setTimeout(()=>{
       if(journalEl){
-        journalFullText="J'ai vu quelque chose gravé sur une épave.\nJe préfère ne pas y penser.";
-        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-        journalText.textContent='';journalText.style.color='rgba(0,255,65,0.65)';
+        showSimonJournal("J'ai vu quelque chose gravé sur une épave.\nJe préfère ne pas y penser.");
       }
     },2000);
   }
@@ -1713,7 +1703,7 @@ const TRADE_ITEMS=[
   {label:'O₂ PLEIN',        cost:50,  effect:()=>{oxygen=maxOxygen;logEvent('⛽ O₂ RECHARGÉ','ok');}},
   {label:'PROPERGOL PLEIN',  cost:40,  effect:()=>{propellant=maxPropellant;logEvent('🚀 PROP RECHARGÉ','ok');}},
   {label:'ÉNERGIE PLEINE',   cost:40,  effect:()=>{energy=100;logEvent('⚡ ÉNERGIE RECHARGÉE','ok');}},
-  {label:'COQUE RÉPARÉE',    cost:80,  effect:()=>{hull=100;logEvent('🛡 COQUE RÉPARÉE','ok');}},
+  {label:'COQUE RÉPARÉE',    cost:80,  effect:()=>{hull=100;logEvent('?? COQUE RÉPARÉE','ok');}},
   {label:'TOUT RECHARGER',   cost:180, effect:()=>{oxygen=maxOxygen;propellant=maxPropellant;energy=100;hull=100;logEvent('✅ TOUT RECHARGÉ','ok');}},
 ];
 function spawnTradePost(){
@@ -1884,8 +1874,7 @@ function activateSignal(){
   setTimeout(()=>signalBannerEl2.classList.remove('visible'),100);
   logEvent('📡 SIGNAL DÉTECTÉ','planet');
   mdwReact('signal');
-  journalFullText="Jour "+survivalDay+". Un signal. Quelque chose dans le vide répond. Je dois y aller.";
-  journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+  showSimonJournal("Jour "+survivalDay+". Un signal. Quelque chose dans le vide répond. Je dois y aller.");
   journalEl.classList.add('active');
   journalDay.textContent='📡 TRANSMISSION';journalText.textContent='';
 }
@@ -2145,9 +2134,7 @@ function updateSecondaryWormholes(dt){
         const note=uNotes[w.targetUniverse];
         if(note){
           setTimeout(()=>{
-            journalFullText=note;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-            journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-            journalText.textContent='';journalText.style.color='rgba(0,255,65,0.8)';
+            showSimonJournal(note);
           },3000);
         }
       }
@@ -2157,8 +2144,7 @@ function updateSecondaryWormholes(dt){
         _exchangesDone?.add('wormhole_effects');
         setTimeout(()=>{
           if(!journalEl)return;
-          journalFullText="J'ai mal à la tête depuis la traversée.\nComme si le temps ne s'était pas tout à fait remis en place.";
-          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          showSimonJournal("J'ai mal à la tête depuis la traversée.\nComme si le temps ne s'était pas tout à fait remis en place.");
           journalEl.classList.add('active');journalDay.textContent='JOURNAL';
           journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
         },3000);
@@ -2167,8 +2153,7 @@ function updateSecondaryWormholes(dt){
         },12000);
         setTimeout(()=>{
           if(!journalEl)return;
-          journalFullText="Il a répondu trop vite.\nComme si la question était attendue.";
-          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+          showSimonJournal("Il a répondu trop vite.\nComme si la question était attendue.");
           journalEl.classList.add('active');journalDay.textContent='JOURNAL';
           journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
         },18000);
@@ -2600,41 +2585,25 @@ function startTutorial(){
   if(tutorialDone)return;
   tutorialDone=true;
 
-  // Jouer chaque ligne du tuto directement — bypass queue et openingActive
+  // Chaque ligne MDW espacée — voix + texte ambre, jamais simultané avec Simon
   MDW_TUTORIAL.forEach(t=>{
     setTimeout(()=>{
       if(!mdwActive)return;
-      mdwSpeak_voice(t.text);
-      if(journalEl){
-        journalFullText=t.text;
-        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');
-        journalDay.textContent='MDW';
-        journalText.textContent='';
-        journalText.style.color='rgba(255,170,0,0.85)';
-      }
+      showMDWLine(t.text, true);
     },t.delay*1000);
   });
 
   const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
-  const afterTuto=(lastDelay+5)*1000;
+  const afterTuto=(lastDelay+6)*1000;
 
-  // Séquence post-tuto — tout manuel, checkExchanges ne touche pas à ça
-  // 1. Simon demande de se connecter
+  // Simon après le tuto — vert, silencieux
   setTimeout(()=>{
-    if(journalEl){
-      journalFullText="Tu peux te connecter à l'ordinateur de bord ?";
-      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-      journalEl.classList.add('active');
-      journalDay.textContent='JOURNAL';
-      journalText.textContent='';
-      journalText.style.color='rgba(0,255,65,0.85)';
-    }
+    showSimonJournal("Tu peux te connecter à l'ordinateur de bord ?");
   }, afterTuto);
 
-  // 2. MDW répond
+  // MDW répond — attendre que Simon finisse
   setTimeout(()=>{
-    mdwSpeak_voice("J'essaie...");
+    showMDWLine("J'essaie...", true);
   }, afterTuto+5000);
 
   // 3. MDW connecté — le lendemain
@@ -2645,8 +2614,7 @@ function startTutorial(){
   // 4. Simon — comment rentrer
   setTimeout(()=>{
     if(journalEl){
-      journalFullText="MDW, comment on rentre sur Terre ?";
-      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      showSimonJournal("MDW, comment on rentre sur Terre ?");
       journalEl.classList.add('active');
       journalDay.textContent='JOURNAL';
       journalText.textContent='';
@@ -2702,11 +2670,7 @@ function triggerJournal(day){
   const entry=JOURNAL_ENTRIES[day];
   if(!entry||journalShownDays.has(day))return;
   journalShownDays.add(day);
-  journalFullText=entry;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-  journalEl.classList.add('active');
-  journalDay.textContent='JOURNAL';
-  journalText.textContent='';
-  journalText.style.color='rgba(0,255,65,0.85)';
+  showSimonJournal(entry);
 }
 function playTypeSound(){
   if(!audioCtx)return;
@@ -3435,22 +3399,100 @@ function runSequence(steps, idx=0){
   }
 }
 
+// ── Règle absolue de narration ─────────────────
+// Simon  → showSimonJournal() — vert, silencieux, jamais de voix
+// MDW    → showMDWLine()      — ambre, voix, jamais de vert
+
+// ── File narrative — rien ne s'interrompt ─────
+const narrativeQueue=[];
+let narrativeBusy=false;
+
+function narrativeNext(){
+  if(narrativeBusy||!narrativeQueue.length)return;
+  const item=narrativeQueue.shift();
+  narrativeBusy=true;
+  item();
+}
+
+function narrativeDone(){
+  narrativeBusy=false;
+  setTimeout(narrativeNext,600); // 600ms de respiration entre deux textes
+}
+
+function showSimonJournal(text, label){
+  narrativeQueue.push(()=>{
+    if(!journalEl){narrativeDone();return;}
+    journalFullText=text;
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');
+    journalDay.textContent=label||'JOURNAL';
+    journalText.textContent='';
+    journalText.style.color='rgba(0,255,65,0.85)';
+    // Durée = temps d'écriture + temps de lecture
+    const duration=Math.max(3000, text.length*55 + 2500);
+    setTimeout(narrativeDone, duration);
+  });
+  narrativeNext();
+}
+
+function showMDWLine(text, speak=true){
+  narrativeQueue.push(()=>{
+    if(!journalEl){narrativeDone();return;}
+    journalFullText=text;
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');
+    journalDay.textContent='MDW';
+    journalText.textContent='';
+    journalText.style.color='rgba(255,170,0,0.85)';
+    if(speak&&mdwActive)mdwSpeak_voice(text);
+    // Durée = temps d'écriture + temps de lecture + voix
+    const duration=Math.max(3500, text.length*60 + 3000);
+    setTimeout(narrativeDone, duration);
+  });
+  narrativeNext();
+}
+
+function showNarrativeImmediate(text, label, color){
+  // Utilisé uniquement pour les urgences qui doivent passer en tête de file
+  narrativeQueue.unshift(()=>{
+    if(!journalEl){narrativeDone();return;}
+    journalFullText=text;
+    journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+    journalEl.classList.add('active');
+    journalDay.textContent=label||'JOURNAL';
+    journalText.textContent='';
+    journalText.style.color=color||'rgba(0,255,65,0.85)';
+    const duration=Math.max(2500, text.length*50+2000);
+    setTimeout(narrativeDone, duration);
+  });
+  narrativeNext();
+}
+
+function clearNarrativeQueue(){
+  narrativeQueue.length=0;
+  narrativeBusy=false;
+}
+
 function startOpeningSequence(){
   openingActive=true;
+  // Geler le spawn de tout pendant la séquence
+  if(typeof spawnTimer!=='undefined')spawnTimer=99999;
 
+  // Utiliser showSimonJournal pour Simon — jamais mdwSpeak_voice
+  // Utiliser showMDWLine pour MDW — toujours ambre + voix
   const steps=[
-    {journal:"Jour 1.", pause:1800},
-    {journal:"Enfin si je puis dire.", pause:2000},
-    {journal:"Je n'ai aucun souvenir.", pause:1800},
-    {journal:"Rien avant ce plafond.", pause:2200},
-    {journal:"L'écusson sur mon épaule dit Simon Brent.", pause:1800},
-    {journal:"Je suppose que c'est moi.", pause:2500},
-    {journal:"Le vaisseau a subi des dégâts.\nJe ne sais pas comment.", pause:2000},
-    {journal:"J'ai une plaie au front.\nMon dos me fait souffrir.", pause:2200},
-    {journal:"Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux.", pause:2000},
-    {journal:"Je ne sais pas comment je savais ça non plus.", pause:2500},
-    {journal:"Je tente le démarrage.", pause:2200},
-    // MDW s'allume
+    {fn:()=>showSimonJournal("Jour 1."), pause:3500},
+    {fn:()=>showSimonJournal("Enfin si je puis dire."), pause:4000},
+    {fn:()=>showSimonJournal("Je n'ai aucun souvenir."), pause:4000},
+    {fn:()=>showSimonJournal("Rien avant ce plafond."), pause:4500},
+    {fn:()=>showSimonJournal("L'écusson sur mon épaule dit Simon Brent."), pause:4000},
+    {fn:()=>showSimonJournal("Je suppose que c'est moi."), pause:5000},
+    {fn:()=>showSimonJournal("Le vaisseau a subi des dégâts.\nJe ne sais pas comment."), pause:4500},
+    {fn:()=>showSimonJournal("J'ai une plaie au front.\nMon dos me fait souffrir."), pause:4500},
+    {fn:()=>showSimonJournal("Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux."), pause:5000},
+    {fn:()=>showSimonJournal("Je ne sais pas comment je savais ça non plus."), pause:5000},
+    {fn:()=>showSimonJournal("Je tente le démarrage."), pause:4000},
+    // MDW s'allume — pause longue avant
     {fn:()=>{
       mdwActive=true;mdwFound=true;
       logEvent('🤖 MDW ACTIVÉ','planet');
@@ -3462,10 +3504,12 @@ function startOpeningSequence(){
         "MDW. Je suis là.\nQue voulez-vous savoir ?",
       ];
       const opening=openings[Math.min(totalRuns||0, openings.length-1)];
-      mdwSpeak_voice(opening);
-    }, wait:6000},
-    {journal:"J'ai besoin du tutoriel.", pause:1500},
-    {fn:()=>mdwSpeak_voice("Bien. Lancement séquence."), wait:3000},
+      showMDWLine(opening, true);
+    }, wait:7000},
+    // Simon répond — silence avant
+    {fn:()=>showSimonJournal("J'ai besoin du tutoriel."), pause:4000},
+    // MDW répond — attendre que Simon finisse
+    {fn:()=>showMDWLine("Bien. Lancement séquence.", true), wait:5000},
     {fn:()=>startTutorial(), wait:0},
   ];
 
@@ -3537,6 +3581,7 @@ function startGame(resume=false){
   sosTriggered=false;sosWreck=null;sosDocked=false;
   finAActive=false;finBActive=false;returnWormholeSpawned=false;
   boostCooldown=0;boostActive=false;boostTimer=0;
+  clearNarrativeQueue();
   scanHintShown=false;
   artifactSpawned=false;artifact=null;
   voracesActive=false;voracesTimer=0;
@@ -4418,7 +4463,7 @@ function drawCosmology(){
 function updateRareEvents(dt){
   if(openingActive)return; // pas d'événements pendant la narration d'ouverture
   rareEventTimer-=dt;
-  if(rareEventTimer<=0){
+  if(rareEventTimer<=0&&!openingActive){
     rareEventTimer=45+Math.random()*60;
     // Tirer un événement selon le jour
     const available=RARE_EVENTS.filter(e=>survivalDay>=e.minDay&&(e.minSector===undefined||sectorCount>=e.minSector));
@@ -5113,16 +5158,7 @@ function updateInstallingModule(dt){
     if(mdwActive)setTimeout(()=>mdwSpeak(`Installation terminée. ${m.name} opérationnel.`,true),200);
     // Échange narratif — MDW commente le module
     if(mdwActive&&m.mdwLine){
-      setTimeout(()=>{
-        if(journalEl){
-          journalFullText=m.mdwLine;
-          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-          journalEl.classList.add('active');
-          journalDay.textContent='MDW';
-          journalText.textContent='';
-          journalText.style.color='rgba(255,170,0,0.85)';
-        }
-      },3000);
+      setTimeout(()=>showMDWLine(m.mdwLine, true),3000);
     }
     playCollect&&playCollect(2);
     spawnParticles(ship.x,ship.y,m.color||'#00ff41',20,1.5);
@@ -6105,14 +6141,7 @@ function drainSanity(){
   if(sanity<45)triggerChromAber(4,0.3);
   if(sanity<35){
     triggerFlash('#aa77ff',0.2);
-    setTimeout(()=>{
-      if(journalEl){
-        journalFullText="Je me souviens de ce secteur.\nJe n'y suis jamais venu.";
-        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-        journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-        journalText.textContent='';
-      }
-    },2000);
+    setTimeout(()=>showSimonJournal("Je me souviens de ce secteur.\nJe n'y suis jamais venu."),2000);
   }
   if(sanity<25)setTimeout(()=>spawnGhostShip(),2000);
 
@@ -8691,20 +8720,11 @@ function scanNearestPhenomenon(){
         deep.draw);
       logEvent(`📡 ANALYSE : ${closest.name}`,'planet');
       if(mdwActive){
-        // MDW lit chaque ligne avec délai
+        // MDW lit et affiche via showMDWLine — toujours ambre
+        setTimeout(()=>showMDWLine(deep.text, false),500);
+        // Voix ligne par ligne
         const lines=deep.text.split('\n').filter(l=>l.trim());
         lines.forEach((line,i)=>setTimeout(()=>mdwSpeak_voice(line),i*3500));
-        // Afficher dans le journal en ambre
-        setTimeout(()=>{
-          if(journalEl){
-            journalFullText=deep.text;
-            journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-            journalEl.classList.add('active');
-            journalDay.textContent='ANALYSE MDW';
-            journalText.textContent='';
-            journalText.style.color='rgba(255,170,0,0.85)';
-          }
-        },500);
       }
     } else {
       addToCatalogue('phenomene',entryName,basicAnalysis,'◈');
