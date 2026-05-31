@@ -155,6 +155,7 @@
   .reset-no{padding:5px 16px;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
   #catalogue-btn{position:fixed;bottom:80px;right:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;transition:all 0.3s;}
   #catalogue-btn.new-entry{border-color:rgba(0,255,65,0.9);color:rgba(0,255,65,1);animation:journalPulse 1s ease-in-out infinite;}
+  #home-btn{position:fixed;bottom:80px;left:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;}
   @keyframes journalPulse{0%,100%{box-shadow:0 0 4px rgba(0,255,65,0.3);}50%{box-shadow:0 0 12px rgba(0,255,65,0.8),0 0 20px rgba(0,255,65,0.4);}}
   #catalogue-panel{position:fixed;inset:0;z-index:200;background:rgba(0,9,2,0.97);display:none;flex-direction:column;overflow:hidden;}
   #catalogue-panel.open{display:flex;}
@@ -230,6 +231,7 @@
 
   <div id="event-log"></div>
   <button id="catalogue-btn">📋</button>
+  <button id="home-btn">⌂</button>
   <div id="day-pop">
     <div class="dp-num" id="dp-num">JOUR 2</div>
     <div class="dp-sub">▸ LE VIDE CONTINUE</div>
@@ -314,7 +316,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.1</div>
 </div>
 
 <script>
@@ -2906,7 +2908,7 @@ const SF_PLANET_NAMES=[
   // Perso
   'Gwenus4','Serwanian','Ema221','Meadower','Claudius',
   // Perso 2
-  'Juno-56','Anthonium','Sebastos','Ethanium',
+  'Juno-56','Anthonium','Sebastos','Ethanium','Anto_2001','DIF_198',
   // Alan Moore
   'Ozymandias','Rorschach','Yuggoth','Kadath','Carcosa',
   'Promethea','Neopolis','Arcane','Veidt','Kovacs',
@@ -3382,6 +3384,8 @@ function startOpeningSequence(){
 
 function startGame(){
   document.getElementById('hud').style.opacity='1';
+  document.getElementById('home-btn').style.display='block';
+  document.getElementById('catalogue-btn').style.display='block';
   requestWakeLock();
   initMDW(); // MDW créé mais pas encore actif — activé par la séquence
   setTimeout(()=>startOpeningSequence(),1500);
@@ -8644,8 +8648,26 @@ document.addEventListener('fullscreenchange',()=>{
   const btn=document.getElementById('btn-fullscreen');
   if(btn)btn.textContent=document.fullscreenElement?'⛶ QUITTER PLEIN ÉCRAN':'⛶ PLEIN ÉCRAN';
 });
+document.getElementById('home-btn').addEventListener('click',()=>{
+  if(state!=='playing'&&state!=='trade')return;
+  if(confirm('Retourner à l\'accueil ? La partie en cours sera perdue.')){
+    // Sauvegarder le score avant de partir
+    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+(score/80));
+    upgradePoints+=earned;
+    hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
+    totalRuns=(totalRuns||0)+1;
+    saveGame();
+    // Retour à l'écran titre
+    document.getElementById('hud').style.opacity='0';
+    document.getElementById('home-btn').style.display='none';
+    document.getElementById('catalogue-btn').style.display='none';
+    state='menu';
+    showTitleScreen();
+  }
+});
+
 document.getElementById('btn-zen').addEventListener('click',()=>{
-  initAudio();
+  if(!audioCtx)initAudio();
   launchSequence((vy)=>{startZenMode();if(vy)ship.vy=vy;ship.angle=-Math.PI/2;});
 });
 
