@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.2</div>
 </div>
 
 <script>
@@ -2590,60 +2590,38 @@ function startTutorial(){
   if(tutorialDone)return;
   tutorialDone=true;
 
-  // Chaque ligne MDW espacée — voix + texte ambre, jamais simultané avec Simon
-  MDW_TUTORIAL.forEach(t=>{
-    setTimeout(()=>{
-      if(!mdwActive)return;
-      showMDWLine(t.text, true);
-    },t.delay*1000);
-  });
+  // Tout dans la file narrative — dans l'ordre, sans interruption
+  // MDW explique les bases
+  showMDWLine("Quatre jauges en bas. Oxygène, propergol, énergie, coque. Surveillez-les.", true);
+  showMDWLine("Les capsules lumineuses rechargent les jauges. Approchez-vous pour les collecter.", true);
+  showMDWLine("Planètes — approchez lentement. L'amarrage se fait automatiquement.", true);
+  showMDWLine("Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer.", true);
+  showMDWLine("Maintenez le doigt 2 secondes pour analyser un phénomène à portée.", true);
+  showMDWLine("L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin.", true);
+  showMDWLine("C'est tout ce que vous avez besoin de savoir pour l'instant.", true);
 
-  const lastDelay=MDW_TUTORIAL[MDW_TUTORIAL.length-1].delay;
-  const afterTuto=(lastDelay+6)*1000;
+  // Simon après le tuto
+  showSimonJournal("Tu peux te connecter à l'ordinateur de bord ?");
 
-  // Simon après le tuto — vert, silencieux
-  setTimeout(()=>{
-    showSimonJournal("Tu peux te connecter à l'ordinateur de bord ?");
-  }, afterTuto);
+  // MDW répond
+  showMDWLine("J'essaie...", true);
+  showMDWLine("Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.", true);
 
-  // MDW répond — attendre que Simon finisse
-  setTimeout(()=>{
-    showMDWLine("J'essaie...", true);
-  }, afterTuto+5000);
+  // Simon — comment rentrer
+  showSimonJournal("MDW, comment on rentre sur Terre ?");
 
-  // 3. MDW connecté — le lendemain
-  setTimeout(()=>{
-    mdwSpeak_voice("Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
-  }, afterTuto+12000);
+  // MDW répond
+  showMDWLine("Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.", true);
 
-  // 4. Simon — comment rentrer
-  setTimeout(()=>{
-    if(journalEl){
-      showSimonJournal("MDW, comment on rentre sur Terre ?");
-      journalEl.classList.add('active');
-      journalDay.textContent='JOURNAL';
-      journalText.textContent='';
-      journalText.style.color='rgba(0,255,65,0.85)';
-    }
-  }, afterTuto+20000);
-
-  // 5. MDW répond
-  setTimeout(()=>{
-    mdwSpeak_voice("Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
-  }, afterTuto+25000);
-
-  // 6. Débloquer — la suite se déroule normalement
-  setTimeout(()=>{
+  // Débloquer après la dernière entrée
+  narrativeQueue.push(()=>{
     openingActive=false;
-    // Marquer tous les échanges acte 1 comme faits — ils ont eu lieu manuellement
     if(_exchangesDone){
-      _exchangesDone.add('mdw_intro1');
-      _exchangesDone.add('mdw_comment');
-      _exchangesDone.add('mdw_pc');
-      _exchangesDone.add('mdw_pc2');
-      _exchangesDone.add('mdw_rentrer');
+      ['mdw_intro1','mdw_comment','mdw_pc','mdw_pc2','mdw_rentrer'].forEach(k=>_exchangesDone.add(k));
     }
-  }, afterTuto+32000);
+    narrativeDone();
+  });
+  narrativeNext();
 }
 
 // Narration phase 2 — transmissions adressées directement
@@ -2672,6 +2650,7 @@ function triggerPhase2Transmission(){
 }
 
 function triggerJournal(day){
+  if(openingActive)return; // pas de journal pendant la séquence d'ouverture
   const entry=JOURNAL_ENTRIES[day];
   if(!entry||journalShownDays.has(day))return;
   journalShownDays.add(day);
@@ -3528,13 +3507,14 @@ function startGame(resume=false){
   requestWakeLock();
   initMDW();
   if(!resume){
+    // openingActive sera mis à true par startOpeningSequence
     setTimeout(()=>startOpeningSequence(),1500);
   }
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
   score=0;gameTime=0;difficulty=1;
   oxygen=Math.min(100,maxOxygen);energy=100;hull=100;propellant=maxPropellant;
-  openingActive=false;
+  // NE PAS remettre openingActive à false ici — startOpeningSequence le gère
   tutorialDone=false;
   document.getElementById('btn-skip-intro')?.remove();
   combo=0;comboTimer=0;comboHideTimer=0;
