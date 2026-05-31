@@ -23,7 +23,7 @@
 
   /* TOP BAR — juste le compteur de jour, discret */
   #top-bar{position:absolute;top:6px;right:10px;pointer-events:none;text-align:right;}
-  #day-block .day-label{font-size:9px;letter-spacing:3px;color:var(--green-dim);}
+  #day-block .day-label{font-size:11px;letter-spacing:3px;color:var(--green-dim);}
   #day-block .day-val{font-family:'VT323',monospace;font-size:20px;color:var(--amber);text-shadow:0 0 6px var(--amber);letter-spacing:2px;}
 
   /* RADAR — haut gauche */
@@ -54,15 +54,15 @@
   #boost-bar .b-charge{font-family:'VT323',monospace;font-size:18px;color:var(--green);letter-spacing:2px;}
 
   .gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;}
-  .gauge-label{font-size:8px;letter-spacing:2px;color:var(--green-dim);}
+  .gauge-label{font-size:11px;letter-spacing:2px;color:var(--green-dim);}
   .gauge-bar{width:80px;height:8px;background:rgba(0,255,65,0.08);border:1px solid var(--green-dim);position:relative;overflow:hidden;}
   .gauge-fill{position:absolute;left:0;top:0;bottom:0;background:var(--green);box-shadow:0 0 6px var(--green);transition:width 0.2s,background 0.3s;}
   .gauge-fill.warn{background:var(--amber);box-shadow:0 0 6px var(--amber);}
   .gauge-fill.crit{background:var(--red);box-shadow:0 0 6px var(--red);}
-  .gauge-val{font-size:9px;color:var(--green);letter-spacing:1px;}
+  .gauge-val{font-size:12px;color:var(--green);letter-spacing:1px;}
 
   #event-log{position:absolute;top:86px;right:12px;width:180px;display:flex;flex-direction:column;gap:3px;pointer-events:none;}
-  .event-line{font-size:8px;letter-spacing:1px;color:var(--green-dim);animation:fadeEvent 4s forwards;text-align:right;}
+  .event-line{font-size:10px;letter-spacing:1px;color:var(--green-dim);animation:fadeEvent 4s forwards;text-align:right;}
   .event-line.warn{color:var(--amber);}
   .event-line.danger{color:var(--red);}
   .event-line.planet{color:#a070ff;}
@@ -88,35 +88,35 @@
 
   .screen-btn{margin-top:4px;padding:12px 32px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:4px;cursor:pointer;pointer-events:all;transition:all 0.15s;text-shadow:0 0 8px var(--green);box-shadow:0 0 12px rgba(0,255,65,0.1),inset 0 0 12px rgba(0,255,65,0.05);}
   .screen-btn:hover,.screen-btn:active{background:rgba(0,255,65,0.1);box-shadow:0 0 20px rgba(0,255,65,0.3);}
-  .controls-hint{font-size:8px;letter-spacing:2px;color:var(--green-dim);text-align:center;line-height:2;}
+  .controls-hint{font-size:10px;letter-spacing:2px;color:var(--green-dim);text-align:center;line-height:2;}
 
   /* POP JOUR — petit, discret, au centre */
   #day-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:90;opacity:0;transition:opacity 0.4s;text-align:center;}
   #day-pop.show{opacity:1;}
   #day-pop .dp-num{font-family:'VT323',monospace;font-size:36px;color:var(--amber);text-shadow:0 0 16px var(--amber);letter-spacing:4px;}
-  #day-pop .dp-sub{font-size:8px;letter-spacing:3px;color:var(--green-dim);margin-top:2px;}
+  #day-pop .dp-sub{font-size:10px;letter-spacing:3px;color:var(--green-dim);margin-top:2px;}
 
   /* MISSION HUD — sous le radar */
   #mission-bar{position:absolute;top:88px;left:6px;text-align:left;pointer-events:none;opacity:0;transition:opacity 0.5s;max-width:175px;}
   #mission-bar.visible{opacity:1;}
-  #mission-bar .m-label{font-size:9px;letter-spacing:2px;color:var(--green-dim);}
-  #mission-bar .m-text{font-size:10px;letter-spacing:1px;color:var(--green);margin-top:2px;line-height:1.4;}
+  #mission-bar .m-label{font-size:11px;letter-spacing:2px;color:var(--green-dim);}
+  #mission-bar .m-text{font-size:12px;letter-spacing:1px;color:var(--green);margin-top:2px;line-height:1.4;}
   #mission-bar .m-prog{font-family:'VT323',monospace;font-size:14px;color:var(--amber);letter-spacing:1px;}
 
   /* SIGNAL FINAL */
   #signal-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity 0.4s;}
   #signal-banner.visible{opacity:1;}
   #signal-banner .sb-title{font-family:'VT323',monospace;font-size:32px;color:var(--amber);text-shadow:0 0 20px var(--amber);letter-spacing:4px;animation:blink 0.6s infinite;}
-  #signal-banner .sb-sub{font-size:8px;letter-spacing:3px;color:var(--green-dim);margin-top:4px;}
+  #signal-banner .sb-sub{font-size:10px;letter-spacing:3px;color:var(--green-dim);margin-top:4px;}
 
   /* UPGRADES */
   .upgrade-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:320px;margin-top:4px;}
-  .upg-btn{padding:8px 10px;background:rgba(0,255,65,0.03);border:1px solid var(--green-dim);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;pointer-events:all;transition:all 0.15s;text-align:left;line-height:1.5;}
+  .upg-btn{padding:8px 10px;background:rgba(0,255,65,0.03);border:1px solid var(--green-dim);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;pointer-events:all;transition:all 0.15s;text-align:left;line-height:1.5;}
   .upg-btn:hover,.upg-btn:active{background:rgba(0,255,65,0.08);border-color:var(--green);color:var(--green);}
   .upg-btn.maxed{border-color:var(--amber);color:var(--amber);cursor:default;opacity:0.6;}
   .upg-btn .upg-name{display:block;letter-spacing:2px;margin-bottom:2px;}
-  .upg-btn .upg-cost{color:var(--amber);font-size:7px;}
-  .upg-btn .upg-level{float:right;color:var(--green-dim);font-size:7px;}
+  .upg-btn .upg-cost{color:var(--amber);font-size:10px;}
+  .upg-btn .upg-level{float:right;color:var(--green-dim);font-size:10px;}
   .upg-pts{font-family:'VT323',monospace;font-size:28px;color:var(--amber);text-shadow:0 0 10px var(--amber);letter-spacing:3px;}
   .upg-label{font-size:8px;letter-spacing:2px;color:var(--green-dim);}
 
@@ -144,8 +144,8 @@
   #launch-fade{position:fixed;inset:0;background:#000902;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.6s ease-in-out;}
   .zen-btn{margin-top:2px;padding:8px 24px;background:transparent;border:1px solid rgba(64,200,255,0.4);color:rgba(64,200,255,0.6);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;cursor:pointer;transition:all 0.15s;}
   .zen-btn:hover,.zen-btn:active{border-color:rgba(64,200,255,0.9);color:rgba(64,200,255,0.9);background:rgba(64,200,255,0.05);}
-  .haptic-toggle{font-size:8px;letter-spacing:2px;color:rgba(0,255,65,0.35);cursor:pointer;padding:4px 8px;border:1px solid rgba(0,255,65,0.15);background:transparent;font-family:'Share Tech Mono',monospace;transition:all 0.15s;}
-  .haptic-toggle.on{color:rgba(0,255,65,0.7);border-color:rgba(0,255,65,0.4);}font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;cursor:pointer;transition:all 0.2s;}
+  .haptic-toggle{font-size:10px;letter-spacing:2px;color:rgba(0,255,65,0.7);cursor:pointer;padding:6px 10px;border:1px solid rgba(0,255,65,0.35);background:transparent;font-family:'Share Tech Mono',monospace;transition:all 0.15s;}
+  .haptic-toggle.on{color:rgba(0,255,65,0.95);border-color:rgba(0,255,65,0.6);text-shadow:0 0 6px rgba(0,255,65,0.3);}
   .reset-btn:hover,.reset-btn:active{border-color:rgba(255,60,60,0.8);color:rgba(255,60,60,0.9);background:rgba(255,60,60,0.05);}
   .reset-confirm{display:none;flex-direction:column;align-items:center;gap:6px;margin-top:4px;}
   .reset-confirm.visible{display:flex;}
@@ -162,19 +162,19 @@
   #journal-text{font-size:14px;color:var(--green);line-height:1.8;letter-spacing:0.2px;opacity:0.9;text-shadow:0 0 8px rgba(0,255,65,0.3);}
   #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:4px;opacity:0.6;}
   #cat-tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid rgba(0,255,65,0.1);flex-wrap:wrap;}
-  .cat-tab{background:transparent;border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:5px 8px;cursor:pointer;white-space:nowrap;}
+  .cat-tab{background:transparent;border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:5px 8px;cursor:pointer;white-space:nowrap;}
   .cat-tab.active{border-color:rgba(0,255,65,0.7);color:rgba(0,255,65,0.9);}
   #cat-content{flex:1;overflow-y:auto;padding:12px 16px;}
   .cat-entry{border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;margin-bottom:10px;}
-  .cat-entry-title{font-size:12px;letter-spacing:1px;color:var(--green);}
-  .cat-entry-body{font-size:12px;color:rgba(0,255,65,0.65);margin-top:5px;line-height:1.8;white-space:pre-line;}
+  .cat-entry-title{font-size:13px;letter-spacing:1px;color:var(--green);}
+  .cat-entry-body{font-size:13px;color:rgba(0,255,65,0.65);margin-top:5px;line-height:1.8;white-space:pre-line;}
   .cat-entry.journal{border-left-color:rgba(255,170,0,0.4);}
   .cat-entry.journal .cat-entry-title{color:var(--amber);}
   .cat-entry.journal .cat-entry-body{color:rgba(255,170,0,0.75);}
   #cat-mdw-panel{border-top:1px solid rgba(0,255,65,0.15);padding:10px 14px;max-height:220px;overflow-y:auto;}
   .cat-question-btn{display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(0,255,65,0.15);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:5px 8px;margin-bottom:4px;cursor:pointer;}
   .cat-question-btn:active{background:rgba(0,255,65,0.05);color:rgba(0,255,65,0.8);}
-  .mdw-answer{font-size:9px;color:rgba(255,170,0,0.8);padding:6px 8px;border-left:2px solid rgba(255,170,0,0.3);margin-top:4px;white-space:pre-line;line-height:1.6;}
+  .mdw-answer{font-size:12px;color:rgba(255,170,0,0.8);padding:6px 8px;border-left:2px solid rgba(255,170,0,0.3);margin-top:4px;white-space:pre-line;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -283,6 +283,7 @@
     <button class="cat-tab" data-tab="planets">PLANÈTES</button>
     <button class="cat-tab" data-tab="phenomenes">PHÉNOMÈNES</button>
     <button class="cat-tab" data-tab="mdw">MDW</button>
+    <button class="cat-tab" data-tab="upgrades">UPGRADES</button>
     <button class="cat-tab" data-tab="ship">VAISSEAU</button>
     <button class="cat-tab" data-tab="phenomena">PHÉNOMÈNES</button>
     <button class="cat-tab" data-tab="sectors">SECTEURS</button>
@@ -305,6 +306,20 @@
   </div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
+
+  <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.1 — NOUVEAUTÉS</div>
+    <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
+      ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
+      ▸ Onglet UPGRADES dans le catalogue<br>
+      ▸ Détails modules dans l'onglet VAISSEAU<br>
+      ▸ Scan enrichi au double-tap avec illustrations<br>
+      ▸ Onglet MDW — observations de Simon<br>
+      ▸ Dérive silencieuse — zéro drain O₂<br>
+      ▸ Respiration plus audible sous 40% O₂<br>
+      ▸ Flash supernova amélioré
+    </div>
+  </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
   <button class="haptic-toggle" id="btn-fullscreen" style="margin-top:2px;">⛶ PLEIN ÉCRAN</button>
   <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
@@ -317,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.1</div>
 </div>
 
 <script>
@@ -1529,13 +1544,10 @@ let maxOxygen=100;
 // ── localStorage ──────────────────────────────
 function saveGame(){
   try{
-    // Sauvegarder aussi une black box du run actuel si on a survécu assez longtemps
     const blackBox=survivalDay>=3?{
-      day:survivalDay,
-      sector:sectorCount,
+      day:survivalDay,sector:sectorCount,
       modules:[...(installedModules||[])],
-      runNumber:totalRuns,
-      planets:discoveredPlanets,
+      runNumber:totalRuns,planets:discoveredPlanets,
     }:null;
     localStorage.setItem('voidDrift_v1',JSON.stringify({
       upgrades,upgradePoints,
@@ -1547,6 +1559,62 @@ function saveGame(){
       lastBlackBox:blackBox,
     }));
   }catch(e){}
+}
+
+function saveRun(){
+  // Sauvegarde de session — état complet du run en cours
+  if(state!=='playing'&&state!=='trade')return;
+  try{
+    localStorage.setItem('voidDrift_run',JSON.stringify({
+      survivalDay,dayTimer,sectorCount,currentUniverse,
+      score,oxygen,energy,hull,propellant,
+      shipX:ship.x,shipY:ship.y,shipAngle:ship.angle,
+      shipVx:ship.vx,shipVy:ship.vy,
+      discoveredPlanets,upgrades,upgradePoints,
+      installedModules:installedModules||[],
+      catalogueEntries:catalogueEntries||[],
+      journalShownDays:[...journalShownDays],
+      _exchangesDone:[...(_exchangesDone||new Set())],
+      sanity,
+    }));
+  }catch(e){}
+}
+
+function loadRun(){
+  try{
+    const raw=localStorage.getItem('voidDrift_run');
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    survivalDay=d.survivalDay||1;
+    dayTimer=d.dayTimer||0;
+    sectorCount=d.sectorCount||0;
+    currentUniverse=d.currentUniverse||0;
+    score=d.score||0;
+    oxygen=d.oxygen||100;
+    energy=d.energy||100;
+    hull=d.hull||100;
+    propellant=d.propellant||100;
+    ship.x=d.shipX||0;ship.y=d.shipY||0;
+    ship.angle=d.shipAngle||(-Math.PI/2);
+    ship.vx=d.shipVx||0;ship.vy=d.shipVy||0;
+    discoveredPlanets=d.discoveredPlanets||0;
+    if(d.upgrades)Object.assign(upgrades,d.upgrades);
+    upgradePoints=d.upgradePoints||0;
+    if(d.installedModules)installedModules=d.installedModules;
+    if(d.catalogueEntries)catalogueEntries=d.catalogueEntries;
+    if(d.journalShownDays)d.journalShownDays.forEach(x=>journalShownDays.add(x));
+    if(d._exchangesDone){_exchangesDone=new Set(d._exchangesDone);}
+    sanity=d.sanity||100;
+    return true;
+  }catch(e){return false;}
+}
+
+function clearRun(){
+  try{localStorage.removeItem('voidDrift_run');}catch(e){}
+}
+
+function hasRunSave(){
+  try{return !!localStorage.getItem('voidDrift_run');}catch(e){return false;}
 }
 
 let lastBlackBox=null; // données du run précédent
@@ -4155,7 +4223,15 @@ function updateSupernovas(dt){
       writeGlitchText('Une étoile meurt au loin. Je le vois dans le spectre. Dans quelques secondes, une explosion plus brillante qu\'une galaxie.','⭐ SUPERNOVA DÉTECTÉE');
       
     }
-    if(s.phase==='warning'&&s.timer<=0){s.phase='exploding';s.timer=0.5;s.r=5;triggerFlash(s.color,0.3);}
+    if(s.phase==='warning'&&s.timer<=0){
+      s.phase='exploding';s.timer=0.5;s.r=5;
+      // Flash blanc aveuglant + aberration
+      triggerFlash('#ffffff',0.9);
+      setTimeout(()=>triggerFlash('#ffffff',0.6),150);
+      setTimeout(()=>triggerFlash(s.color,0.4),400);
+      triggerChromAber(6,0.4);
+      haptic('impact');
+    }
     if(s.phase==='exploding'){s.r+=s.maxR*dt*3;if(s.timer<=0){s.phase='expanding';s.timer=4;}}
     if(s.phase==='expanding'){
       s.r=Math.min(s.maxR,s.r+s.maxR*dt*0.3);
@@ -5733,6 +5809,7 @@ function checkDead(){
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
     planetsFound[selectedDiff]=Math.max(planetsFound[selectedDiff],discoveredPlanets);
     setTimeout(()=>showGameOver(),800);state='dying';
+    clearRun(); // effacer la save de session à la mort
   }
 }
 
@@ -7035,6 +7112,7 @@ function showGameOver(){
   titleShipX=40;titleShipY=50;titleShipVx=0;titleShipVy=0;titleAnimating=false;
   if(!titleLoopRunning)titleLoop();
   stopAmbient();
+  setTimeout(updateResumeBtn,500);
   const dc=DIFF_CONFIG[selectedDiff];
   hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
   const earned=Math.floor(survivalDay*10+discoveredPlanets*20+(score/100));
@@ -8125,6 +8203,8 @@ function gameLoop(ts){
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
         updateSolarSystems(dt);updateBoost(dt);updateVoraces(dt);updateArtifact(dt);
+        // Auto-save toutes les 60s
+        if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
         checkLore();checkEndings();checkContracts();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
@@ -8165,7 +8245,7 @@ document.addEventListener('keydown',e=>{
   if(!audioCtx)initAudio();
   // Boost d'urgence
   if(e.key===' '||e.key==='b'){triggerEmergencyBoost();return;}
-  // Triple-tap clavier
+  // Touche S — scan
   if(e.key==='s'||e.key==='S'){scanNearestPhenomenon();return;}
 });
 document.addEventListener('keyup',e=>{keysDown.delete(e.key);});
@@ -8190,7 +8270,7 @@ function updateKeyboard(dt){
 }
 function getPinchDist(e){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
 
-// ── Scan phénomène (triple tap) ───────────────
+// ── Scan phénomène ──────────────────────────
 // Analyses enrichies pour scan MANUEL (double-tap) — plus longues, poétiques, avec illustration
 const PHENOMENON_DEEP_ANALYSES={
   'PULSAR':{
@@ -8344,11 +8424,19 @@ function checkScanHint(){
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(d<450){
       autoScanned.add(p);
-      // Scan automatique — MDW commente
+      // Scan automatique — MDW commente via sa propre voix + bloc MDW uniquement
       setTimeout(()=>{
         if(!mdwActive)return;
         const analysis=getAnalysis(p.name);
+        // Voix MDW
         mdwSpeak_voice(analysis);
+        // Afficher dans le bloc MDW (pas dans le journal Simon)
+        if(mdwEl){
+          const mdwText=document.getElementById('mdw-text');
+          if(mdwText)mdwText.textContent=analysis;
+          mdwEl.style.opacity='1';
+          setTimeout(()=>{mdwEl.style.opacity='0';},6000);
+        }
         addToCatalogue('phenomene',
           p.name+' (J'+survivalDay+')',
           analysis,
@@ -8424,18 +8512,22 @@ function handlePointerDown(e){
   e.preventDefault();if(state!=='playing')return;if(!audioCtx)initAudio();
   if(e.touches&&e.touches.length===2){pinchStartDist=getPinchDist(e);pinchStartZoom=viewZoom;touchActive=false;touchTarget=null;return;}
   const x=e.touches?e.touches[0].clientX:e.clientX,y=e.touches?e.touches[0].clientY:e.clientY;
-  // Double-tap = tir torpille
+  // Double-tap = scan ou boost
   const now=Date.now();
-  if(now-lastTapTime<300){
+  if(now-lastTapTime<350){
     tapCount++;
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Double tap — scan enrichi si près d'un phénomène, sinon boost
-      if(upgrades.boost>0&&!phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<600)){
-        triggerEmergencyBoost();tapCount=0;lastTapTime=0;return;
+      // Toujours tenter le scan en premier
+      const hasNearby=phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<700)||
+                      planets.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<500);
+      if(hasNearby){
+        scanNearestPhenomenon();
+      } else if(upgrades.boost>0){
+        triggerEmergencyBoost();
       }
-      scanNearestPhenomenon();tapCount=0;lastTapTime=0;return;
+      tapCount=0;lastTapTime=0;return;
     }
   }else{
     tapCount=1;
@@ -8474,15 +8566,62 @@ document.getElementById('btn-start').addEventListener('click',()=>{
   initAudio();
   launchSequence((worldVy)=>{
     startGame();
-    // Le vaisseau hérite de la vitesse du décollage titre
     ship.vy=worldVy||0;
-    ship.angle=-Math.PI/2; // pointe vers le haut au départ
+    ship.angle=-Math.PI/2;
   });
 });
+
+// Bouton REPRENDRE — visible si save de run existe
+function updateResumeBtn(){
+  let resumeBtn=document.getElementById('btn-resume');
+  if(hasRunSave()){
+    if(!resumeBtn){
+      resumeBtn=document.createElement('button');
+      resumeBtn.id='btn-resume';
+      resumeBtn.className='screen-btn';
+      resumeBtn.textContent='[ REPRENDRE ]';
+      resumeBtn.style.cssText='margin-top:8px;border-color:var(--amber);color:var(--amber);text-shadow:0 0 8px var(--amber);';
+      document.getElementById('btn-start').after(resumeBtn);
+      resumeBtn.addEventListener('click',()=>{
+        initAudio();
+        launchSequence((worldVy)=>{
+          startGame();
+          const resumed=loadRun();
+          if(resumed){
+            mdwActive=true;mdwFound=true;tutorialDone=true;
+            openingActive=false;
+            if(mdwEl)mdwEl.style.opacity='0';
+            ship.vy=worldVy||0;
+            logEvent('▶ RUN REPRIS — JOUR '+survivalDay,'planet');
+          }
+        });
+      });
+    }
+  } else if(resumeBtn){
+    resumeBtn.remove();
+  }
+}
 
 // ── Catalogue en pause ────────────────────────
 let cataloguePaused=false;
 let currentCatTab='journal';
+
+function buyUpgradeFromCat(key){
+  if(!UPGRADES?.[key])return;
+  const lvl=upgrades[key]||0;
+  const maxLvl=UPGRADES[key].levels||1;
+  if(lvl>=maxLvl){logEvent('Déjà au niveau maximum','warn');return;}
+  const cost=UPGRADES[key].cost?.[lvl]||0;
+  if((upgradePoints||0)<cost){logEvent('Points insuffisants','warn');return;}
+  upgradePoints-=cost;
+  upgrades[key]=(upgrades[key]||0)+1;
+  if(UPGRADES[key].apply)UPGRADES[key].apply();
+  saveGame();
+  logEvent(`✅ ${key.toUpperCase()} LV${upgrades[key]}`,'planet');
+  haptic('collect');
+  // Rafraîchir l'onglet
+  renderCatTab('upgrades');
+}
 
 function openCatalogue(){
   if(state!=='playing')return;
@@ -8596,11 +8735,40 @@ function renderCatTab(tab){
     return;
   }
 
+  if(tab==='upgrades'){
+    const upgDescs={
+      o2tank:   {name:'RÉSERVOIR O₂',     icon:'🫁', desc:'Augmente la capacité maximale d\'oxygène de 25 unités. Vous donne plus de temps avant l\'asphyxie.', effect:'+25 O₂ max'},
+      recycler: {name:'RECYCLEUR AIR',    icon:'♻',  desc:'Réduit le drain d\'oxygène de 20%. Simon respire plus efficacement.', effect:'Drain O₂ -20%'},
+      armor:    {name:'BLINDAGE',         icon:'🛡',  desc:'Absorbe 30% des dégâts de coque. Les débris et champs de radiation font moins de dégâts.', effect:'Dégâts coque -30%'},
+      thruster: {name:'PROPULSEURS',      icon:'🚀', desc:'Augmente la puissance de propulsion de 40%. Le vaisseau répond plus vite aux commandes.', effect:'Poussée +40%'},
+      radar_ext:{name:'RADAR+',           icon:'📡', desc:'Étend la portée du radar de 50%. Vous détectez les objets plus loin.', effect:'Portée radar +50%'},
+      shield:   {name:'BOUCLIER',         icon:'⚡', desc:'Déploie un bouclier énergétique qui absorbe les impacts. Se régénère avec l\'énergie.', effect:'Absorbe impacts'},
+      drone:    {name:'DRONE',            icon:'🤖', desc:'Un drone autonome collecte automatiquement les capsules à portée.', effect:'Collecte auto'},
+      scanner:  {name:'SCANNER',          icon:'🔭', desc:'Révèle le type de planète avant l\'approche. Plus de surprises.', effect:'Détecte planètes'},
+      boost:    {name:'BOOST D\'URGENCE', icon:'⚡', desc:'Double-tap pour une propulsion massive d\'une seconde. Recharge en 60s. Dernier recours face à un objet massif.', effect:'Double-tap boost'},
+    };
+    const pts=upgradePoints||0;
+    let html=`<div style="font-size:11px;color:var(--amber);letter-spacing:2px;margin-bottom:12px;">POINTS : ${pts}</div>`;
+    for(const [key,u] of Object.entries(upgDescs)){
+      const lvl=upgrades[key]||0;
+      const maxLvl=UPGRADES?.[key]?.levels||1;
+      const cost=UPGRADES?.[key]?.cost?.[lvl]||0;
+      const maxed=lvl>=maxLvl;
+      html+=`<div style="border-left:2px solid rgba(0,255,65,${maxed?'0.6':'0.2'});padding:8px 10px;margin-bottom:10px;">
+        <div style="font-size:12px;color:rgba(0,255,65,${maxed?'0.9':'0.7'});letter-spacing:1px;margin-bottom:3px;">${u.icon} ${u.name} <span style="color:var(--amber);font-size:10px;">LV${lvl}/${maxLvl}</span></div>
+        <div style="font-size:11px;color:rgba(0,255,65,0.55);line-height:1.6;margin-bottom:4px;">${u.desc}</div>
+        <div style="font-size:10px;color:var(--amber);">${u.effect}</div>
+        ${!maxed?`<button onclick="buyUpgradeFromCat('${key}')" style="margin-top:6px;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer;">${cost > pts?'<span style="color:rgba(255,80,80,0.7)">':''} ACHETER ${cost} pts${cost>pts?'</span>':''}</button>`:'<div style="font-size:10px;color:rgba(0,255,65,0.4);margin-top:4px;">✓ MAXÉ</div>'}
+      </div>`;
+    }
+    content.innerHTML=html;
+    return;
+  }
   if(tab==='ship'){
     // Plan du vaisseau avec modules installés
     content.innerHTML=`
       <div style="text-align:center;padding:10px 0;">
-        <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:10px;">ÉTAT DU VAISSEAU</div>
+        <div style="font-size:11px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:10px;">ÉTAT DU VAISSEAU</div>
         <canvas id="ship-plan-canvas" width="200" height="200" style="display:block;margin:0 auto;max-width:100%;"></canvas>
         <div id="ship-modules-list" style="margin-top:12px;text-align:left;padding:0 8px;"></div>
       </div>`;
@@ -8608,7 +8776,7 @@ function renderCatTab(tab){
     const spc=document.getElementById('ship-plan-canvas');
     const sctx=spc.getContext('2d');
     sctx.clearRect(0,0,200,200);
-    const cx=100,cy=100;
+    const cx=100,cy=145; // vaisseau en bas
     // Fond
     sctx.fillStyle='#000902';sctx.fillRect(0,0,200,200);
     // Grille légère
@@ -8658,14 +8826,26 @@ function renderCatTab(tab){
       thruster:'Propulseurs',radar_ext:'Radar+',shield:'Bouclier',
       drone:'Drone',scanner:'Scanner',boost:'Boost d\'urgence',
     };
+    const modDescs={
+      o2tank:'Capacité O₂ +25. Vous donne plus de marge avant l\'asphyxie.',
+      recycler:'Drain O₂ réduit de 20%. Simon respire plus efficacement.',
+      armor:'Dégâts de coque réduits de 30%. Résiste aux débris et radiations.',
+      thruster:'Poussée +40%. Le vaisseau répond plus vite.',
+      radar_ext:'Portée radar +50%. Détecte les objets plus loin.',
+      shield:'Absorbe les impacts énergétiques. Se régénère.',
+      drone:'Collecte automatiquement les capsules à portée.',
+      scanner:'Révèle le type de planète avant l\'approche.',
+      boost:'Double-tap — propulsion massive 1s. Recharge 60s.',
+    };
     const modList=document.getElementById('ship-modules-list');
     const installed=Object.entries(mods).filter(([k,v])=>v>0);
     if(!installed.length){
       modList.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:10px;">Aucun module installé.</div>';
     } else {
       modList.innerHTML=installed.map(([k,v])=>`
-        <div style="font-size:10px;color:rgba(0,255,65,0.75);border-left:2px solid rgba(0,255,65,0.3);padding:3px 8px;margin-bottom:4px;">
-          ◈ ${modNames[k]||k} <span style="color:rgba(0,255,65,0.4)">LV${v}</span>
+        <div style="border-left:2px solid rgba(0,255,65,0.3);padding:4px 8px;margin-bottom:8px;">
+          <div style="font-size:12px;color:rgba(0,255,65,0.85);">◈ ${modNames[k]||k} <span style="color:rgba(0,255,65,0.4);font-size:10px;">LV${v}</span></div>
+          <div style="font-size:11px;color:rgba(0,255,65,0.5);margin-top:2px;line-height:1.5;">${modDescs[k]||''}</div>
         </div>`).join('');
     }
     return;
@@ -8813,19 +8993,19 @@ document.addEventListener('fullscreenchange',()=>{
 });
 document.getElementById('home-btn').addEventListener('click',()=>{
   if(state!=='playing'&&state!=='trade')return;
-  if(confirm('Retourner à l\'accueil ? La partie en cours sera perdue.')){
-    // Sauvegarder le score avant de partir
+  if(confirm('Retourner à l\'accueil ? La partie sera sauvegardée.')){
+    saveRun(); // sauvegarder avant de partir
     const earned=Math.floor(survivalDay*15+discoveredPlanets*25+(score/80));
     upgradePoints+=earned;
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
     totalRuns=(totalRuns||0)+1;
     saveGame();
-    // Retour à l'écran titre
     document.getElementById('hud').style.opacity='0';
     document.getElementById('home-btn').style.display='none';
     document.getElementById('catalogue-btn').style.display='none';
     state='menu';
     showTitleScreen();
+    setTimeout(updateResumeBtn,500);
   }
 });
 
