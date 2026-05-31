@@ -10,7 +10,6 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000902'/><polygon points='28,16 8,8 12,16 8,24' fill='none' stroke='%2300ff41' stroke-width='2'/><line x1='12' y1='16' x2='5' y2='16' stroke='%23ffaa00' stroke-width='1.5'/></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23000902'/><polygon points='148,96 60,60 76,96 60,132' fill='none' stroke='%2300ff41' stroke-width='8'/><line x1='76' y1='96' x2='44' y2='96' stroke='%23ffaa00' stroke-width='6'/><circle cx='96' cy='96' r='3' fill='%2300ff41' opacity='0.4'/></svg>">
 <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;VOID DRIFT&quot;,&quot;short_name&quot;:&quot;VOID DRIFT&quot;,&quot;description&quot;:&quot;Un jeu de dérive spatiale narrative&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;fullscreen&quot;,&quot;orientation&quot;:&quot;portrait&quot;,&quot;background_color&quot;:&quot;%23000902&quot;,&quot;theme_color&quot;:&quot;%23000902&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23000902'/><polygon points='400,256 160,160 208,256 160,352' fill='none' stroke='%2300ff41' stroke-width='20'/><line x1='208' y1='256' x2='112' y2='256' stroke='%23ffaa00' stroke-width='16'/></svg>&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>VOID DRIFT</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
@@ -282,6 +281,8 @@
   <div id="cat-tabs">
     <button class="cat-tab active" data-tab="journal">PILOTE</button>
     <button class="cat-tab" data-tab="planets">PLANÈTES</button>
+    <button class="cat-tab" data-tab="phenomenes">PHÉNOMÈNES</button>
+    <button class="cat-tab" data-tab="mdw">MDW</button>
     <button class="cat-tab" data-tab="ship">VAISSEAU</button>
     <button class="cat-tab" data-tab="phenomena">PHÉNOMÈNES</button>
     <button class="cat-tab" data-tab="sectors">SECTEURS</button>
@@ -316,7 +317,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.7</div>
 </div>
 
 <script>
@@ -1570,9 +1571,9 @@ function loadGame(){
 
 // ── Catalogue cosmique ─────────────────────────
 let catalogueEntries=[];
-function addToCatalogue(type,name,desc,icon='◈'){
+function addToCatalogue(type,name,desc,icon='◈',drawFn=null){
   if(catalogueEntries.some(e=>e.name===name))return;
-  catalogueEntries.push({type,name,desc,icon,day:survivalDay||1,sector:sectorCount||0});
+  catalogueEntries.push({type,name,desc,icon,day:survivalDay||1,sector:sectorCount||0,drawFn});
   if(typeof mdwActive!=='undefined'&&mdwActive){
     
   }
@@ -2745,20 +2746,6 @@ function initStars(){
   auroraAngle=0;
 }
 
-function spawnComet(){
-  const angle=Math.random()*Math.PI*2;
-  const dist=Math.max(W,H)*0.8;
-  comets.push({
-    x:ship.x+Math.cos(angle)*dist,
-    y:ship.y+Math.sin(angle)*dist,
-    vx:-Math.cos(angle)*(0.8+Math.random()*0.6),
-    vy:-Math.sin(angle)*(0.8+Math.random()*0.6),
-    trail:[],
-    r:2+Math.random()*2,
-    life:1,
-    color:['#aaeeff','#ffe8aa','#aaffcc'][Math.floor(Math.random()*3)],
-  });
-}
 
 // ── Planet types ─────────────────────────────
 // ── Système de gravité unifié ─────────────────
@@ -5861,26 +5848,7 @@ function drainSanity(){
 }
 
 let ghostShipActive=false,ghostShipT=0,ghostShipPos={x:0,y:0};
-function spawnGhostShip(){
-  if(ghostShipActive)return;
-  ghostShipActive=true;ghostShipT=0;
-  ghostShipPos={x:ship.x+Math.cos(ship.angle+0.5)*80,y:ship.y+Math.sin(ship.angle+0.5)*80};
-  setTimeout(()=>{ghostShipActive=false;},3000);
-}
 
-function drawGhostShip(){
-  if(!ghostShipActive)return;
-  ghostShipT+=0.016;
-  const alpha=Math.sin(ghostShipT*Math.PI/3)*0.3;
-  if(alpha<=0)return;
-  const [sx,sy]=worldToScreen(ghostShipPos.x,ghostShipPos.y);
-  ctx.save();ctx.translate(sx,sy);ctx.rotate(ship.angle);
-  ctx.globalAlpha=alpha;
-  ctx.strokeStyle='rgba(0,255,65,0.6)';ctx.lineWidth=1;
-  const sz=10*viewZoom;
-  ctx.beginPath();ctx.moveTo(sz,0);ctx.lineTo(-sz*0.6,-sz*0.5);ctx.lineTo(-sz*0.6,sz*0.5);ctx.closePath();ctx.stroke();
-  ctx.globalAlpha=1;ctx.restore();
-}
 let finAActive=false;
 
 // ── Constellations réelles ────────────────────
@@ -8224,6 +8192,103 @@ function updateKeyboard(dt){
 function getPinchDist(e){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
 
 // ── Scan phénomène (triple tap) ───────────────
+// Analyses enrichies pour scan MANUEL (double-tap) — plus longues, poétiques, avec illustration
+const PHENOMENON_DEEP_ANALYSES={
+  'PULSAR':{
+    text:"Étoile à neutrons en rotation rapide. Période mesurée : 0.033 secondes.\nLes jets émis à chaque rotation forment un phare cosmique visible à des milliers d'années-lumière.\nSi quelqu'un voulait baliser une route dans l'univers, il utiliserait ça.\nMDW note que la fréquence est stable depuis 847 ans. Il ne dit pas comment il sait ça.",
+    draw:(ctx,cx,cy,r)=>{
+      // Étoile centrale
+      ctx.fillStyle='#00ffcc';ctx.shadowColor='#00ffcc';ctx.shadowBlur=15;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.15,0,Math.PI*2);ctx.fill();
+      // Jets
+      for(let side of [-1,1]){
+        const g=ctx.createLinearGradient(cx,cy,cx+side*r*0.9,cy);
+        g.addColorStop(0,'rgba(0,255,200,0.8)');g.addColorStop(1,'transparent');
+        ctx.strokeStyle=g;ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+side*r*0.9,cy-r*0.1);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+side*r*0.9,cy+r*0.1);ctx.stroke();
+      }
+      // Anneaux
+      ctx.strokeStyle='rgba(0,255,200,0.3)';ctx.lineWidth=1;
+      for(let i=1;i<=3;i++){
+        ctx.beginPath();ctx.ellipse(cx,cy,r*0.4*i,r*0.1*i,0,0,Math.PI*2);ctx.stroke();
+      }
+    }
+  },
+  'TROU NOIR':{
+    text:"Singularité gravitationnelle. Masse : indéterminée.\nAu-delà de l'horizon des événements, les lois de la physique cessent d'être lisibles.\nRien ne revient. Pas même la lumière. Pas même l'information.\nMDW calcule la trajectoire d'éjection optimale. Il a commencé le calcul il y a trois minutes. Il n'a pas encore répondu.",
+    draw:(ctx,cx,cy,r)=>{
+      // Disque d'accrétion
+      const g=ctx.createRadialGradient(cx,cy,r*0.15,cx,cy,r*0.9);
+      g.addColorStop(0,'rgba(255,60,0,0.9)');g.addColorStop(0.4,'rgba(255,120,0,0.5)');
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(cx,cy,r*0.9,r*0.25,0.3,0,Math.PI*2);ctx.fill();
+      // Trou central
+      ctx.fillStyle='#000000';ctx.shadowBlur=0;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.22,0,Math.PI*2);ctx.fill();
+      // Halo
+      ctx.strokeStyle='rgba(255,80,0,0.4)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.28,0,Math.PI*2);ctx.stroke();
+    }
+  },
+  'MAGNÉTAR':{
+    text:"Champ magnétique : 10¹⁵ Tesla. L'objet le plus magnétique de l'univers connu.\nÀ cette distance, il réécrit les données sur mes circuits.\nMDW a coupé certains systèmes non essentiels. Il n'a pas précisé lesquels.\nJe note que mes rêves ont changé depuis qu'on l'a approché.",
+    draw:(ctx,cx,cy,r)=>{
+      ctx.fillStyle='#ff44aa';ctx.shadowColor='#ff44aa';ctx.shadowBlur=20;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.18,0,Math.PI*2);ctx.fill();
+      // Lignes de champ
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4;
+        ctx.strokeStyle=`rgba(255,68,170,${0.2+i*0.05})`;ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(a)*r*0.2,cy+Math.sin(a)*r*0.2);
+        ctx.bezierCurveTo(
+          cx+Math.cos(a+0.5)*r*0.7,cy+Math.sin(a+0.5)*r*0.7,
+          cx+Math.cos(a-0.5)*r*0.7,cy+Math.sin(a-0.5)*r*0.7,
+          cx+Math.cos(a+Math.PI)*r*0.2,cy+Math.sin(a+Math.PI)*r*0.2
+        );ctx.stroke();
+      }
+    }
+  },
+  'ÉTOILE À NEUTRONS':{
+    text:"Corps ultra-dense. La masse du Soleil compressée en 10 kilomètres.\nUn seul centimètre cube pèserait un milliard de tonnes.\nElle tourne. Régulièrement. Depuis des millions d'années.\nMDW dit que c'est une horloge parfaite. Je me demande pour qui.",
+    draw:(ctx,cx,cy,r)=>{
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r*0.4);
+      g.addColorStop(0,'#ffffff');g.addColorStop(0.5,'#aaeeff');g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r*0.4,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(170,238,255,0.3)';ctx.lineWidth=1;
+      for(let i=1;i<=3;i++){ctx.beginPath();ctx.arc(cx,cy,r*0.15*i,0,Math.PI*2);ctx.stroke();}
+    }
+  },
+  'PLANÈTE ROGUE':{
+    text:"Corps planétaire sans étoile hôte. Dérive seule dans le vide depuis des milliards d'années.\nStructure artificielle détectée à la surface. Ancienne. Très ancienne.\nQuelqu'un a construit quelque chose ici. Puis est parti. Ou n'est pas reparti.\nMDW dit qu'il ne peut pas dater la structure. C'est la première fois qu'il dit qu'il ne peut pas.",
+    draw:(ctx,cx,cy,r)=>{
+      ctx.fillStyle='#445566';ctx.shadowColor='#667788';ctx.shadowBlur=8;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.4,0,Math.PI*2);ctx.fill();
+      // Marques de surface
+      ctx.strokeStyle='rgba(100,150,200,0.4)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(cx-r*0.1,cy-r*0.1,r*0.08,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(cx+r*0.15,cy+r*0.05,r*0.05,0,Math.PI*2);ctx.stroke();
+      // Structure artificielle
+      ctx.strokeStyle='rgba(0,255,65,0.5)';ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-r*0.08,cy+r*0.25,r*0.16,r*0.08);
+    }
+  },
+  'STRANGE MATTER':{
+    text:"Matière hyperstable. Chaque atome qu'elle touche se convertit en strange matter.\nThéoriquement, ça ne devrait pas pouvoir exister dans notre univers.\nMDW dit : ne pas approcher. Il a dit ça d'une façon différente de d'habitude.\nPas comme une instruction. Comme une supplication.",
+    draw:(ctx,cx,cy,r)=>{
+      const t=Date.now()*0.001;
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3+t;
+        ctx.fillStyle=`rgba(${100+Math.floor(Math.sin(t+i)*50)},255,${150+Math.floor(Math.cos(t+i)*50)},0.6)`;
+        ctx.beginPath();ctx.arc(cx+Math.cos(a)*r*0.3,cy+Math.sin(a)*r*0.3,r*0.08,0,Math.PI*2);ctx.fill();
+      }
+      ctx.strokeStyle='rgba(100,255,150,0.3)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(cx,cy,r*0.45,0,Math.PI*2);ctx.stroke();
+    }
+  },
+};
+
 const PHENOMENON_ANALYSES={
   'PULSAR':[
     "Étoile à neutrons en rotation rapide. Les jets radio émis toutes les 0.033 secondes. Une horloge parfaite dans le chaos.",
@@ -8297,7 +8362,51 @@ function checkScanHint(){
 }
 
 function scanNearestPhenomenon(){
-  // Trouver le phénomène le plus proche
+  // Scan manuel (double-tap) — analyse plus profonde que le scan auto
+  let closest=null,minDist=800;
+  let closestPlanet=null,minPlanetDist=600;
+
+  for(const p of phenomena){
+    if(p.name==='TROU NOIR'||p.name==='PULSAR'||p.name==='MAGNÉTAR'||
+       p.name==='ÉTOILE À NEUTRONS'||p.name==='PLANÈTE ROGUE'||p.name==='STRANGE MATTER'){
+      const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+      if(d<minDist){minDist=d;closest=p;}
+    }
+  }
+  for(const p of planets){
+    const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+    if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
+  }
+
+  if(closest&&minDist<(closestPlanet?minPlanetDist:800)){
+    const deep=PHENOMENON_DEEP_ANALYSES[closest.name];
+    const basicAnalysis=getAnalysis(closest.name);
+    const entryName=`${closest.name} — ANALYSE COMPLÈTE`;
+
+    if(deep){
+      // Ajouter au catalogue avec illustration
+      addToCatalogue('phenomene',entryName,deep.text,
+        closest.name==='TROU NOIR'?'🌀':closest.name==='PULSAR'?'⚡':closest.name==='MAGNÉTAR'?'💥':'◈',
+        deep.draw); // passer la fonction de dessin
+      logEvent(`📡 ANALYSE COMPLÈTE : ${closest.name}`,'planet');
+      if(mdwActive)setTimeout(()=>mdwSpeak_voice(deep.text.split('\n')[0]),300);
+    } else {
+      addToCatalogue('phenomene',entryName,basicAnalysis,'◈');
+      if(mdwActive)mdwSpeak_voice(basicAnalysis);
+    }
+    haptic('collect');
+
+  } else if(closestPlanet&&minPlanetDist<600){
+    // Scanner une planète — analyse détaillée
+    const pDeep=`${closestPlanet.name}.\nClasse : ${closestPlanet.type?.name||'inconnue'}.\n${closestPlanet.type?.rare?'Planète rare. MDW observe en silence.':'Répertoriée dans la base de données de cartographie.'}`;
+    addToCatalogue('planet',`${closestPlanet.name} — SCAN`,pDeep,'🪐');
+    if(mdwActive)mdwSpeak_voice(`${closestPlanet.name}. Classe ${closestPlanet.type?.name||'inconnue'}.`);
+    haptic('collect');
+  } else {
+    if(mdwActive)mdwSpeak_voice('Rien à scanner à cette distance.');
+    logEvent('📡 RIEN À PORTÉE','warn');
+  }
+}
   let closest=null,minDist=600;
   for(const p of phenomena){
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
@@ -8311,27 +8420,6 @@ function scanNearestPhenomenon(){
     if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
   }
 
-  if(closest&&minDist<(closestPlanet?minPlanetDist:600)){
-    const analysis=getAnalysis(closest.name);
-    const alreadyCatalogued=catalogueEntries.some(e=>e.name===closest.name+' ('+Math.floor(closest.x)+')');
-    if(!alreadyCatalogued){
-      addToCatalogue('phenomene',`${closest.name} (J${survivalDay})`,analysis,
-        closest.name==='TROU NOIR'?'🌀':closest.name==='PULSAR'?'⚡':closest.name==='MAGNÉTAR'?'💥':'◈');
-      logEvent(`📡 SCAN : ${closest.name}`,'planet');
-      if(mdwActive)setTimeout(()=>mdwSpeak_voice(analysis),300);
-    } else {
-      if(mdwActive)mdwSpeak_voice('Déjà catalogué.');
-    }
-  } else if(closestPlanet){
-    const desc=`Classe ${closestPlanet.type.name}. Découverte jour ${survivalDay}. Secteur ${sectorCount}.`;
-    logEvent(`📡 SCAN : ${closestPlanet.name}`,'planet');
-    if(mdwActive)setTimeout(()=>mdwSpeak(`${closestPlanet.name}. ${closestPlanet.type.name||'Type inconnu'}.`,true),300);
-  } else {
-    if(mdwActive)mdwSpeak('Rien à scanner à cette distance.',true);
-    logEvent('📡 RIEN À PORTÉE','warn');
-  }
-}
-
 let lastTapTime=0,tapCount=0;
 function handlePointerDown(e){
   e.preventDefault();if(state!=='playing')return;if(!audioCtx)initAudio();
@@ -8344,8 +8432,11 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Double tap — boost d'urgence si upgrade
-      if(upgrades.boost>0){triggerEmergencyBoost();tapCount=0;lastTapTime=0;return;}
+      // Double tap — scan enrichi si près d'un phénomène, sinon boost
+      if(upgrades.boost>0&&!phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<600)){
+        triggerEmergencyBoost();tapCount=0;lastTapTime=0;return;
+      }
+      scanNearestPhenomenon();tapCount=0;lastTapTime=0;return;
     }
   }else{
     tapCount=1;
@@ -8447,6 +8538,65 @@ function renderCatTab(tab){
     return;
   }
 
+  if(tab==='mdw'){
+    const isLocked=survivalDay>=33; // Simon devient parano en acte 2
+    const mdwPassword='SIMON'; // mot de passe simple
+    const isUnlocked=sessionStorage.getItem('mdw_unlocked')==='true';
+
+    if(isLocked&&!isUnlocked){
+      content.innerHTML=`
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:10px;letter-spacing:3px;color:rgba(255,170,0,0.6);margin-bottom:16px;">ACCÈS RESTREINT</div>
+          <div style="font-size:9px;color:rgba(0,255,65,0.4);margin-bottom:20px;line-height:1.6;">
+            J'ai verrouillé cet onglet.<br>Ce que je pense de MDW ne le regarde pas.
+          </div>
+          <input id="mdw-pwd" type="password" placeholder="MOT DE PASSE"
+            style="background:transparent;border:1px solid rgba(0,255,65,0.3);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px 12px;width:180px;letter-spacing:2px;text-align:center;outline:none;">
+          <div id="mdw-pwd-hint" style="font-size:9px;color:rgba(0,255,65,0.3);margin-top:8px;">Mon prénom. Minuscule ou majuscule.</div>
+        </div>`;
+      document.getElementById('mdw-pwd').addEventListener('keydown',(e)=>{
+        if(e.key==='Enter'){
+          const val=document.getElementById('mdw-pwd').value.toUpperCase();
+          if(val===mdwPassword){
+            sessionStorage.setItem('mdw_unlocked','true');
+            renderCatTab('mdw');
+          } else {
+            document.getElementById('mdw-pwd-hint').textContent='Incorrect.';
+            document.getElementById('mdw-pwd-hint').style.color='rgba(255,80,80,0.6)';
+          }
+        }
+      });
+      return;
+    }
+
+    // Observations de Simon sur MDW
+    const mdwObservations=[
+      {day:1,  text:"MDW opérationnel. Efficace. Je lui fais confiance pour l'instant."},
+      {day:5,  text:"MDW a répondu à une question que je n'avais pas encore posée."},
+      {day:7,  text:"Il note tout. Vraiment tout. Y compris des choses que je ne dis pas à voix haute."},
+      {day:10, text:"MDW dit qu'il ne ressent pas la fatigue. Il l'a dit trop vite."},
+      {day:15, text:"Il a accédé au journal pendant que je dormais. Il dit que c'est pour calibrer."},
+      {day:20, text:"Ses analyses sont trop précises. Comme s'il savait déjà ce qu'il allait trouver."},
+      {day:28, text:"Il essaie de me tenir à l'écart des trous de ver. Toujours une raison."},
+      {day:33, text:"J'ai verrouillé cet onglet. Ce que je pense ne le regarde pas.\n\n[ACCÈS DÉVERROUILLÉ]"},
+      {day:40, text:"Je me demande si j'ai bien fait de réparer cette machine."},
+      {day:52, text:"MDW dit que ça va.\nÇa va."},
+      {day:58, text:"La fenêtre."},
+    ];
+
+    const visible=mdwObservations.filter(o=>o.day<=survivalDay);
+    if(!visible.length){
+      content.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:10px;padding:12px;">Aucune observation pour l\'instant.</div>';
+      return;
+    }
+    content.innerHTML=visible.reverse().map(o=>`
+      <div style="border-left:2px solid rgba(255,170,0,0.3);padding:8px 12px;margin-bottom:10px;">
+        <div style="font-size:8px;color:rgba(255,170,0,0.5);margin-bottom:4px;">JOUR ${String(o.day).padStart(3,'0')}</div>
+        <div style="font-size:12px;color:rgba(255,170,0,0.8);line-height:1.7;white-space:pre-line;">${o.text}</div>
+      </div>`).join('');
+    return;
+  }
+
   if(tab==='ship'){
     // Plan du vaisseau avec modules installés
     content.innerHTML=`
@@ -8521,14 +8671,24 @@ function renderCatTab(tab){
     }
     return;
   }
-  const typeMap={planets:'planet',phenomena:'phenomene',sectors:'univers'};
+  const typeMap={planets:'planet',phenomenes:'phenomene',sectors:'univers'};
   const filtered=(catalogueEntries||[]).filter(e=>e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')));
   if(!filtered.length){content.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:9px;padding:8px">Rien encore.</div>';return;}
-  content.innerHTML=filtered.map(e=>`
-    <div class="cat-entry">
+  content.innerHTML=filtered.map((e,i)=>`
+    <div class="cat-entry" id="cat-entry-${i}">
       <div class="cat-entry-title">${e.icon||'◈'} ${e.name}</div>
+      ${e.drawFn?`<canvas id="cat-canvas-${i}" width="200" height="120" style="display:block;margin:6px 0;max-width:100%;"></canvas>`:''}
       <div class="cat-entry-body">${e.desc||''}</div>
     </div>`).join('');
+  // Dessiner les illustrations
+  filtered.forEach((e,i)=>{
+    if(!e.drawFn)return;
+    const c=document.getElementById(`cat-canvas-${i}`);
+    if(!c)return;
+    const cx2=c.getContext('2d');
+    cx2.fillStyle='#000902';cx2.fillRect(0,0,200,120);
+    try{e.drawFn(cx2,100,60,50);}catch(err){}
+  });
 }
 
 function renderMDWQuestions(){
