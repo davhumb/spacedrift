@@ -317,7 +317,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.8</div>
 </div>
 
 <script>
@@ -640,35 +640,34 @@ function startBreathing(){
   function breathCycle(rate){
     if(!breathActive)return;
     const now=audioCtx.currentTime;
-    // Volume proportionnel au manque d'O2
     const urgency=Math.max(0,1-(oxygen/40));
-    const vol=0.1+urgency*0.2;
+    const vol=0.25+urgency*0.35; // volume plus fort
     const osc=audioCtx.createOscillator();
     const g=audioCtx.createGain();
     osc.type='sine';
-    osc.frequency.setValueAtTime(90+Math.random()*15,now);
+    osc.frequency.setValueAtTime(85+Math.random()*20,now);
     g.gain.setValueAtTime(0,now);
     g.gain.linearRampToValueAtTime(vol,now+rate*0.35);
     g.gain.linearRampToValueAtTime(0,now+rate);
     osc.connect(g);g.connect(breathGain);
     osc.start(now);osc.stop(now+rate);
-    // S'accélère avec l'urgence
-    const nextRate=Math.max(0.5,rate*(0.88+urgency*0.04));
+    const nextRate=Math.max(0.4,rate*(0.86+urgency*0.04));
     setTimeout(()=>breathCycle(nextRate),nextRate*900);
   }
-  breathCycle(2.2);
+  breathCycle(2.0);
 }
 
 function stopBreathing(){
   if(!breathActive)return;
   breathActive=false;
-  if(breathGain)breathGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.8);
+  if(breathGain&&audioCtx)breathGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.8);
 }
 
 function updateBreathing(){
-  if(!audioCtx||state!=='playing')return;
-  if(oxygen<40&&!breathActive)startBreathing();
-  else if(oxygen>=45&&breathActive)stopBreathing();
+  // Pas de condition sur state — l'O2 peut baisser en cutscene aussi
+  if(!audioCtx)return;
+  if(oxygen<40&&!breathActive&&!driftMode)startBreathing();
+  else if((oxygen>=45||driftMode)&&breathActive)stopBreathing();
 }
 // ── Boost d'urgence ───────────────────────────
 let boostCooldown=0,boostActive=false,boostTimer=0;
@@ -3694,7 +3693,7 @@ function updateResources(dt){
   const recyclerBonus=getModuleBonus('o2drain');
   // Drain très réduit les 3 premiers jours
   const earlyBonus=survivalDay<=1?0.1:survivalDay<=3?0.3:survivalDay<=5?0.6:1.0;
-  const driftBonus=driftMode?0.45:1.0;
+  const driftBonus=driftMode?0.0:1.0; // dérive silencieuse = zéro drain O2
   const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus*driftBonus;
   oxygen=Math.max(0,oxygen-o2Rate*dilDt);
   if(oxygen<=0)hull=Math.max(0,hull-5*drainMult*earlyBonus*dilDt);
