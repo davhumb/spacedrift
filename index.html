@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.2 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.3 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.2</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.3</div>
 </div>
 
 <script>
@@ -3399,23 +3399,23 @@ function runSequence(steps, idx=0){
 function startOpeningSequence(){
   openingActive=true;
 
-
-
   const steps=[
-    // Textes Simon — dans l'ordre, séquentiels
-    {journal:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.", pause:1000},
-    {journal:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.", pause:500},
-    {journal:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.", pause:500},
-    {journal:"J'ai une plaie au front et mon dos me fait souffrir.", pause:1000},
-    // Simon trouve MDW
-    {journal:"Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux.", pause:500},
-    {journal:"Je tente le démarrage.", pause:2000},
+    {journal:"Jour 1.", pause:1800},
+    {journal:"Enfin si je puis dire.", pause:2000},
+    {journal:"Je n'ai aucun souvenir.", pause:1800},
+    {journal:"Rien avant ce plafond.", pause:2200},
+    {journal:"L'écusson sur mon épaule dit Simon Brent.", pause:1800},
+    {journal:"Je suppose que c'est moi.", pause:2500},
+    {journal:"Le vaisseau a subi des dégâts.\nJe ne sais pas comment.", pause:2000},
+    {journal:"J'ai une plaie au front.\nMon dos me fait souffrir.", pause:2200},
+    {journal:"Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux.", pause:2000},
+    {journal:"Je ne sais pas comment je savais ça non plus.", pause:2500},
+    {journal:"Je tente le démarrage.", pause:2200},
     // MDW s'allume
     {fn:()=>{
       mdwActive=true;mdwFound=true;
       logEvent('🤖 MDW ACTIVÉ','planet');
       unlockAchievement&&unlockAchievement('mdw');
-      // Réplique d'ouverture qui change selon le run
       const openings=[
         "MDW. À votre service.\nQue puis-je faire pour vous aujourd'hui ?",
         "MDW. Systèmes en ligne.\nQue puis-je faire pour vous ?",
@@ -3425,24 +3425,23 @@ function startOpeningSequence(){
       const opening=openings[Math.min(totalRuns||0, openings.length-1)];
       mdwSpeak_voice(opening);
     }, wait:6000},
-    // Simon demande le tutoriel
     {journal:"J'ai besoin du tutoriel.", pause:1500},
-    // MDW lance le tuto
     {fn:()=>mdwSpeak_voice("Bien. Lancement séquence."), wait:3000},
     {fn:()=>startTutorial(), wait:0},
   ];
 
-  // Démarrer après 3s
   setTimeout(()=>runSequence(steps), 3000);
 }
 
-function startGame(){
+function startGame(resume=false){
   document.getElementById('hud').style.opacity='1';
   document.getElementById('home-btn').style.display='block';
   document.getElementById('catalogue-btn').style.display='block';
   requestWakeLock();
-  initMDW(); // MDW créé mais pas encore actif — activé par la séquence
-  setTimeout(()=>startOpeningSequence(),1500);
+  initMDW();
+  if(!resume){
+    setTimeout(()=>startOpeningSequence(),1500);
+  }
   drainMult=DIFF_CONFIG[selectedDiff].drainMult;
   applyUpgrades();
   score=0;gameTime=0;difficulty=1;
@@ -8585,14 +8584,23 @@ function updateResumeBtn(){
       resumeBtn.addEventListener('click',()=>{
         initAudio();
         launchSequence((worldVy)=>{
-          startGame();
+          startGame(true); // skip intro
           const resumed=loadRun();
           if(resumed){
             mdwActive=true;mdwFound=true;tutorialDone=true;
             openingActive=false;
+            state='playing';
             if(mdwEl)mdwEl.style.opacity='0';
             ship.vy=worldVy||0;
-            logEvent('▶ RUN REPRIS — JOUR '+survivalDay,'planet');
+            // Message de reprise discret
+            setTimeout(()=>{
+              if(journalEl){
+                journalFullText='Jour '+survivalDay+'.\nLà où je m\'étais arrêté.';
+                journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+                journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+                journalText.textContent='';journalText.style.color='rgba(0,255,65,0.7)';
+              }
+            },1000);
           }
         });
       });
