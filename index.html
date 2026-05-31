@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.2</div>
 </div>
 
 <script>
@@ -8729,8 +8729,8 @@ function renderCatTab(tab){
     }
     content.innerHTML=visible.reverse().map(o=>`
       <div style="border-left:2px solid rgba(255,170,0,0.3);padding:8px 12px;margin-bottom:10px;">
-        <div style="font-size:8px;color:rgba(255,170,0,0.5);margin-bottom:4px;">JOUR ${String(o.day).padStart(3,'0')}</div>
-        <div style="font-size:12px;color:rgba(255,170,0,0.8);line-height:1.7;white-space:pre-line;">${o.text}</div>
+        <div style="font-size:10px;color:rgba(255,170,0,0.5);margin-bottom:4px;letter-spacing:2px;">JOUR ${String(o.day).padStart(3,'0')}</div>
+        <div style="font-size:14px;color:rgba(255,170,0,0.85);line-height:1.8;white-space:pre-line;">${o.text}</div>
       </div>`).join('');
     return;
   }
@@ -8765,86 +8765,59 @@ function renderCatTab(tab){
     return;
   }
   if(tab==='ship'){
-    // Plan du vaisseau avec modules installés
-    content.innerHTML=`
-      <div style="text-align:center;padding:10px 0;">
-        <div style="font-size:11px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:10px;">ÉTAT DU VAISSEAU</div>
-        <canvas id="ship-plan-canvas" width="200" height="200" style="display:block;margin:0 auto;max-width:100%;"></canvas>
-        <div id="ship-modules-list" style="margin-top:12px;text-align:left;padding:0 8px;"></div>
-      </div>`;
-    // Dessiner le plan
-    const spc=document.getElementById('ship-plan-canvas');
-    const sctx=spc.getContext('2d');
-    sctx.clearRect(0,0,200,200);
-    const cx=100,cy=145; // vaisseau en bas
-    // Fond
-    sctx.fillStyle='#000902';sctx.fillRect(0,0,200,200);
-    // Grille légère
-    sctx.strokeStyle='rgba(0,255,65,0.05)';sctx.lineWidth=0.5;
-    for(let x=0;x<200;x+=20){sctx.beginPath();sctx.moveTo(x,0);sctx.lineTo(x,200);sctx.stroke();}
-    for(let y=0;y<200;y+=20){sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(200,y);sctx.stroke();}
-    // Corps du vaisseau
-    const sz=40;
-    sctx.strokeStyle='rgba(0,255,65,0.8)';sctx.lineWidth=1.5;sctx.shadowColor='#00ff41';sctx.shadowBlur=8;
-    sctx.beginPath();sctx.moveTo(cx+sz,cy);sctx.lineTo(cx-sz*0.6,cy-sz*0.5);
-    sctx.lineTo(cx-sz*0.4,cy);sctx.lineTo(cx-sz*0.6,cy+sz*0.5);sctx.closePath();sctx.stroke();
-    // Modules installés — dessinés sur le vaisseau
-    const mods=upgrades;
-    if(mods.thruster>0){ // tuyères
-      sctx.strokeStyle='rgba(255,150,0,0.8)';sctx.lineWidth=2;sctx.shadowColor='#ff9900';
-      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy-sz*0.3);sctx.lineTo(cx-sz*0.9,cy-sz*0.3);sctx.stroke();
-      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy+sz*0.3);sctx.lineTo(cx-sz*0.9,cy+sz*0.3);sctx.stroke();
+    // Fusionner installedModules + modules d'épaves
+    const allMods=[...(installedModules||[])];
+    // Modules des épaves installés depuis SHIP_MODULES
+    for(const key of Object.keys(SHIP_MODULES||{})){
+      if(!allMods.includes(key)&&upgrades[key]>0)allMods.push(key);
     }
-    if(mods.armor>0){ // plaques blindage
-      sctx.strokeStyle='rgba(100,150,255,0.6)';sctx.lineWidth=1;sctx.shadowColor='#6699ff';
-      sctx.beginPath();sctx.rect(cx-sz*0.3,cy-sz*0.4,sz*0.4,sz*0.8);sctx.stroke();
-    }
-    if(mods.radar_ext>0){ // antenne radar
-      sctx.strokeStyle='rgba(0,255,200,0.8)';sctx.lineWidth=1;sctx.shadowColor='#00ffc8';
-      sctx.beginPath();sctx.moveTo(cx,cy-sz*0.5);sctx.lineTo(cx,cy-sz*0.9);sctx.stroke();
-      sctx.beginPath();sctx.arc(cx,cy-sz*0.9,4,0,Math.PI*2);sctx.stroke();
-    }
-    if(mods.drone>0){ // pod drone
-      sctx.strokeStyle='rgba(255,200,0,0.7)';sctx.lineWidth=1;sctx.shadowColor='#ffcc00';
-      sctx.beginPath();sctx.arc(cx+sz*0.3,cy+sz*0.6,6,0,Math.PI*2);sctx.stroke();
-    }
-    if(mods.shield>0){ // bouclier
-      sctx.strokeStyle='rgba(0,150,255,0.4)';sctx.lineWidth=1;sctx.shadowColor='#0099ff';
-      sctx.setLineDash([3,3]);
-      sctx.beginPath();sctx.arc(cx,cy,sz*1.2,0,Math.PI*2);sctx.stroke();
-      sctx.setLineDash([]);
-    }
-    if(mods.boost>0){ // boost d'urgence
-      sctx.strokeStyle='rgba(0,255,65,0.9)';sctx.lineWidth=2;sctx.shadowColor='#00ff41';
-      sctx.beginPath();sctx.moveTo(cx-sz*0.6,cy);sctx.lineTo(cx-sz*1.1,cy);sctx.stroke();
-      sctx.beginPath();sctx.moveTo(cx-sz*1.1,cy-sz*0.2);sctx.lineTo(cx-sz*1.1,cy+sz*0.2);sctx.stroke();
-    }
-    sctx.shadowBlur=0;
-    // Liste modules
+
+    const modDescs={
+      o2tank:'Capacité O₂ +25. Plus de marge avant l\'asphyxie.',
+      recycler:'Drain O₂ -20%. Simon respire plus efficacement.',
+      armor:'Dégâts coque -30%. Résiste aux débris et radiations.',
+      thruster:'Poussée +40%. Réponse plus rapide aux commandes.',
+      radar_ext:'Portée radar +50%. Détecte les objets plus loin.',
+      shield:'Absorbe les impacts énergétiques.',
+      drone:'Collecte automatiquement les capsules à portée.',
+      scanner:'Révèle le type de planète avant l\'approche.',
+      boost:'Double-tap — propulsion massive 1s. Recharge 60s.',
+    };
     const modNames={
       o2tank:'Réservoir O₂',recycler:'Recycleur Air',armor:'Blindage',
       thruster:'Propulseurs',radar_ext:'Radar+',shield:'Bouclier',
       drone:'Drone',scanner:'Scanner',boost:'Boost d\'urgence',
     };
-    const modDescs={
-      o2tank:'Capacité O₂ +25. Vous donne plus de marge avant l\'asphyxie.',
-      recycler:'Drain O₂ réduit de 20%. Simon respire plus efficacement.',
-      armor:'Dégâts de coque réduits de 30%. Résiste aux débris et radiations.',
-      thruster:'Poussée +40%. Le vaisseau répond plus vite.',
-      radar_ext:'Portée radar +50%. Détecte les objets plus loin.',
-      shield:'Absorbe les impacts énergétiques. Se régénère.',
-      drone:'Collecte automatiquement les capsules à portée.',
-      scanner:'Révèle le type de planète avant l\'approche.',
-      boost:'Double-tap — propulsion massive 1s. Recharge 60s.',
-    };
+
+    content.innerHTML=`
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:10px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:8px;">ÉTAT DU VAISSEAU</div>
+        <canvas id="ship-plan-canvas" width="220" height="160" style="display:block;margin:0 auto;max-width:100%;"></canvas>
+        <div id="ship-modules-list" style="margin-top:10px;text-align:left;padding:0 8px;"></div>
+      </div>`;
+
+    // Dessiner le vrai vaisseau avec drawShipAt
+    const spc=document.getElementById('ship-plan-canvas');
+    if(spc){
+      const sctx=spc.getContext('2d');
+      sctx.fillStyle='#000902';sctx.fillRect(0,0,220,160);
+      // Grille légère
+      sctx.strokeStyle='rgba(0,255,65,0.04)';sctx.lineWidth=0.5;
+      for(let x=0;x<220;x+=20){sctx.beginPath();sctx.moveTo(x,0);sctx.lineTo(x,160);sctx.stroke();}
+      for(let y=0;y<160;y+=20){sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(220,y);sctx.stroke();}
+      // Vaisseau centré, pointant à droite, échelle 4x
+      drawShipAt(sctx,110,90,0,4,false,0,allMods);
+    }
+
+    // Liste des modules
     const modList=document.getElementById('ship-modules-list');
-    const installed=Object.entries(mods).filter(([k,v])=>v>0);
-    if(!installed.length){
-      modList.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:10px;">Aucun module installé.</div>';
+    if(!modList)return;
+    if(!allMods.length){
+      modList.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:12px;padding:8px;">Aucun module installé.</div>';
     } else {
-      modList.innerHTML=installed.map(([k,v])=>`
-        <div style="border-left:2px solid rgba(0,255,65,0.3);padding:4px 8px;margin-bottom:8px;">
-          <div style="font-size:12px;color:rgba(0,255,65,0.85);">◈ ${modNames[k]||k} <span style="color:rgba(0,255,65,0.4);font-size:10px;">LV${v}</span></div>
+      modList.innerHTML=allMods.map(k=>`
+        <div style="border-left:2px solid rgba(0,255,65,0.3);padding:5px 10px;margin-bottom:8px;">
+          <div style="font-size:13px;color:rgba(0,255,65,0.9);">◈ ${modNames[k]||k}</div>
           <div style="font-size:11px;color:rgba(0,255,65,0.5);margin-top:2px;line-height:1.5;">${modDescs[k]||''}</div>
         </div>`).join('');
     }
@@ -9046,8 +9019,10 @@ document.getElementById('reset-no').addEventListener('click',()=>{
 lastTime=performance.now();
 loadGame();
 initStars();
-titleLoop(); // Démarrer l'animation du vaisseau titre
+titleLoop();
 requestAnimationFrame(gameLoop);
+// Afficher le bouton REPRENDRE si save existe
+updateResumeBtn();
 </script>
 </body>
 </html>
