@@ -314,8 +314,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.8</div>
-  <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.9</div>
 </div>
 
 <script>
@@ -3344,18 +3343,7 @@ function runSequence(steps, idx=0){
 function startOpeningSequence(){
   openingActive=true;
 
-  // Bouton PASSER — visible si pas le premier run
-  if((totalRuns||0)>0){
-    const skipBtn=document.createElement('button');
-    skipBtn.id='btn-skip-intro';
-    skipBtn.textContent='[ PASSER ]';
-    skipBtn.style.cssText=`position:fixed;bottom:80px;right:12px;z-index:50;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 12px;cursor:pointer;pointer-events:all;`;
-    skipBtn.addEventListener('click',()=>{
-      skipIntroduction();
-      skipBtn.remove();
-    });
-    document.getElementById('hud').appendChild(skipBtn);
-  }
+
 
   const steps=[
     // Textes Simon — dans l'ordre, séquentiels
@@ -8653,19 +8641,6 @@ document.addEventListener('fullscreenchange',()=>{
   const btn=document.getElementById('btn-fullscreen');
   if(btn)btn.textContent=document.fullscreenElement?'⛶ QUITTER PLEIN ÉCRAN':'⛶ PLEIN ÉCRAN';
 });
-document.getElementById('btn-debug-god').addEventListener('click',()=>{
-  if(!audioCtx)initAudio();
-  openingActive=false;
-  mdwActive=true;mdwFound=true;tutorialDone=true;
-  initMDW();
-  startGame();
-  setTimeout(()=>{
-    state='playing';
-    // Aller directement à la séquence dieu — skip tout
-    setTimeout(()=>startGodSequence(),1000);
-  },500);
-});
-
 document.getElementById('btn-zen').addEventListener('click',()=>{
   initAudio();
   launchSequence((vy)=>{startZenMode();if(vy)ship.vy=vy;ship.angle=-Math.PI/2;});
