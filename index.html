@@ -314,7 +314,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.9</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.1.0</div>
 </div>
 
 <script>
@@ -3695,11 +3695,14 @@ function updateShip(dt){
 
 function updateResources(dt){
   if(state==='trade')return;
+  // Pas de drain pendant la séquence d'ouverture
+  if(openingActive)return;
   // Dilatation temporelle — planète DILATÉE
   const timeDilation=window._dilatationActive?0.5:1;
   const dilDt=dt*timeDilation;
   const recyclerBonus=getModuleBonus('o2drain');
-  const earlyBonus=survivalDay<=2?0.6:1.0;
+  // Drain très réduit les 3 premiers jours
+  const earlyBonus=survivalDay<=1?0.1:survivalDay<=3?0.3:survivalDay<=5?0.6:1.0;
   const driftBonus=driftMode?0.45:1.0;
   const o2Rate=(activeEvent&&activeEvent.name==='O2 LEAK')?0:O2_DRAIN*drainMult*recyclerBonus*earlyBonus*driftBonus;
   oxygen=Math.max(0,oxygen-o2Rate*dilDt);
