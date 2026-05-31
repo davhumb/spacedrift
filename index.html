@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.0 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.1 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.1</div>
 </div>
 
 <script>
@@ -2113,6 +2113,11 @@ function updateSecondaryWormholes(dt){
       currentUniverse=w.targetUniverse;
       drainSanity();
       triggerChromAber(8,0.5);
+      // Relancer speechSynthesis après la traversée (peut se suspendre sur mobile)
+      setTimeout(()=>{
+        if(window.speechSynthesis&&speechSynthesis.paused)speechSynthesis.resume();
+        if(!mdwVoice)initVoice();
+      },2000);
       // Journal Simon — note l'univers traversé
       const uDest=UNIVERSES[w.targetUniverse];
       if(uDest&&journalEl){
@@ -8692,69 +8697,82 @@ function checkScanHint(){
 }
 
 function scanNearestPhenomenon(){
-  // Scan manuel (double-tap) — analyse plus profonde que le scan auto
   let closest=null,minDist=800;
   let closestPlanet=null,minPlanetDist=600;
+  let closestWreck=null,minWreckDist=400;
+  let closestComet=null,minCometDist=400;
 
-  for(const p of phenomena){
-    if(p.name==='TROU NOIR'||p.name==='PULSAR'||p.name==='MAGNÉTAR'||
-       p.name==='ÉTOILE À NEUTRONS'||p.name==='PLANÈTE ROGUE'||p.name==='STRANGE MATTER'){
-      const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
-      if(d<minDist){minDist=d;closest=p;}
-    }
-  }
-  for(const p of planets){
-    const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
-    if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
-  }
-
-  if(closest&&minDist<(closestPlanet?minPlanetDist:800)){
-    const deep=PHENOMENON_DEEP_ANALYSES[closest.name];
-    const basicAnalysis=getAnalysis(closest.name);
-    const entryName=`${closest.name} — ANALYSE COMPLÈTE`;
-
-    if(deep){
-      // Ajouter au catalogue avec illustration
-      addToCatalogue('phenomene',entryName,deep.text,
-        closest.name==='TROU NOIR'?'🌀':closest.name==='PULSAR'?'⚡':closest.name==='MAGNÉTAR'?'💥':'◈',
-        deep.draw);
-      logEvent(`📡 ANALYSE : ${closest.name}`,'planet');
-      if(mdwActive){
-        // MDW lit et affiche via showMDWLine — toujours ambre
-        setTimeout(()=>showMDWLine(deep.text, false),500);
-        // Voix ligne par ligne
-        const lines=deep.text.split('\n').filter(l=>l.trim());
-        lines.forEach((line,i)=>setTimeout(()=>mdwSpeak_voice(line),i*3500));
-      }
-    } else {
-      addToCatalogue('phenomene',entryName,basicAnalysis,'◈');
-      if(mdwActive)mdwSpeak_voice(basicAnalysis);
-    }
-    haptic('collect');
-
-  } else if(closestPlanet&&minPlanetDist<600){
-    // Scanner une planète — analyse détaillée
-    const pDeep=`${closestPlanet.name}.\nClasse : ${closestPlanet.type?.name||'inconnue'}.\n${closestPlanet.type?.rare?'Planète rare. MDW observe en silence.':'Répertoriée dans la base de données de cartographie.'}`;
-    addToCatalogue('planet',`${closestPlanet.name} — SCAN`,pDeep,'🪐');
-    if(mdwActive)mdwSpeak_voice(`${closestPlanet.name}. Classe ${closestPlanet.type?.name||'inconnue'}.`);
-    haptic('collect');
-  } else {
-    if(mdwActive)mdwSpeak_voice('Rien à scanner à cette distance.');
-    logEvent('📡 RIEN À PORTÉE','warn');
-  }
-}
-  let closest=null,minDist=600;
   for(const p of phenomena){
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(d<minDist){minDist=d;closest=p;}
   }
-  // Aussi scanner les planètes proches
-  let closestPlanet=null,minPlanetDist=400;
   for(const p of planets){
-    if(!p.discovered)continue;
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(d<minPlanetDist){minPlanetDist=d;closestPlanet=p;}
   }
+  for(const w of wrecks){
+    const d=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
+    if(d<minWreckDist){minWreckDist=d;closestWreck=w;}
+  }
+  for(const c of comets){
+    const d=Math.sqrt((c.x-ship.x)**2+(c.y-ship.y)**2);
+    if(d<minCometDist){minCometDist=d;closestComet=c;}
+  }
+
+  // Trouver le plus proche de tout
+  const candidates=[
+    closest&&{type:'phenomenon',obj:closest,dist:minDist},
+    closestPlanet&&{type:'planet',obj:closestPlanet,dist:minPlanetDist},
+    closestWreck&&{type:'wreck',obj:closestWreck,dist:minWreckDist},
+    closestComet&&{type:'comet',obj:closestComet,dist:minCometDist},
+  ].filter(Boolean).sort((a,b)=>a.dist-b.dist);
+
+  if(!candidates.length||candidates[0].dist>800){
+    if(mdwActive)showMDWLine('Rien à scanner à cette distance.',true);
+    logEvent('📡 RIEN À PORTÉE','warn');
+    return;
+  }
+
+  const best=candidates[0];
+  haptic('collect');
+
+  if(best.type==='phenomenon'){
+    const p=best.obj;
+    const deep=PHENOMENON_DEEP_ANALYSES[p.name];
+    const entryName=`${p.name} — ANALYSE`;
+    if(deep){
+      addToCatalogue('phenomene',entryName,deep.text,
+        p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈',
+        deep.draw);
+      logEvent(`📡 ANALYSE : ${p.name}`,'planet');
+      if(mdwActive){
+        showMDWLine(deep.text,false);
+        const lines=deep.text.split('\n').filter(l=>l.trim());
+        lines.forEach((line,i)=>setTimeout(()=>mdwSpeak_voice(line),i*3500));
+      }
+    } else {
+      const basic=getAnalysis(p.name);
+      addToCatalogue('phenomene',entryName,basic,'◈');
+      if(mdwActive)showMDWLine(basic,true);
+    }
+
+  } else if(best.type==='planet'){
+    const p=best.obj;
+    const desc=`${p.name}.\nClasse : ${p.type?.name||'inconnue'}.\n${p.type?.rare?'Planète rare.':'Corps céleste répertorié.'}`;
+    addToCatalogue('planet',`${p.name} — SCAN`,desc,'🪐');
+    if(mdwActive)showMDWLine(`${p.name}. Classe ${p.type?.name||'inconnue'}.`,true);
+
+  } else if(best.type==='wreck'){
+    const w=best.obj;
+    const desc=`Épave : ${w.name}.\n${w.log||'Données de vol corrompues.'}\n${w.moduleKey?'Module récupérable détecté.':'Aucun module.'}`;
+    addToCatalogue('planet',`ÉPAVE — ${w.name}`,desc,'💀');
+    if(mdwActive)showMDWLine(`Épave détectée. ${w.name}. ${w.moduleKey?'Un module est récupérable.':'Aucun module utilisable.'}`,true);
+
+  } else if(best.type==='comet'){
+    const desc="Comète en transit.\nComposition : glace et silicates.\nTrajectoire : non stable.";
+    if(mdwActive)showMDWLine("Comète. Corps mineur en transit. Composition standard.",true);
+  }
+}
 
 let lastTapTime=0,tapCount=0;
 function handlePointerDown(e){
@@ -9156,7 +9174,10 @@ function initVoice(){
 
 function mdwSpeak_voice(text){
   if(!voiceEnabled||!window.speechSynthesis)return;
-  // Ne pas cancel si déjà en train de parler — laisser la queue finir
+  // Relancer speechSynthesis si suspendu (après traversée trou de ver sur mobile)
+  if(speechSynthesis.paused)speechSynthesis.resume();
+  // Réinitialiser la voix si perdue
+  if(!mdwVoice)initVoice();
   const utt=new SpeechSynthesisUtterance(text);
   if(mdwVoice)utt.voice=mdwVoice;
 
@@ -9173,6 +9194,11 @@ function mdwSpeak_voice(text){
   utt.rate=Math.max(0.6,1.15+rateMod);
   utt.pitch=Math.max(0.1,0.3+pitchMod);
   utt.volume=0.35;
+  // Retry si speechSynthesis ne démarre pas (bug mobile connu)
+  utt.onerror=(e)=>{
+    if(e.error==='interrupted')return;
+    setTimeout(()=>speechSynthesis.speak(utt),300);
+  };
   speechSynthesis.speak(utt);
 }
 
