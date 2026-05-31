@@ -314,7 +314,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.0.8</div>
   <button id="btn-debug-god" style="margin-top:6px;background:transparent;border:1px solid rgba(255,0,0,0.3);color:rgba(255,0,0,0.5);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;cursor:pointer;">⚠ DEBUG — SÉQUENCE FINALE</button>
 </div>
 
@@ -2478,16 +2478,12 @@ function applyUpgrades(){
 let tutorialDone=false;
 
 const MDW_TUTORIAL=[
-  {delay:2,  text:"Tutoriel en cours de traitement. Votre écran est tactile. Zoom et dézoom en pinçant l'écran."},
-  {delay:12, text:"En bas : quatre jauges. Oxygène — si elle atteint zéro, la coque commence à céder. Collectez les capsules vertes."},
-  {delay:22, text:"Propergol — carburant de propulsion. Tapez et maintenez pour vous diriger. La jauge remonte lentement."},
-  {delay:32, text:"Énergie — recharge automatiquement. Si elle est vide, la propulsion passe en mode urgence."},
-  {delay:42, text:"Coque — les débris la font baisser. Si elle atteint zéro, c'est la fin."},
-  {delay:52, text:"Radar en haut — points verts : ressources. Points rouges : débris. Losanges colorés : trous de ver."},
-  {delay:62, text:"Planètes — approchez lentement. Vitesse inférieure à 3 unités par seconde pour l'amarrage automatique."},
-  {delay:72, text:"Trous de ver — ils vous transportent vers d'autres secteurs. Approchez-vous pour traverser."},
-  {delay:82, text:"Journal en haut à gauche — vos pensées. Bouton catalogue en bas à droite — tout ce que vous avez découvert."},
-  {delay:92, text:"Tutoriel terminé. Bonne route, Simon Brent."},
+  {delay:2,  text:"Quatre jauges en bas. Oxygène, propergol, énergie, coque. Surveillez-les."},
+  {delay:8,  text:"Les capsules lumineuses rechargent les jauges. Approchez-vous pour les collecter."},
+  {delay:14, text:"Planètes — approchez lentement. L'amarrage se fait automatiquement."},
+  {delay:20, text:"Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer."},
+  {delay:26, text:"L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin."},
+  {delay:32, text:"C'est tout ce que vous avez besoin de savoir pour l'instant."},
 ];
 
 function startTutorial(){
@@ -2908,6 +2904,16 @@ const SF_PLANET_NAMES=[
   'Omicron','Vergon','Eternium','Trisol','Wormulon',
   'Nimbus','Decapod','Chapek','Morbo','Kif',
   'Zoidberg','Calculon','Hypnotoad','Wernstrom','Angleyne',
+  // Perso
+  'Gwenus4','Serwanian','Ema221','Meadower','Claudius',
+  // Perso 2
+  'Juno-56','Anthonium','Sebastos','Ethanium',
+  // Alan Moore
+  'Ozymandias','Rorschach','Yuggoth','Kadath','Carcosa',
+  'Promethea','Neopolis','Arcane','Veidt','Kovacs',
+  'Cavor','Hali','Larkhill','Valerie','Norsefire',
+  'Whitechapel','Gull','Woodrue','Bubastis','Quatermain',
+  'Nemo','Moreau','Ayesha',
 ];
 let usedPlanetNames=new Set();
 
@@ -8265,21 +8271,27 @@ function getAnalysis(name){
 
 let scanHintShown=false;
 
+// Phénomènes déjà scannés automatiquement
+const autoScanned=new Set();
+
 function checkScanHint(){
-  if(scanHintShown||!mdwActive)return;
+  if(!mdwActive||state!=='playing')return;
   for(const p of phenomena){
+    if(autoScanned.has(p))continue;
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
-    if(d<400){
-      scanHintShown=true;
-      // Afficher hint discret
-      if(journalEl){
-        setTimeout(()=>{
-          journalFullText="[ TRIPLE-TAP → SCAN ]";
-          journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-          journalEl.classList.add('active');journalDay.textContent='SYS';
-          journalText.textContent='';journalText.style.color='rgba(0,200,255,0.7)';
-        },500);
-      }
+    if(d<450){
+      autoScanned.add(p);
+      // Scan automatique — MDW commente
+      setTimeout(()=>{
+        if(!mdwActive)return;
+        const analysis=getAnalysis(p.name);
+        mdwSpeak_voice(analysis);
+        addToCatalogue('phenomene',
+          p.name+' (J'+survivalDay+')',
+          analysis,
+          p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈');
+        logEvent('📡 '+p.name,'planet');
+      },1500+Math.random()*2000);
       break;
     }
   }
@@ -8330,10 +8342,7 @@ function handlePointerDown(e){
   const now=Date.now();
   if(now-lastTapTime<300){
     tapCount++;
-    if(tapCount>=3){
-      scanNearestPhenomenon();
-      tapCount=0;lastTapTime=0;return;
-    }
+    if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
       // Double tap — boost d'urgence si upgrade
