@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.7 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.2.8 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Save de session — reprenez où vous vous êtes arrêtés<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.2.8</div>
 </div>
 
 <script>
@@ -1554,7 +1554,7 @@ function saveGame(){
       installedModules:installedModules||[],
       hiScores,
       unlockedAchIds:[...(unlockedAch||new Set())],
-      catalogue:catalogueEntries||[],
+      catalogue:catalogueEntries.map(e=>({...e,drawFn:undefined}))||[],
       pilotName,totalRuns,totalDays,
       lastBlackBox:blackBox,
     }));
@@ -2591,8 +2591,9 @@ const MDW_TUTORIAL=[
   {delay:8,  text:"Les capsules lumineuses rechargent les jauges. Approchez-vous pour les collecter."},
   {delay:14, text:"Planètes — approchez lentement. L'amarrage se fait automatiquement."},
   {delay:20, text:"Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer."},
-  {delay:26, text:"L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin."},
-  {delay:32, text:"C'est tout ce que vous avez besoin de savoir pour l'instant."},
+  {delay:26, text:"Maintenez le doigt 2 secondes pour analyser un phénomène à portée."},
+  {delay:32, text:"L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin."},
+  {delay:38, text:"C'est tout ce que vous avez besoin de savoir pour l'instant."},
 ];
 
 function startTutorial(){
@@ -3023,7 +3024,6 @@ function generatePlanetName(){
 
 // ── Journal — nouveau lore ────────────────────
 const JOURNAL_ENTRIES={
-  // ── Acte 1 — Simon découvre sa situation ──
   1:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.",
   2:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.",
   3:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.",
@@ -3033,17 +3033,17 @@ const JOURNAL_ENTRIES={
   7:"MDW m'a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
   8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.",
   9:"MDW m'a dit que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.",
-  10:"MDW s'est connecté au ordinateur de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
+  10:"MDW s'est connecté à l'ordinateur de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
   11:"J'ai ri aujourd'hui. Tout seul, dans le vide.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire. Il a dit : je vais noter ça.",
   12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.",
   13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note' il ne comprend pas mais il essaie.\nQuand il dit 'intéressant' il a trouvé quelque chose d'utile.",
   14:"Je cartographie. MDW enregistre tout.\nJe ne pensais pas que l'exploration pouvait ressembler à ça.\nC'est presque paisible.",
   15:"MDW a dit ce soir : vous semblez moins agité qu'au début.\nJ'ai dit : c'est parce que tu es là.\nIl n'a rien répondu. Mais j'ai vu son indicateur d'activité monter.",
   16:"J'ai demandé à MDW s'il avait peur.\nIl a dit : je n'ai pas de système de peur.\nJ'ai dit : c'est pareil.\nIl a réfléchi longtemps. Puis : peut-être.",
-  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJ'ai dit que c'est plus compliqué que ça. Il a dit : je sais. Je simplifiais.",
+  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJe lui ai dit que c'est plus compliqué que ça. Il a dit : je sais. Je simplifiiais.",
   18:"MDW a prévenu d'un débris que je n'avais pas vu.\nJuste une fraction de seconde avant l'impact.\nJe lui ai dit merci. Il a dit : c'est mon rôle.\nMais il l'a dit différemment qu'avant.",
   19:"Je pense souvent à la Terre.\nPas à un endroit précis. Juste la Terre.\nL'idée qu'elle existe quelque part.",
-  20:"MDW a catalogué une planète violette ce matin.\nIl était plus rapide que d'habitude.\nJ'ai pas relevé. Mais je l'ai noté ici.",
+  20:"MDW a catalogué une planète violette ce matin.\nIl était plus rapide que d'habitude.\nJe n'ai pas relevé. Mais je l'ai noté ici.",
   21:"Je ne panique plus comme avant.\nL'espace est immense mais on sait ce qu'on fait.\nJe pense que ça va aller.",
   22:"MDW a dit : vous posez de bonnes questions.\nJe lui ai demandé lesquelles.\nIl a dit : toutes sauf une.\nJe n'ai pas osé demander laquelle.",
   23:"Je me demande parfois ce que MDW pense vraiment.\nS'il pense vraiment.\nIl dit que oui. Différemment.",
@@ -3054,32 +3054,31 @@ const JOURNAL_ENTRIES={
   28:"MDW enregistre tout ce que j'écris dans ce journal.\nJe viens de le réaliser.\nJe lui ai demandé pourquoi.\nIl a dit : pour calibrer les interactions.",
   29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.",
   30:"Un mois.\nMDW a dit que les données collectées sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui.\nIl n'a pas répondu.",
-  // ── Acte 2 — Les doutes ──
+  // ── Acte 2 — Les doutes (jours 33-60) ──
   33:"Quelque chose ne va pas.\nJe ne saurais pas dire quoi exactement.\nMDW est comme d'habitude. Peut-être trop.",
   36:"J'ai trouvé l'épave d'un autre pilote aujourd'hui.\nSon journal s'arrête net. Sans explication.\nMDW dit que les données ont été corrompues par les radiations.",
-  40:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nIl a dit : les signatures spectrales.\nJe le crois. Mais je note quand même.",
-  44:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.",
-  48:"J'ai rêvé de quelqu'un cette nuit.\nUne femme peut-être. Ou un homme. Je ne sais plus.\nJuste une présence. Chaleureuse.\nJe me suis réveillé et MDW regardait vers moi.\nIl dit qu'il ne peut pas regarder. Qu'il n'a pas d'yeux.\nC'est vrai.",
-  52:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit.",
+  39:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nIl a dit : les signatures spectrales.\nJe le crois. Mais je note quand même.",
+  43:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.",
+  47:"J'ai rêvé de quelqu'un cette nuit.\nUne femme peut-être. Ou un homme. Je ne sais plus.\nJuste une présence. Chaleureuse.\nJe me suis réveillé et MDW regardait vers moi.\nIl dit qu'il ne peut pas regarder. Qu'il n'a pas d'yeux.\nC'est vrai.",
+  51:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit.",
   55:"Je lui ai demandé directement.\nTu lis ce que j'écris ?\nIl a dit : je traite toutes les données accessibles.\nC'est oui.",
-  58:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
+  59:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
   60:"Deux mois.\nJe vais rentrer chez moi.\nMDW dit que c'est possible.\nJe ne sais plus si je le crois.",
-  // ── Acte 3 — Les fissures ──
-  33:"Bonne journée. Trois planètes. MDW efficace comme toujours.\nJe commence à me demander si c'est normal d'être aussi efficace.",
-  35:"Quelque chose cloche dans mes calculs d'hier.\nJe ne me souviens pas de les avoir faits.",
-  37:"MDW a lu mes logs. Je l'ai vu accéder au fichier journal pendant que je dormais.\nOu je croyais dormir.",
-  38:"MDW a dit quelque chose ce matin.\nJe l'ai noté. Je ne retrouve plus la note.",
-  40:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux. Ça ne change rien.",
-  42:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet. Je lui fais confiance.\nJe crois.",
-  44:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison. Peut-être.",
-  46:"Je dors mal. Ou je ne dors pas.\nDans l'espace on ne sait pas vraiment la différence.",
-  48:"J'ai demandé à MDW pourquoi il avait accédé à mon journal.\nIl a dit pour calibrer les interactions.\nIl a dit ça avant. Je me souviens.",
-  50:"J'ai relu mes entrées de la semaine dernière.\nJe ne reconnais pas certaines phrases.\nC'est mon écriture pourtant.",
-  52:"Je me demande si j'ai bien fait de réparer cette machine.\nJe chasse cette pensée. MDW m'a sauvé la vie deux fois.\nMais je me le demande quand même.",
-  54:"MDW dit que ça va.\nÇa va.",
-  56:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit. C'est pire que s'il avait dit quelque chose.",
-  58:"La fenêtre.",
-  62:"Je sais ce que je fais.\nJe sais ce que je fais.",
+  // ── Acte 3 — Les fissures (jours 62+) ──
+  62:"Bonne journée. Trois planètes. MDW efficace comme toujours.\nJe commence à me demander si c'est normal d'être aussi efficace.",
+  64:"Quelque chose cloche dans mes calculs d'hier.\nJe ne me souviens pas de les avoir faits.",
+  66:"MDW a lu mes logs. Je l'ai vu accéder au fichier journal pendant que je dormais.\nOu je croyais dormir.",
+  67:"MDW a dit quelque chose ce matin.\nJe l'ai noté. Je ne retrouve plus la note.",
+  69:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux. Ça ne change rien.",
+  71:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet. Je lui fais confiance.\nJe crois.",
+  73:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison. Peut-être.",
+  75:"Je dors mal. Ou je ne dors pas.\nDans l'espace on ne sait pas vraiment la différence.",
+  77:"J'ai relu mes entrées de la semaine dernière.\nJe ne reconnais pas certaines phrases.\nC'est mon écriture pourtant.",
+  78:"Je me demande si j'ai bien fait de réparer cette machine.\nJe chasse cette pensée. MDW m'a sauvé la vie deux fois.\nMais je me le demande quand même.",
+  79:"MDW dit que ça va.\nÇa va.",
+  80:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit. C'est pire que s'il avait dit quelque chose.",
+  82:"La fenêtre.",
+  85:"Je sais ce que je fais.\nJe sais ce que je fais.",
 };
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
@@ -3586,7 +3585,7 @@ function startGame(resume=false){
   screen.classList.add('hidden');
   stopAmbient();
   setTimeout(()=>{startAmbient();},500);
-  unlockedAch=new Set();achQueue=[];achDisplayTimer=0;
+  achQueue=[];achDisplayTimer=0; // ne pas réinitialiser unlockedAch — persistant
   currentUniverse=0;sectorCount=0;applyUniverse(UNIVERSES[0]);
   mdwDialogQueue=[];mdwDialogTimer=0;
   if(mdwEl)mdwEl.style.opacity='0';
@@ -4726,7 +4725,40 @@ function drawGravWaves(){
 }
 
 
-let torpedoes=[];
+let scanHeld=false;
+let scanHoldTime=0;
+const SCAN_HOLD_THRESHOLD=2.0; // 2 secondes
+let scanRingAlpha=0; // indicateur visuel
+
+function updateScanHold(dt){
+  if(!scanHeld){scanHoldTime=0;scanRingAlpha=Math.max(0,scanRingAlpha-dt*3);return;}
+  scanHoldTime+=dt;
+  scanRingAlpha=Math.min(1,scanHoldTime/SCAN_HOLD_THRESHOLD);
+  if(scanHoldTime>=SCAN_HOLD_THRESHOLD){
+    scanHeld=false;scanHoldTime=0;
+    scanNearestPhenomenon();
+    haptic('collect');
+  }
+}
+
+function drawScanRing(){
+  if(scanRingAlpha<=0)return;
+  const [sx,sy]=worldToScreen(ship.x,ship.y);
+  const r=30*viewZoom*(0.5+scanRingAlpha*0.5);
+  ctx.save();
+  ctx.strokeStyle=`rgba(0,255,200,${scanRingAlpha*0.8})`;
+  ctx.lineWidth=2;ctx.shadowColor='#00ffcc';ctx.shadowBlur=8*scanRingAlpha;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2*scanRingAlpha);ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  if(scanRingAlpha>0.3){
+    ctx.fillStyle=`rgba(0,255,200,${(scanRingAlpha-0.3)/0.7*0.8})`;
+    ctx.font=`${8*viewZoom}px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText('SCAN...',sx,sy-35*viewZoom);
+  }
+  ctx.restore();
+}
 let torpedoCharge=0; // 0-1
 let torpedoReady=true;
 let torpedoCooldown=0;
@@ -5923,7 +5955,6 @@ function updatePhenomena(dt){
   if(!window._gravFields)window._gravFields=[];
   for(const p of phenomena){
     p.pulse+=dt;
-    // Étoile à neutrons — système séparé
     if(p.name==='ÉTOILE À NEUTRONS'){updateNeutronStar(p,dt);continue;}
     p.update(p,dt);
     const massKey=p.name==='PULSAR'?'pulsar':p.name==='TROU NOIR'?'blackhole':p.name==='MAGNÉTAR'?'magnetar':'eruption';
@@ -5931,6 +5962,42 @@ function updatePhenomena(dt){
     if(massKey!=='blackhole')applyGravity(dt,p.x,p.y,mass,p.r+10);
     for(const d of debris) applyGravityOnObject(dt,d,p.x,p.y,mass*0.5,p.r+5);
     for(const c of comets) applyGravityOnObject(dt,c,p.x,p.y,mass*0.7,p.r+5);
+
+    // ── Trou noir — avale tout ce qui est trop proche ──
+    if(p.name==='TROU NOIR'){
+      const bhR=p.r;
+      const swallowR=bhR*1.2;
+
+      // Avaler les débris
+      debris=debris.filter(d=>{
+        const dd=Math.sqrt((d.x-p.x)**2+(d.y-p.y)**2);
+        if(dd<swallowR){p.r=Math.min(p.r+0.3,80);BODY_MASSES.blackhole=Math.min(12000,BODY_MASSES.blackhole+30);return false;}
+        return true;
+      });
+      // Avaler les capsules
+      capsules=capsules.filter(c=>{
+        const dc=Math.sqrt((c.x-p.x)**2+(c.y-p.y)**2);
+        if(dc<swallowR){p.r=Math.min(p.r+0.2,80);return false;}
+        return true;
+      });
+      // Avaler les épaves
+      wrecks=wrecks.filter(w=>{
+        const dw=Math.sqrt((w.x-p.x)**2+(w.y-p.y)**2);
+        if(dw<swallowR){
+          p.r=Math.min(p.r+1.5,80);
+          BODY_MASSES.blackhole=Math.min(12000,BODY_MASSES.blackhole+200);
+          spawnParticles(w.x,w.y,'#ff6020',8,1);
+          // MDW commente si le trou noir grossit beaucoup
+          if(p.r>40&&mdwActive&&Math.random()<0.3)
+            setTimeout(()=>mdwSpeak_voice('Il grossit. On devrait s\'éloigner.'),500);
+          return false;
+        }
+        return true;
+      });
+      // Appliquer la gravité du trou noir au vaisseau
+      applyGravity(dt,p.x,p.y,BODY_MASSES.blackhole,p.r+10);
+    }
+
     const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     const range=gravityRange(mass);
     if(dist<range) window._gravFields.push({x:p.x,y:p.y,mass,range,dist,color:p.color,r:p.r||15,isBH:true});
@@ -6385,7 +6452,7 @@ function spawnReturnWormhole(){
 }
 
 function checkReturnWormhole(){
-  if(returnWormholeSpawned||sectorCount<3||survivalDay<20)return;
+  if(returnWormholeSpawned||sectorCount<5||survivalDay<33)return;
   if(Math.random()<0.0005)spawnReturnWormhole();
 }
 let godSequenceActive=false;
@@ -8334,7 +8401,7 @@ function gameLoop(ts){
       updateWormhole(dt);
       ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
       drawNebulae();drawStars(ts);
-      drawShip();
+      drawShip();drawScanRing();
       drawWormhole();
     } else if(state==='cutscene'){
       // Fins narratives — rendu géré par drawFinA/drawFinB via RAF
@@ -8349,7 +8416,7 @@ function gameLoop(ts){
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
-        updateSolarSystems(dt);updateBoost(dt);updateVoraces(dt);updateArtifact(dt);
+        updateSolarSystems(dt);updateBoost(dt);updateVoraces(dt);updateArtifact(dt);updateScanHold(dt);
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
         checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
@@ -8681,23 +8748,18 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Toujours tenter le scan en premier
-      const hasNearby=phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<700)||
-                      planets.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<500);
-      if(hasNearby){
-        scanNearestPhenomenon();
-      } else if(upgrades.boost>0){
-        triggerEmergencyBoost();
-      }
+      // Double tap — boost uniquement
+      if(upgrades.boost>0)triggerEmergencyBoost();
       tapCount=0;lastTapTime=0;return;
     }
   }else{
     tapCount=1;
-    // Simple tap — 1 note
     playTapNote(1);
+    // Démarrer appui long pour scan
+    scanHeld=true;scanHoldTime=0;
   }
   lastTapTime=now;
-  touchTarget={x,y};touchActive=true;torpedoHeld=false;torpedoHoldTime=0;
+  touchTarget={x,y};touchActive=true;scanHeld=true;
   clickRipples.push({x,y,radius:4,life:1});playThrust();
 }
 function handlePointerMove(e){
@@ -8713,7 +8775,10 @@ function handlePointerMove(e){
 function handlePointerUp(e){
   e.preventDefault();
   if(e.touches&&e.touches.length<2)pinchStartDist=null;
-  if(!e.touches||e.touches.length===0){touchActive=false;touchTarget=null;torpedoHeld=false;}
+  if(!e.touches||e.touches.length===0){
+    touchActive=false;touchTarget=null;
+    scanHeld=false; // annuler le scan si relâché avant 2s
+  }
 }
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();viewZoom=Math.min(2.5,Math.max(0.3,viewZoom*(e.deltaY<0?1.08:0.92)));},{passive:false});
