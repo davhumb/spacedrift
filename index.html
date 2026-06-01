@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.7 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.8 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Capsules virées — planètes = seule source de survie<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.8</div>
 </div>
 
 <script>
@@ -2917,6 +2917,72 @@ const PLANET_TYPES=[
      logEvent('⏱ DILATATION TEMPORELLE — DRAIN -50%','planet');
      score+=350;
    }},
+
+  // ── Planètes extraordinaires ──
+  {name:'GÉANTE',    massKey:'planet_gazeuse',  color:'#ff880030',glowColor:'#ff8800',ring:true,
+   rare:true, giant:true,
+   onApproach:(p)=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Masse considérable. Attention à la gravité."),1000);
+   },
+   effect:()=>{oxygen=Math.min(maxOxygen,oxygen+80);propellant=Math.min(maxPropellant,propellant+80);hull=Math.min(100,hull+40);upgradePoints+=120;logEvent('🟠 GÉANTE — RESSOURCES MASSIVES','planet');}},
+
+  {name:'MORTE',     massKey:'planet_rocheuse', color:'#44444450',glowColor:'#666666',ring:false,
+   rare:true,
+   onApproach:(p)=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Cette planète dérive vers quelque chose. Elle n'a plus longtemps."),1500);
+   },
+   effect:()=>{
+     const logs=["Dernier log. Je n'ai pas trouvé ce que je cherchais.\nMais j'ai trouvé autre chose.","La planète était belle une fois.\nJe le sens encore dans ses strates.","Quelqu'un a vécu ici.\nLongtemps avant nous."];
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText=logs[Math.floor(Math.random()*logs.length)];
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='FRAGMENT';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.6)';
+       }
+     },1000);
+     hull=Math.min(100,hull+50);upgradePoints+=180;logEvent('⬛ PLANÈTE MORTE — +180 CRÉDITS','planet');}},
+
+  {name:'MIROIR',    massKey:'planet_violette', color:'#ffffff20',glowColor:'#ccddff',ring:false,
+   rare:true,
+   onApproach:(p)=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Je ne comprends pas ce que je mesure. La surface renvoie tout."),2000);
+     triggerChromAber(2,0.5);
+   },
+   effect:()=>{sanity=Math.min(100,sanity+25);upgradePoints+=140;logEvent('🪞 MIROIR — +140 CRÉDITS','planet');}},
+
+  {name:'VIVANTE',   massKey:'planet_glacee',   color:'#20ff6050',glowColor:'#20ff60',ring:false,
+   rare:true,
+   onApproach:(p)=>{
+     if(audioCtx){
+       [60,80,55,70,65].forEach((f,i)=>setTimeout(()=>{
+         const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+         o.type='sine';o.frequency.value=f;
+         g.gain.setValueAtTime(0,audioCtx.currentTime);
+         g.gain.linearRampToValueAtTime(0.05,audioCtx.currentTime+0.8);
+         g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+2);
+         o.connect(g);g.connect(audioCtx.destination);
+         o.start();o.stop(audioCtx.currentTime+2.1);
+       },i*800));
+     }
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Je ne comprends pas ce que je vois. La surface... bouge."),1000);
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Elle bouge.\nPas comme une planète.\nComme quelque chose qui respire.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },3000);
+   },
+   effect:()=>{sanity=Math.min(100,sanity+30);upgradePoints+=200;logEvent('🟢 VIVANTE — +200 CRÉDITS','planet');}},
+
+  {name:'BRISÉE',    massKey:'planet_rocheuse', color:'#aa660050',glowColor:'#aa6600',ring:false,
+   rare:true, broken:true,
+   onApproach:(p)=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak_voice("Planète fragmentée. Les débris orbitent encore autour du centre de masse."),1500);
+   },
+   effect:()=>{hull=Math.min(100,hull+60);upgradePoints+=160;logEvent('💥 BRISÉE — MINERAIS DENSES +160 CRÉDITS','planet');}},
 ];
 
 // ── Noms de planètes SF ───────────────────────
@@ -3078,7 +3144,8 @@ function spawnPlanet(){
     rareTypes[Math.floor(Math.random()*rareTypes.length)]:
     baseAvail[Math.floor(Math.random()*baseAvail.length)];
   if(!type)return;
-  const r=35+Math.random()*40;
+  const baseR=35+Math.random()*40;
+  const r=type.giant?baseR*3:type.broken?baseR*1.2:baseR;
   planets.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
@@ -3221,23 +3288,29 @@ function generateMoons(type,planetR){
 }
 
 function updatePlanets(dt){
-  // _gravFieldsStatic est permanent — ne pas reset à chaque frame
-
   for(const p of planets){
     if(!p.type)continue;
     p.pulse+=dt*0.8;
     p.orbitAngle+=p.orbitSpeed*dt*60;
-    // Mettre à jour les lunes
-    if(p.moons){
-      for(const m of p.moons) m.angle+=m.speed*dt*60;
+    if(p.moons){for(const m of p.moons) m.angle+=m.speed*dt*60;}
+
+    // Planète MORTE — dérive vers le trou noir le plus proche
+    if(p.type.name==='MORTE'&&!p.mined){
+      const bh=phenomena.find(ph=>ph.name==='TROU NOIR');
+      if(bh){
+        const ddx=bh.x-p.x,ddy=bh.y-p.y;
+        const dd=Math.sqrt(ddx*ddx+ddy*ddy);
+        if(dd>bh.r*2){
+          p.x+=ddx/dd*0.08*dt*60;
+          p.y+=ddy/dd*0.08*dt*60;
+        }
+      }
     }
 
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     const mass=BODY_MASSES[p.type.massKey]||120;
-    const range=gravityRange(mass);
 
-    // Gravité sur le vaisseau
     applyGravity(dt,p.x,p.y,mass,p.r+8);
 
     // ── Survol planète — pas de collision, la gravité courbe la trajectoire ──
@@ -5987,28 +6060,75 @@ function updatePhenomena(dt){
     if(p.name==='TROU NOIR'){
       const bhR=p.r;
       const swallowR=bhR*1.2;
+      const attractR=bhR*8; // zone d'attraction visible sur les planètes
+
+      // Attirer et avaler les planètes
+      planets=planets.filter(pl=>{
+        const dp=Math.sqrt((pl.x-p.x)**2+(pl.y-p.y)**2);
+        // Attirer progressivement
+        if(dp<attractR&&dp>swallowR){
+          const f=0.0008*(p.r/15)*dt*60/(dp/attractR);
+          const nx=(p.x-pl.x)/dp,ny=(p.y-pl.y)/dp;
+          if(!pl.vx)pl.vx=0;if(!pl.vy)pl.vy=0;
+          pl.vx+=nx*f;pl.vy+=ny*f;
+          pl.x+=pl.vx;pl.y+=pl.vy;
+        }
+        if(dp<swallowR){
+          // Planète avalée — gros gain de masse
+          const massGain=pl.r*2;
+          p.r=Math.min(120,p.r+massGain);
+          BODY_MASSES.blackhole=Math.min(20000,BODY_MASSES.blackhole+massGain*100);
+          // Flash + particules
+          triggerFlash('#ff4400',0.4);
+          triggerChromAber(4,0.3);
+          spawnParticles(pl.x,pl.y,pl.type?.glowColor||'#ff6020',25,2);
+          // Simon note dans son journal
+          setTimeout(()=>{
+            if(journalEl){
+              journalFullText=`Il vient d'avaler une planète.\nComme si elle n'avait jamais existé.`;
+              journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+              journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+              journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+            }
+          },500);
+          if(mdwActive)setTimeout(()=>mdwSpeak_voice('Il grossit. Considérablement.'),1000);
+          return false;
+        }
+        return true;
+      });
+
+      // Avaler un autre trou noir plus petit
+      phenomena=phenomena.filter(ph=>{
+        if(ph===p||ph.name!=='TROU NOIR')return true;
+        const dph=Math.sqrt((ph.x-p.x)**2+(ph.y-p.y)**2);
+        if(dph<swallowR*2&&ph.r<p.r*0.8){
+          // Fusion — explosion de rayonnement
+          p.r=Math.min(150,p.r+ph.r*1.5);
+          BODY_MASSES.blackhole=Math.min(30000,BODY_MASSES.blackhole+ph.r*500);
+          triggerFlash('#ffffff',0.8);
+          triggerChromAber(8,0.5);
+          spawnParticles(ph.x,ph.y,'#ffffff',40,3);
+          if(mdwActive)setTimeout(()=>mdwSpeak_voice('Fusion. Énergie libérée : exceptionnelle.'),800);
+          logEvent('⚫ FUSION DE TROUS NOIRS','danger');
+          return false;
+        }
+        return true;
+      });
 
       // Avaler les débris
       debris=debris.filter(d=>{
         const dd=Math.sqrt((d.x-p.x)**2+(d.y-p.y)**2);
-        if(dd<swallowR){p.r=Math.min(p.r+0.3,80);BODY_MASSES.blackhole=Math.min(12000,BODY_MASSES.blackhole+30);return false;}
-        return true;
-      });
-      // Avaler les capsules
-      capsules=capsules.filter(c=>{
-        const dc=Math.sqrt((c.x-p.x)**2+(c.y-p.y)**2);
-        if(dc<swallowR){p.r=Math.min(p.r+0.2,80);return false;}
+        if(dd<swallowR){p.r=Math.min(p.r+0.3,150);BODY_MASSES.blackhole=Math.min(30000,BODY_MASSES.blackhole+30);return false;}
         return true;
       });
       // Avaler les épaves
       wrecks=wrecks.filter(w=>{
         const dw=Math.sqrt((w.x-p.x)**2+(w.y-p.y)**2);
         if(dw<swallowR){
-          p.r=Math.min(p.r+1.5,80);
-          BODY_MASSES.blackhole=Math.min(12000,BODY_MASSES.blackhole+200);
+          p.r=Math.min(p.r+2,150);
+          BODY_MASSES.blackhole=Math.min(30000,BODY_MASSES.blackhole+200);
           spawnParticles(w.x,w.y,'#ff6020',8,1);
-          // MDW commente si le trou noir grossit beaucoup
-          if(p.r>40&&mdwActive&&Math.random()<0.3)
+          if(p.r>50&&mdwActive&&Math.random()<0.3)
             setTimeout(()=>mdwSpeak_voice('Il grossit. On devrait s\'éloigner.'),500);
           return false;
         }
@@ -7818,7 +7938,29 @@ function drawPlanets(){
     body.addColorStop(0,'rgba(255,255,255,0.15)');
     body.addColorStop(0.4,p.type.color);
     body.addColorStop(1,'rgba(0,0,0,0.5)');
-    ctx.fillStyle=body;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+
+    if(p.type.name==='VIVANTE'){
+      // Surface animée — ondulations organiques
+      ctx.fillStyle=body;ctx.beginPath();
+      for(let a=0;a<Math.PI*2;a+=0.15){
+        const wave=1+Math.sin(a*4+p.pulse*2)*0.04;
+        const rx=sx+Math.cos(a)*r*wave,ry=sy+Math.sin(a)*r*wave;
+        a<0.01?ctx.moveTo(rx,ry):ctx.lineTo(rx,ry);
+      }
+      ctx.closePath();ctx.fill();
+    } else if(p.type.name==='BRISÉE'){
+      // Fragments épars autour du centre
+      const frags=6;
+      for(let i=0;i<frags;i++){
+        const fa=i*(Math.PI*2/frags)+p.pulse*0.1;
+        const fd=r*(0.4+Math.sin(p.pulse+i)*0.15);
+        const fr=r*(0.25+Math.random()*0.1);
+        ctx.fillStyle=p.type.color;
+        ctx.beginPath();ctx.arc(sx+Math.cos(fa)*fd,sy+Math.sin(fa)*fd,fr,0,Math.PI*2);ctx.fill();
+      }
+    } else {
+      ctx.fillStyle=body;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+    }
 
     // Anneau si planète gazeuse/violette
     if(p.type.ring){
