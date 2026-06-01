@@ -8671,11 +8671,11 @@ let scanHintShown=false;
 const autoScanned=new Set();
 
 function checkScanHint(){
-  if(!mdwActive||state!=='playing')return;
+  if(!mdwActive||state!=='playing'||openingActive)return;
   for(const p of phenomena){
     if(autoScanned.has(p))continue;
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
-    if(d<450){
+    if(d<450&&p.name!=='TROU NOIR'){
       autoScanned.add(p);
       // Scan automatique — MDW commente via sa propre voix + bloc MDW uniquement
       setTimeout(()=>{
@@ -8791,8 +8791,12 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Double tap — boost uniquement
-      if(upgrades.boost>0)triggerEmergencyBoost();
+      // Double tap — scan enrichi en priorité, boost si rien à scanner
+      const hasNearby=phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<700)
+        ||planets.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<500)
+        ||wrecks.some(w=>Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2)<400);
+      if(hasNearby){scanNearestPhenomenon();}
+      else if(upgrades.boost>0){triggerEmergencyBoost();}
       tapCount=0;lastTapTime=0;return;
     }
   }else{
