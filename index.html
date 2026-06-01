@@ -2579,10 +2579,10 @@ let tutorialDone=false;
 
 const MDW_TUTORIAL=[
   {delay:2,  text:"Quatre jauges en bas. Oxygène, propergol, énergie, coque. Surveillez-les."},
-  {delay:8,  text:"Les capsules lumineuses rechargent les jauges. Approchez-vous pour les collecter."},
-  {delay:14, text:"Planètes — approchez lentement. L'amarrage se fait automatiquement."},
+  {delay:8,  text:"Les planètes sont votre seule source de ressources. Approchez lentement pour vous amarrer."},
+  {delay:14, text:"Glacée — oxygène. Gazeuse — propergol. Rocheuse — coque. Violette — crédits."},
   {delay:20, text:"Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer."},
-  {delay:26, text:"Maintenez le doigt 2 secondes pour analyser un phénomène à portée."},
+  {delay:26, text:"Maintenez le doigt sur l'écran 2 secondes. J'analyserai ce qui est à portée."},
   {delay:32, text:"L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin."},
   {delay:38, text:"C'est tout ce que vous avez besoin de savoir pour l'instant."},
 ];
@@ -2594,10 +2594,10 @@ function startTutorial(){
   // Tout dans la file narrative — dans l'ordre, sans interruption
   // MDW explique les bases
   showMDWLine("Quatre jauges en bas. Oxygène, propergol, énergie, coque. Surveillez-les.", true);
-  showMDWLine("Les capsules lumineuses rechargent les jauges. Approchez-vous pour les collecter.", true);
-  showMDWLine("Planètes — approchez lentement. L'amarrage se fait automatiquement.", true);
+  showMDWLine("Les planètes sont votre seule source de ressources. Approchez lentement pour vous amarrer.", true);
+  showMDWLine("Glacée — oxygène. Gazeuse — propergol. Rocheuse — coque. Violette — crédits.", true);
   showMDWLine("Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer.", true);
-  showMDWLine("Maintenez le doigt 2 secondes pour analyser un phénomène à portée.", true);
+  showMDWLine("Maintenez le doigt sur l'écran 2 secondes. J'analyserai ce qui est à portée.", true);
   showMDWLine("L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin.", true);
   showMDWLine("C'est tout ce que vous avez besoin de savoir pour l'instant.", true);
 
@@ -8791,12 +8791,8 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Double tap — scan enrichi en priorité, boost si rien à scanner
-      const hasNearby=phenomena.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<700)
-        ||planets.some(p=>Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<500)
-        ||wrecks.some(w=>Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2)<400);
-      if(hasNearby){scanNearestPhenomenon();}
-      else if(upgrades.boost>0){triggerEmergencyBoost();}
+      // Double tap — boost d'urgence
+      if(upgrades.boost>0)triggerEmergencyBoost();
       tapCount=0;lastTapTime=0;return;
     }
   }else{
