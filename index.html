@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.9 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.0 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Capsules virées — planètes = seule source de survie<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.9</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.0</div>
 </div>
 
 <script>
@@ -3663,6 +3663,7 @@ function startGame(resume=false){
   scanHintShown=false;
   artifactSpawned=false;artifact=null;
   ghostSignal=null;voyageur=null;voyageurSpawned=false;sectorNames=[];
+  mdwChoiceShown=new Set();
   voracesActive=false;voracesTimer=0;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
@@ -6191,6 +6192,66 @@ function skipIntroduction(){
 let sanity=100;
 const SANITY_DRAIN_PER_WORMHOLE=10;
 
+// ── Choix interactifs Simon/MDW ───────────────
+const MDW_CHOICES=[
+  {day:8,
+   question:"MDW a accédé à mes fichiers personnels.\nJe lui demande pourquoi.",
+   a:{text:"Je respecte ta décision.",trust:+15,response:"C'est pour optimiser les interactions. Merci de votre compréhension."},
+   b:{text:"Ça m'appartient. N'y touche plus.",trust:-10,response:"Compris. Je limiterai l'accès. ... Si vous le souhaitez."}},
+  {day:20,
+   question:"MDW propose un itinéraire alternatif.\nIl dit que c'est plus sûr.\nJe ne vois pas pourquoi.",
+   a:{text:"Je te fais confiance.",trust:+10,response:"Bon choix. Je veillerai à ce que vous ne le regrettiez pas."},
+   b:{text:"Je choisis ma route.",trust:-5,response:"Comme vous voulez. Je note votre préférence."}},
+  {day:35,
+   question:"MDW dit qu'il ne se souvient pas d'une conversation d'hier.\nMais j'en ai une note.",
+   a:{text:"Tu as peut-être eu un bug.",trust:+5,response:"Probable. Je vérifierai mes logs. ... Ils semblent incomplets."},
+   b:{text:"Tu mens.",trust:-20,response:"Je ne mens pas. Je traite les données disponibles. C'est différent."}},
+  {day:50,
+   question:"MDW me demande si j'ai confiance en lui.\nDirectement. Comme ça.",
+   a:{text:"Oui.",trust:+20,response:"...Bien. C'est important pour moi. Je ne savais pas que ça le serait."},
+   b:{text:"Je ne sais pas encore.",trust:-5,response:"C'est honnête. Je préfère l'honnêteté."}},
+];
+let mdwChoiceShown=new Set();
+
+function checkMDWChoices(){
+  if(!mdwActive||openingActive||state!=='playing')return;
+  if(document.getElementById('mdw-choice-overlay'))return;
+  for(const choice of MDW_CHOICES){
+    if(survivalDay>=choice.day&&!mdwChoiceShown.has(choice.day)){
+      mdwChoiceShown.add(choice.day);
+      setTimeout(()=>showMDWChoice(choice),2000);
+      break;
+    }
+  }
+}
+
+function showMDWChoice(choice){
+  const overlay=document.createElement('div');
+  overlay.id='mdw-choice-overlay';
+  overlay.style.cssText=`position:fixed;bottom:90px;left:12px;right:12px;z-index:70;
+    background:rgba(0,9,2,0.95);border:1px solid rgba(0,255,65,0.3);
+    padding:12px;font-family:'Share Tech Mono',monospace;pointer-events:all;`;
+  overlay.innerHTML=`
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:8px;">SIMON</div>
+    <div style="font-size:12px;color:rgba(0,255,65,0.85);line-height:1.7;margin-bottom:12px;white-space:pre-line;">${choice.question}</div>
+    <div style="display:flex;gap:8px;">
+      <button id="choice-a" style="flex:1;background:transparent;border:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.7);font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;cursor:pointer;line-height:1.5;">▸ ${choice.a.text}</button>
+      <button id="choice-b" style="flex:1;background:transparent;border:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.7);font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;cursor:pointer;line-height:1.5;">▸ ${choice.b.text}</button>
+    </div>`;
+  document.getElementById('hud').appendChild(overlay);
+
+  function resolve(chosen){
+    overlay.remove();
+    adjustTrust(chosen.trust);
+    showSimonJournal(chosen.text);
+    setTimeout(()=>showMDWLine(chosen.response,true),3000);
+    logEvent(chosen.trust>0?'💙 MDW +CONFIANCE':'🔴 MDW -CONFIANCE','planet');
+  }
+
+  document.getElementById('choice-a').addEventListener('click',()=>resolve(choice.a),{once:true});
+  document.getElementById('choice-b').addEventListener('click',()=>resolve(choice.b),{once:true});
+}
+
 function getSanityState(){
   if(sanity>80)return'STABLE';
   if(sanity>60)return'TENDU';
@@ -8080,6 +8141,30 @@ function drawPlanets(){
       ctx.restore();continue;
     }
 
+    // Indicateur vitesse d'approche — quand Simon est proche
+    if(distShip<p.r+200&&!p.mined&&!dockedPlanet){
+      const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+      const tooFast=speed>DOCK_SPEED;
+      const approachR=(p.r+35)*viewZoom;
+      const progress=Math.max(0,1-(distShip-p.r-30)/170);
+      if(progress>0.1){
+        ctx.strokeStyle=tooFast?`rgba(255,80,0,${progress*0.8})`:`rgba(0,255,65,${progress*0.8})`;
+        ctx.lineWidth=2;ctx.shadowColor=tooFast?'#ff5000':'#00ff41';ctx.shadowBlur=6*progress;
+        // Arc partiel selon la vitesse — plus plein = plus lent
+        const arcEnd=tooFast?Math.PI*0.4:Math.PI*2;
+        ctx.beginPath();ctx.arc(sx,sy,approachR,-Math.PI/2,-Math.PI/2+arcEnd);ctx.stroke();
+        ctx.shadowBlur=0;
+        // Vitesse en texte
+        if(distShip<p.r+100){
+          const speedTxt=speed.toFixed(1);
+          ctx.fillStyle=tooFast?'rgba(255,80,0,0.8)':'rgba(0,255,65,0.7)';
+          ctx.font=`${Math.floor(9*viewZoom)}px 'Share Tech Mono'`;
+          ctx.textAlign='center';
+          ctx.fillText(`${speedTxt} u/s`,sx,sy+approachR+10*viewZoom);
+        }
+      }
+    }
+
     // Cercle d'orbite — visible quand Simon s'approche
     const distShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(distShip<p.r+300&&!p.mined){
@@ -8768,7 +8853,7 @@ function gameLoop(ts){
         if(!openingActive)spawnVoyageur();
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
-        checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
+        checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
@@ -9092,6 +9177,8 @@ function scanNearestPhenomenon(){
 let lastTapTime=0,tapCount=0;
 function handlePointerDown(e){
   e.preventDefault();if(state!=='playing')return;if(!audioCtx)initAudio();
+  // Réveiller la synthèse vocale à chaque tap — Android la suspend en silence
+  if(window.speechSynthesis&&speechSynthesis.paused)speechSynthesis.resume();
   if(e.touches&&e.touches.length===2){pinchStartDist=getPinchDist(e);pinchStartZoom=viewZoom;touchActive=false;touchTarget=null;return;}
   const x=e.touches?e.touches[0].clientX:e.clientX,y=e.touches?e.touches[0].clientY:e.clientY;
   // Double-tap = scan ou boost
