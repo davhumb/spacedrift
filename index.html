@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.8 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.3.9 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Capsules virées — planètes = seule source de survie<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.3.9</div>
 </div>
 
 <script>
@@ -2145,6 +2145,7 @@ function updateSecondaryWormholes(dt){
         }
       }
       sectorCount++;
+      triggerSectorNameJournal();
       // Effets des trous de ver sur Simon — à partir de la 5e traversée
       if(sectorCount>=5&&!_exchangesDone?.has('wormhole_effects')){
         _exchangesDone?.add('wormhole_effects');
@@ -3661,6 +3662,7 @@ function startGame(resume=false){
   clearNarrativeQueue();
   scanHintShown=false;
   artifactSpawned=false;artifact=null;
+  ghostSignal=null;voyageur=null;voyageurSpawned=false;sectorNames=[];
   voracesActive=false;voracesTimer=0;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
@@ -7040,7 +7042,81 @@ function updateVoraces(dt){
   ctx.fillRect(0,0,W,H);
 }
 
-// ── Pluie de météorites ───────────────────────
+// ── Le Voyageur ───────────────────────────────
+let voyageur=null;
+let voyageurSpawned=false;
+
+function spawnVoyageur(){
+  if(voyageurSpawned||survivalDay<10)return;
+  if(Math.random()>0.005)return; // 0.5% de chance par check
+  voyageurSpawned=true;
+  const angle=Math.random()*Math.PI*2;
+  const dist=1500;
+  const dir=angle+Math.PI; // traverse dans la direction opposée
+  voyageur={
+    x:ship.x+Math.cos(angle)*dist,
+    y:ship.y+Math.sin(angle)*dist,
+    vx:Math.cos(dir)*0.4,vy:Math.sin(dir)*0.4,
+    angle:dir,life:300,pulse:0,
+    width:180,height:40, // immense
+    seen:false,
+  };
+  logEvent('⬛ OBJET NON IDENTIFIÉ','warn');
+}
+
+function updateVoyageur(dt){
+  if(!voyageur)return;
+  voyageur.x+=voyageur.vx*dt*60;
+  voyageur.y+=voyageur.vy*dt*60;
+  voyageur.pulse+=dt;
+  voyageur.life-=dt;
+  const dist=Math.sqrt((voyageur.x-ship.x)**2+(voyageur.y-ship.y)**2);
+  // Simon le voit la première fois
+  if(!voyageur.seen&&dist<800){
+    voyageur.seen=true;
+    // Silence — ni Simon ni MDW n'explique
+    if(mdwActive){
+      // MDW se tait — rare
+      setTimeout(()=>mdwSpeak_voice('...'),3000);
+    }
+    setTimeout(()=>showSimonJournal("Il y a quelque chose là-bas.\nImmense.\nQui se déplace.\nMDW ne dit rien."),2000);
+  }
+  if(voyageur.life<=0)voyageur=null;
+}
+
+function drawVoyageur(){
+  if(!voyageur)return;
+  const [sx,sy]=worldToScreen(voyageur.x,voyageur.y);
+  if(sx<-300||sx>W+300||sy<-300||sy>H+300)return;
+  const pulse=(Math.sin(voyageur.pulse*0.5)+1)*0.5;
+  const w=voyageur.width*viewZoom;
+  const h=voyageur.height*viewZoom;
+  ctx.save();ctx.translate(sx,sy);ctx.rotate(voyageur.angle);
+  // Corps principal — immense, sombre, presque invisible
+  ctx.fillStyle=`rgba(5,5,8,0.95)`;
+  ctx.strokeStyle=`rgba(40,40,60,${0.3+pulse*0.1})`;ctx.lineWidth=1;
+  ctx.shadowColor='rgba(40,40,100,0.3)';ctx.shadowBlur=20;
+  // Forme fuselée angulaire
+  ctx.beginPath();
+  ctx.moveTo(w*0.5,0);
+  ctx.lineTo(w*0.2,-h*0.3);ctx.lineTo(-w*0.5,-h*0.5);
+  ctx.lineTo(-w*0.5,h*0.5);ctx.lineTo(w*0.2,h*0.3);
+  ctx.closePath();ctx.fill();ctx.stroke();
+  // Quelques points de lumière tenue — presque rien
+  ctx.fillStyle=`rgba(60,60,120,${0.2+pulse*0.15})`;
+  for(let i=0;i<4;i++){
+    ctx.beginPath();ctx.arc(-w*0.3+i*w*0.15,0,1.5,0,Math.PI*2);ctx.fill();
+  }
+  ctx.shadowBlur=0;ctx.restore();
+  // Sur le radar — point noir qui pulse
+  const PR=getRadarRange();
+  const rdx=(voyageur.x-ship.x)/PR*RADAR_R;
+  const rdy=(voyageur.y-ship.y)/PR*RADAR_R;
+  if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R){
+    rctx.fillStyle=`rgba(60,60,120,${0.5+pulse*0.3})`;
+    rctx.beginPath();rctx.arc(35+rdx,35+rdy,4,0,Math.PI*2);rctx.fill();
+  }
+}
 let meteorShowerActive=false,meteorShowerTimer=0,meteorAngle=0;
 function triggerMeteorShower(){
   if(meteorShowerActive)return;
@@ -7146,7 +7222,96 @@ function drawPlasmaStream(){
   }
   ctx.restore();
 }
-// ── Artefact inconnu ──────────────────────────
+// ── Noms de secteurs ─────────────────────────
+const SECTOR_NAMES=[
+  'Le Cimetière Bleu','L\'Océan Silencieux','Les Dents de Verre',
+  'Le Vide Rouge','La Chambre Froide','L\'Œil du Néant',
+  'Les Os du Système','La Fosse','Le Couloir Blanc',
+  'Les Épines','L\'Antichambre','Le Gouffre Lent',
+  'La Frontière Molle','Les Ruines Orbitales','Le Miroir Cassé',
+  'La Respiration','Les Derniers Soleils','L\'Abîme Calme',
+  'Le Passage Étroit','La Zone Morte','Les Courants Noirs',
+  'Le Seuil','L\'Espace Entre','La Pression',
+];
+let sectorNames=[];
+
+function getSectorName(idx){
+  if(!sectorNames[idx]){
+    sectorNames[idx]=SECTOR_NAMES[Math.floor(Math.random()*SECTOR_NAMES.length)];
+  }
+  return sectorNames[idx];
+}
+
+function triggerSectorNameJournal(){
+  const name=getSectorName(sectorCount);
+  const notes=[
+    `J'appelle ça : ${name}.`,
+    `Je baptise ce secteur : ${name}.\nMDW dit que les secteurs n'ont pas de noms. Celui-là en a un.`,
+    `${name}.\nC'est ce que je vois.`,
+    `Je note : ${name}.\nPour me souvenir. Si jamais.`,
+  ];
+  setTimeout(()=>{
+    showSimonJournal(notes[Math.floor(Math.random()*notes.length)]);
+  },5000);
+}
+// ── Signal fantôme ────────────────────────────
+let ghostSignal=null;
+
+function spawnGhostSignal(){
+  if(ghostSignal||survivalDay<5)return;
+  const angle=Math.random()*Math.PI*2;
+  ghostSignal={
+    x:ship.x+Math.cos(angle)*(600+Math.random()*400),
+    y:ship.y+Math.sin(angle)*(600+Math.random()*400),
+    pulse:0,life:20,moves:0,
+  };
+  logEvent('📡 SIGNAL DÉTECTÉ','warn');
+  if(mdwActive)setTimeout(()=>mdwSpeak_voice('Signal détecté. Origine imprécise.'),1000);
+}
+
+function updateGhostSignal(dt){
+  if(!ghostSignal)return;
+  ghostSignal.pulse+=dt;ghostSignal.life-=dt;
+  const dist=Math.sqrt((ghostSignal.x-ship.x)**2+(ghostSignal.y-ship.y)**2);
+  if(dist<300&&ghostSignal.moves<4){
+    ghostSignal.moves++;
+    const a=Math.random()*Math.PI*2;
+    ghostSignal.x=ship.x+Math.cos(a)*(500+Math.random()*300);
+    ghostSignal.y=ship.y+Math.sin(a)*(500+Math.random()*300);
+    ghostSignal.life=15;
+    logEvent('📡 SIGNAL... AILLEURS','warn');
+    if(ghostSignal.moves===1&&mdwActive)
+      setTimeout(()=>mdwSpeak_voice("Je ne détecte rien. Pourtant le signal existe."),500);
+    if(ghostSignal.moves>=4){
+      setTimeout(()=>showSimonJournal("Le signal a disparu.\nMDW dit qu'il n'a jamais existé.\nJe l'ai vu."),2000);
+      ghostSignal=null;return;
+    }
+  }
+  if(ghostSignal&&ghostSignal.life<=0)ghostSignal=null;
+}
+
+function drawGhostSignal(){
+  if(!ghostSignal)return;
+  const [sx,sy]=worldToScreen(ghostSignal.x,ghostSignal.y);
+  const pulse=(Math.sin(ghostSignal.pulse*4)+1)*0.5;
+  if(sx>-50&&sx<W+50&&sy>-50&&sy<H+50){
+    ctx.strokeStyle=`rgba(255,255,0,${0.3+pulse*0.4})`;ctx.lineWidth=1;
+    ctx.shadowColor='#ffff00';ctx.shadowBlur=8*pulse;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.arc(sx,sy,15+pulse*8,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);ctx.shadowBlur=0;
+    ctx.strokeStyle=`rgba(255,255,0,${0.5+pulse*0.3})`;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(sx-6,sy);ctx.lineTo(sx+6,sy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(sx,sy-6);ctx.lineTo(sx,sy+6);ctx.stroke();
+  }
+  const PR=getRadarRange();
+  const rdx=(ghostSignal.x-ship.x)/PR*RADAR_R;
+  const rdy=(ghostSignal.y-ship.y)/PR*RADAR_R;
+  if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R&&Math.floor(Date.now()/300)%2===0){
+    rctx.fillStyle='#ffff00';rctx.shadowColor='#ffff00';rctx.shadowBlur=8;
+    rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
+  }
+}
+
 let artifactSpawned=false,artifact=null;
 
 function spawnArtifact(){
@@ -8598,6 +8763,9 @@ function gameLoop(ts){
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
         updateMeteorShower(dt);updateAurora(dt);updatePlasmaStream(dt);updateBreathing();updateSanity(dt);
         updateSolarSystems(dt);updateBoost(dt);updateVoraces(dt);updateArtifact(dt);updateScanHold(dt);
+        updateGhostSignal(dt);updateVoyageur(dt);
+        if(!openingActive&&Math.random()<0.00005*dt*60)spawnGhostSignal();
+        if(!openingActive)spawnVoyageur();
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
         checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();
@@ -8618,7 +8786,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawSolarSystems();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();// capsules virées
-      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
+      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawGhostSignal();drawVoyageur();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
       if(finBActive)drawFinB();else drawShip();
       drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
