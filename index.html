@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.3 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.4 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
       ▸ Simon veut rentrer — échanges jours 16/19/22<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.3</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.4</div>
 </div>
 
 <script>
@@ -1515,8 +1515,7 @@ let discoveredPlanets=0;
 const ship={x:0,y:0,vx:0,vy:0,angle:0,thrusting:false,thrustPower:0,trail:[]};
 let oxygen=100,energy=100,hull=100;
 let debris=[],capsules=[],planets=[],particles=[],stars=[],nebulae=[],cosmicDust=[];
-// capsules virées — push neutralisé
-Object.defineProperty(capsules,"push",{value:function(){},writable:false,configurable:false});
+// capsules virées — tableau réinitialisé au startGame
 let clickRipples=[],floatingTexts=[];
 let difficulty=1,spawnTimer=0,capsuleTimer=0,eventTimer=0;
 let activeEvent=null,eventDuration=0;
@@ -8771,6 +8770,20 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawSolarSystems();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();// capsules virées
+      // Reliques — dessinées séparément
+      for(const c of capsules){
+        if(!c.isRelic)continue;
+        const [sx,sy]=worldToScreen(c.x,c.y);
+        if(sx<-50||sx>W+50||sy<-50||sy>H+50)continue;
+        const pulse=(Math.sin(c.pulse*2)+1)*0.5;
+        ctx.shadowColor=c.color;ctx.shadowBlur=10+pulse*8;
+        ctx.strokeStyle=c.color;ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(sx,sy,(c.r||18)*viewZoom,0,Math.PI*2);ctx.stroke();
+        ctx.fillStyle=c.color;ctx.font=`${14*viewZoom}px serif`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(c.label||'◈',sx,sy);
+        ctx.shadowBlur=0;
+      }
       drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawGhostSignal();drawVoyageur();drawSecondaryWormholes();drawEnemies();// drawTorpedoes virée
       if(finBActive)drawFinB();else drawShip();
       drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
