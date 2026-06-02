@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.0 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.1 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Capsules virées — planètes = seule source de survie<br>
       ▸ Onglet UPGRADES dans le catalogue<br>
@@ -332,7 +332,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.1</div>
 </div>
 
 <script>
@@ -528,16 +528,7 @@ function pickContracts(){
   contractsCompleted=activeContracts.map(()=>false);
 }
 
-function checkContracts(){
-  activeContracts.forEach((c,i)=>{
-    if(!contractsCompleted[i]&&c.check()){
-      contractsCompleted[i]=true;
-      upgradePoints+=c.reward;
-      logEvent(`✅ CONTRAT : ${c.text} +${c.reward}PTS`,'planet');
-      saveGame&&saveGame();
-    }
-  });
-}
+// checkContracts virée
 
 // ── Marques de coque ──────────────────────────
 let hullMarks=[];
@@ -2578,15 +2569,7 @@ function applyUpgrades(){
 
 let tutorialDone=false;
 
-const MDW_TUTORIAL=[
-  {delay:2,  text:"Quatre jauges en bas. Oxygène, propergol, énergie, coque. Surveillez-les."},
-  {delay:8,  text:"Les planètes sont votre seule source de ressources. Approchez lentement pour vous amarrer."},
-  {delay:14, text:"Glacée — oxygène. Gazeuse — propergol. Rocheuse — coque. Violette — crédits."},
-  {delay:20, text:"Trous de ver — ils mènent ailleurs. C'est notre seul moyen d'avancer."},
-  {delay:26, text:"Maintenez le doigt sur l'écran 2 secondes. J'analyserai ce qui est à portée."},
-  {delay:32, text:"L'écran répond au pincement. Zoomez pour voir de près, dézoomez pour voir loin."},
-  {delay:38, text:"C'est tout ce que vous avez besoin de savoir pour l'instant."},
-];
+// MDW_TUTORIAL viré — remplacé par showMDWLine direct
 
 function startTutorial(){
   if(tutorialDone)return;
@@ -3616,7 +3599,7 @@ function startGame(resume=false){
   discoveredPlanets=0;pcVal.textContent='0';
   journalShownDays=new Set();journalActive=false;journalEl.classList.remove('active');
   debris=[];capsules=[];planets=[];particles=[];clickRipples=[];floatingTexts=[];
-  torpedoes=[];wrecks=[];passengers=[];wrecksFound=0;torpedoReady=true;torpedoCooldown=0;
+  torpedoes=[];wrecks=[];passengers=[];wrecksFound=0;
   enemies=[];enemyTorpedoes=[];gravWaves=[];
   passengersEl.innerHTML='';window._radarBonus=0;
   spawnTimer=0;capsuleTimer=0;eventTimer=0;activeEvent=null;
@@ -3774,16 +3757,7 @@ const CAPSULE_TYPES=[
   {type:'boost',    color:'#60ffff', label:'2×',  effect:()=>{score+=500;logEvent('+500 SCORE BOOST!','warn');}},
   {type:'propellant',color:'#ff8040',label:'🚀',effect:()=>{propellant=Math.min(maxPropellant,propellant+60);logEvent('+60 PROPERGOL','ok');}},
 ];
-function spawnCapsule(){
-  const margin=60,side=Math.floor(Math.random()*4),hw=W/2+margin,hh=H/2+margin;let x,y;
-  if(side===0){x=ship.x+(Math.random()*W-hw);y=ship.y-hh;}
-  else if(side===1){x=ship.x+hw;y=ship.y+(Math.random()*H-hh);}
-  else if(side===2){x=ship.x+(Math.random()*W-hw);y=ship.y+hh;}
-  else{x=ship.x-hw;y=ship.y+(Math.random()*H-hh);}
-  const spd=0.06+Math.random()*0.08,angle=Math.atan2(ship.y-y,ship.x-x)+(Math.random()-0.5)*0.5;
-  const cfg=CAPSULE_TYPES[Math.floor(Math.random()*CAPSULE_TYPES.length)];
-  capsules.push({x,y,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd,r:14,pulse:Math.random()*Math.PI*2,...cfg});
-}
+// spawnCapsule virée
 
 // ── Events ───────────────────────────────────
 const EVENTS=[
@@ -3958,7 +3932,6 @@ function updateDebris(dt){
   if(bossActive&&!debris.some(d=>d.isBoss))bossActive=false;
 }
 
-function updateCapsules(dt){} // virée
 
 function updateParticles(dt){for(const p of particles){p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;p.life-=p.decay*dt*60;}particles=particles.filter(p=>p.life>0);}
 
@@ -4865,92 +4838,15 @@ function drawScanRing(){
   ctx.restore();
 }
 let torpedoCharge=0; // 0-1
-let torpedoReady=true;
-let torpedoCooldown=0;
-let torpedoHeld=false;
-let torpedoHoldTime=0;
 const TORPEDO_COOLDOWN=4;
 const torpedoBar=document.getElementById('boost-bar'); // renommé
 const torpedoChargeDom=document.getElementById('torpedo-charge');
 
-function fireTorpedo(){
-  if(!torpedoReady||energy<10)return;
-  const spd=3+torpedoHoldTime*2;
-  torpedoes.push({
-    x:ship.x+Math.cos(ship.angle)*14,
-    y:ship.y+Math.sin(ship.angle)*14,
-    vx:Math.cos(ship.angle)*spd+ship.vx,
-    vy:Math.sin(ship.angle)*spd+ship.vy,
-    life:1, r:4,
-    power:torpedoHoldTime>0.5?2:1,
-    trail:[],
-  });
-  energy=Math.max(0,energy-10);
-  torpedoReady=false;torpedoCooldown=TORPEDO_COOLDOWN;torpedoHoldTime=0;
-}
+// fireTorpedo virée
 
-function updateTorpedoes(dt){
-  torpedoCooldown=Math.max(0,torpedoCooldown-dt);
-  if(torpedoCooldown<=0)torpedoReady=true;
+// updateTorpedoes virée
 
-  for(const t of torpedoes){
-    t.trail.push({x:t.x,y:t.y});
-    if(t.trail.length>15)t.trail.shift();
-    t.x+=t.vx*dt*60;t.y+=t.vy*dt*60;
-    t.life-=0.008*dt*60;
-
-    // Collision débris
-    for(const d of debris){
-      const dx=d.x-t.x,dy=d.y-t.y;
-      if(Math.sqrt(dx*dx+dy*dy)<d.r+t.r){
-        d.hp-=t.power;d.hitFlash=1;
-        spawnParticles(t.x,t.y,'#ffaa00',8,1.5);
-        if(d.hp<=0){
-          if(d.r>10)fragmentDebris(d);
-          d.dead=true;
-          score+=d.isBoss?500:50;
-          if(currentMission&&currentMission.text.includes('DÉBRIS'))missionCounter++;
-        }
-        t.life=0;break;
-      }
-    }
-  }
-  torpedoes=torpedoes.filter(t=>t.life>0);
-
-  // HUD torpille
-  if(upgrades.torpedo>0){
-    // torpille supprimée
-    if(torpedoReady){
-      torpedoChargeDom.textContent=torpedoHeld?'●'.repeat(Math.floor(torpedoHoldTime*5)+1):'PRÊTE';
-      torpedoChargeDom.style.color=torpedoHeld?'#ffffff':'var(--amber)';
-    }else{
-      torpedoChargeDom.textContent=Math.ceil(torpedoCooldown)+'s';
-      torpedoChargeDom.style.color='var(--green-dim)';
-    }
-  }else{
-    // torpille supprimée
-  }
-}
-
-function drawTorpedoes(){
-  for(const t of torpedoes){
-    ctx.save();
-    // Traînée
-    for(let i=1;i<t.trail.length;i++){
-      const [tx1,ty1]=worldToScreen(t.trail[i-1].x,t.trail[i-1].y);
-      const [tx2,ty2]=worldToScreen(t.trail[i].x,t.trail[i].y);
-      ctx.strokeStyle=`rgba(255,170,0,${(i/t.trail.length)*0.6})`;
-      ctx.lineWidth=(i/t.trail.length)*2;
-      ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
-    }
-    // Corps
-    const [sx,sy]=worldToScreen(t.x,t.y);
-    const grd=ctx.createRadialGradient(sx,sy,0,sx,sy,t.r*viewZoom*2);
-    grd.addColorStop(0,'#ffffff');grd.addColorStop(0.4,'#ffaa00');grd.addColorStop(1,'transparent');
-    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(sx,sy,t.r*viewZoom*2,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-  }
-}
+// drawTorpedoes virée
 
 // ── Épaves ────────────────────────────────────
 // ── Système de modules vaisseau ───────────────
@@ -8410,7 +8306,6 @@ function drawDebris(){
   }
 }
 
-function drawCapsules(){} // virée
 
 function drawParticles(){
   for(const p of particles){
@@ -8842,7 +8737,7 @@ function gameLoop(ts){
       if(state==='playing'&&!cataloguePaused){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateKeyboard(dt);updateResources(dt);updateDebris(dt);// capsules virées
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateTorpedoes(dt);updateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);// updateTorpedoes viréeupdateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
@@ -8871,7 +8766,7 @@ function gameLoop(ts){
       drawAuroras();drawComets();drawPhenomena(globalTs);drawRareEvents();drawGravWaves();drawConvergence();drawSolarSystems();drawPlanets();
       drawTouchTarget();drawClickRipples();
       drawParticles();drawDebris();// capsules virées
-      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawGhostSignal();drawVoyageur();drawSecondaryWormholes();drawEnemies();drawTorpedoes();
+      drawFloatingTexts();drawWrecks();drawGraveyardWrecks();drawSOSWreck();drawArtifact();drawGhostSignal();drawVoyageur();drawSecondaryWormholes();drawEnemies();// drawTorpedoes virée
       if(finBActive)drawFinB();else drawShip();
       drawGhostShip();drawDockingUI();drawSpecialEffects();drawGodSequence();drawSignal();drawEventBanner();
       updateGodFlare(dt);
