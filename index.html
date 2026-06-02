@@ -509,7 +509,7 @@ const CONTRACT_POOL=[
   {text:'EXPLORER 3 PLANÈTES',       reward:150, check:()=>discoveredPlanets>=3},
   {text:'SURVIVRE 7 JOURS',          reward:200, check:()=>survivalDay>=7},
   {text:'TRAVERSER UN TROU DE VER',  reward:300, check:()=>sectorCount>=1},
-  {text:'COLLECTER 10 CAPSULES',     reward:120, check:()=>missionCounter>=10},
+  // mission capsules virée
   {text:'DÉTRUIRE 5 ENNEMIS',        reward:250, check:()=>false}, // suivi via killCount
   {text:'TROUVER UNE ÉPAVE',         reward:100, check:()=>wrecksFound>=1},
   {text:'TROUVER UNE RELIQUE',       reward:200, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&catalogueEntries.some(e=>e.type==='relic')},
@@ -1515,6 +1515,8 @@ let discoveredPlanets=0;
 const ship={x:0,y:0,vx:0,vy:0,angle:0,thrusting:false,thrustPower:0,trail:[]};
 let oxygen=100,energy=100,hull=100;
 let debris=[],capsules=[],planets=[],particles=[],stars=[],nebulae=[],cosmicDust=[];
+// capsules virées — push neutralisé
+Object.defineProperty(capsules,"push",{value:function(){},writable:false,configurable:false});
 let clickRipples=[],floatingTexts=[];
 let difficulty=1,spawnTimer=0,capsuleTimer=0,eventTimer=0;
 let activeEvent=null,eventDuration=0;
@@ -1819,7 +1821,7 @@ function drawTradePosts(){
 // ── Missions ──────────────────────────────────
 const MISSION_POOL=[
   {text:'SURVIVRE 2 JOURS',     check:()=>survivalDay>=currentMission.startDay+2, reward:80},
-  {text:'COLLECTER 5 CAPSULES', check:()=>missionCounter>=5,                       reward:100, counter:true},
+  // mission capsules virée
   {text:'ÉVITER 10 DÉBRIS',     check:()=>missionCounter>=10,                      reward:120, counter:true},
   {text:'DÉCOUVRIR UNE PLANÈTE',check:()=>missionCounter>=1,                       reward:150, counter:true},
   {text:'ATTEINDRE 2000 PTS',   check:()=>score>=currentMission.targetScore,       reward:90},
@@ -3310,6 +3312,7 @@ function updatePlanets(dt){
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     const mass=BODY_MASSES[p.type.massKey]||120;
+    const range=gravityRange(mass);
 
     applyGravity(dt,p.x,p.y,mass,p.r+8);
 
@@ -3350,7 +3353,6 @@ function updatePlanets(dt){
         spawnParticles(c.x,c.y,c.color,15,1.2);
       }
     }
-    for(const cap of capsules) applyGravityOnObject(dt,cap,p.x,p.y,mass*0.3,p.r+cap.r+4);
     for(const t of torpedoes){
       applyGravityOnObject(dt,t,p.x,p.y,mass*0.4,p.r+t.r);
       // Torpille s'écrase sur la planète
@@ -3907,31 +3909,7 @@ function updateShip(dt){
       }else{
         energy=Math.max(0,energy-ENERGY_THRUST_COST*2*dt*ship.thrustPower);
       }
-      // Particules de propulsion principale
-      if(Math.random()<0.4){
-        const ex=ship.x+Math.cos(ship.angle+Math.PI)*10,ey=ship.y+Math.sin(ship.angle+Math.PI)*10;
-        const flameColor=driftMode?'#40c8ff':hasProp?'#00ff41':'#ff6020';
-        particles.push({x:ex,y:ey,
-          vx:Math.cos(ship.angle+Math.PI)*(1+Math.random())+ship.vx*0.3,
-          vy:Math.sin(ship.angle+Math.PI)*(1+Math.random())+ship.vy*0.3,
-          life:1,decay:0.07+Math.random()*0.05,r:2+Math.random()*2,
-          color:flameColor});
-      }
-      // Rétro-fusées — impulsions latérales si changement de direction brutal
-      if(ship._prevAngle!==undefined){
-        const angleDiff=Math.abs(ship.angle-ship._prevAngle);
-        const normalDiff=angleDiff>Math.PI?Math.PI*2-angleDiff:angleDiff;
-        if(normalDiff>0.3&&Math.random()<0.5){
-          // Particule latérale
-          const lateralAngle=ship.angle+Math.PI/2*(Math.random()<0.5?1:-1);
-          particles.push({
-            x:ship.x+Math.cos(lateralAngle)*8,y:ship.y+Math.sin(lateralAngle)*8,
-            vx:Math.cos(lateralAngle)*0.8,vy:Math.sin(lateralAngle)*0.8,
-            life:0.6,decay:0.12,r:1.5,color:'rgba(180,220,255,0.7)'
-          });
-        }
-      }
-      ship._prevAngle=ship.angle;
+      // particules propulsion virées
     }else{ship.thrusting=false;ship.thrustPower=0;}
   }else{ship.thrusting=false;ship.thrustPower=0;}
   // Drift mode — drag légèrement réduit (on glisse plus)
@@ -8098,6 +8076,7 @@ function drawPlanets(){
     }
 
     // Indicateur vitesse d'approche — quand Simon est proche
+    const distShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(distShip<p.r+200&&!p.mined&&!dockedPlanet){
       const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
       const tooFast=speed>DOCK_SPEED;
@@ -8122,7 +8101,6 @@ function drawPlanets(){
     }
 
     // Cercle d'orbite — visible quand Simon s'approche
-    const distShip=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
     if(distShip<p.r+300&&!p.mined){
       const orbitR=(p.r+120)*viewZoom;
       const alpha=Math.max(0,0.1*(1-(distShip-p.r-40)/260));
@@ -8229,42 +8207,28 @@ function drawShip(){
   const [sx,sy]=worldToScreen(ship.x,ship.y);
   ctx.save();
 
-  // ── Indicateur vecteur vitesse ──
-  const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
-  if(speed>0.5){
-    const velAngle=Math.atan2(ship.vy,ship.vx);
-    const velLen=Math.min(40,speed*3)*viewZoom;
-    ctx.strokeStyle=`rgba(0,255,65,${Math.min(0.4,speed*0.03)})`;
-    ctx.lineWidth=0.8;ctx.setLineDash([3,4]);
-    ctx.beginPath();
-    ctx.moveTo(sx,sy);
-    ctx.lineTo(sx+Math.cos(velAngle)*velLen,sy+Math.sin(velAngle)*velLen);
-    ctx.stroke();ctx.setLineDash([]);
-  }
+  // vecteur vitesse viré
 
   // ── Traînée — 150 points, dégradé selon vitesse et drift ──
+  // Traînée positionnelle — trajectory simple
   const trailLen=ship.trail.length;
-  const trailColor=driftMode?'64,200,255':'0,255,65';
   for(let i=1;i<trailLen;i++){
-    const pt1=ship.trail[trailLen-trailLen+i-1];
-    const pt2=ship.trail[trailLen-trailLen+i];
+    const pt1=ship.trail[i-1];
+    const pt2=ship.trail[i];
     if(!pt1||!pt2)continue;
     const [tx1,ty1]=worldToScreen(pt1.x,pt1.y);
     const [tx2,ty2]=worldToScreen(pt2.x,pt2.y);
     const frac=i/trailLen;
-    const alpha=frac*(ship._slingshotTrail>0?0.5:driftMode?0.35:0.22);
-    ctx.strokeStyle=`rgba(${trailColor},${alpha})`;
-    ctx.lineWidth=(frac)*1.8*viewZoom;
+    const alpha=frac*0.18;
+    ctx.strokeStyle=`rgba(0,255,65,${alpha})`;
+    ctx.lineWidth=0.8;
     ctx.beginPath();ctx.moveTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.stroke();
   }
   ctx.restore();
   ctx.save();ctx.translate(sx,sy);ctx.rotate(ship.angle);
   const s=viewZoom;
 
-  // Halo
-  const grd=ctx.createRadialGradient(0,0,0,0,0,25*s);
-  grd.addColorStop(0,'rgba(0,255,65,0.15)');grd.addColorStop(1,'transparent');
-  ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,25*s,0,Math.PI*2);ctx.fill();
+  // halo viré
 
   // ── Modules installés (dessinés AVANT la coque pour certains) ──
   ctx.shadowBlur=0;
@@ -8307,25 +8271,7 @@ function drawShip(){
     }
   }
 
-  // Propulsion
-  if(ship.thrusting&&energy>0){
-    const fl=(8+ship.thrustPower*14+Math.random()*4)*s;
-    const thrustMult=installedModules.includes('thruster')?1.4:1;
-    // Couleur flamme selon mode
-    const flameR=driftMode?64:255;
-    const flameG=driftMode?200:Math.floor(170+Math.random()*85);
-    const flameB=driftMode?255:0;
-    ctx.strokeStyle=`rgba(${flameR},${flameG},${flameB},0.85)`;
-    ctx.shadowColor=driftMode?'#40c8ff':'#ffaa00';ctx.shadowBlur=driftMode?8:12;
-    ctx.lineWidth=(2+ship.thrustPower*2)*s;
-    ctx.beginPath();ctx.moveTo(-7*s,0);ctx.lineTo(-7*s-fl*thrustMult,(Math.random()-0.5)*4*s);ctx.stroke();
-  } else if(!ship.thrusting&&energy<=0){
-    // Propulsion d'urgence — flamme orange
-    if(touchActive){
-      ctx.strokeStyle='rgba(255,100,0,0.5)';ctx.lineWidth=s;ctx.shadowColor='#ff6000';ctx.shadowBlur=6;
-      ctx.beginPath();ctx.moveTo(-7*s,0);ctx.lineTo(-12*s,(Math.random()-0.5)*3*s);ctx.stroke();
-    }
-  }
+  // flamme propulsion virée
   ctx.restore();
 }
 
@@ -8354,13 +8300,13 @@ function drawDebris(){
       for(let i=0;i<d.shape.length;i++){const[px,py]=d.shape[i];i===0?ctx.moveTo(px*viewZoom,py*viewZoom):ctx.lineTo(px*viewZoom,py*viewZoom);}
       ctx.closePath();ctx.fill();ctx.stroke();
     } else {
-      ctx.strokeStyle=d.isBoss?(d.hitFlash>0?'#ffffff':'#ff4040'):(d.hitFlash>0?'#ffffff':'#336644');
-      ctx.lineWidth=d.isBoss?2:1.5;ctx.shadowColor=d.isBoss?'#ff2020':'#00a828';ctx.shadowBlur=d.isBoss?12:4;
+      ctx.strokeStyle=d.isBoss?(d.hitFlash>0?'#ffffff':'#ff4040'):(d.hitFlash>0?'#ffffff':'#1a3322');
+      ctx.lineWidth=d.isBoss?2:1;ctx.shadowColor=d.isBoss?'#ff2020':'#003311';ctx.shadowBlur=d.isBoss?12:2;
       ctx.beginPath();
       for(let i=0;i<d.shape.length;i++){const[px,py]=d.shape[i];i===0?ctx.moveTo(px*viewZoom,py*viewZoom):ctx.lineTo(px*viewZoom,py*viewZoom);}
       ctx.closePath();ctx.stroke();
-      ctx.strokeStyle=d.isBoss?'rgba(255,64,64,0.25)':'rgba(0,255,65,0.15)';ctx.lineWidth=0.5;
-      ctx.beginPath();ctx.arc(0,0,d.r*(d.isBoss?0.5:0.4)*viewZoom,0,Math.PI*2);ctx.stroke();
+      // Pas de cercle intérieur brillant pour les débris normaux
+      if(d.isBoss){ctx.strokeStyle='rgba(255,64,64,0.25)';ctx.lineWidth=0.5;ctx.beginPath();ctx.arc(0,0,d.r*0.5*viewZoom,0,Math.PI*2);ctx.stroke();}
     }
     ctx.restore();
   }
@@ -8508,12 +8454,7 @@ function drawRadar(){
     rctx.fillStyle=d.isBoss?'#ff4040':'rgba(255,32,32,0.7)';
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,d.isBoss?3:1.5,0,Math.PI*2);rctx.fill();
   }
-  // Capsules
-  for(const c of capsules){
-    const dx=(c.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(c.y-ship.y)/RADAR_RANGE*RADAR_R;
-    if(Math.sqrt(dx*dx+dy*dy)>RADAR_R)continue;
-    rctx.fillStyle=c.color;rctx.beginPath();rctx.arc(cx+dx,cy+dy,2,0,Math.PI*2);rctx.fill();
-  }
+  // capsules virées du radar
   // Épaves
   for(const w of wrecks){
     if(w.discovered)continue;
