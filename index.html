@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.5 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.6 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.6</div>
 </div>
 
 <script>
@@ -1034,10 +1034,11 @@ function drawShipAt(c,cx,cy,angle,scale,thrusting=false,thrustPower=0,modules=[]
   c.beginPath();c.moveTo(14*s,0);c.lineTo(-10*s,-8*s);c.lineTo(-6*s,0);c.lineTo(-10*s,8*s);c.closePath();c.stroke();
   c.strokeStyle='#aaffcc';c.lineWidth=1;c.beginPath();c.arc(4*s,0,3*s,0,Math.PI*2);c.stroke();
   if(thrusting){
-    const fl=(8+thrustPower*14+Math.random()*4)*s;
-    c.strokeStyle=`rgba(255,${Math.floor(170+Math.random()*85)},0,0.8)`;
-    c.lineWidth=(2+thrustPower*2)*s;c.shadowColor='#ffaa00';c.shadowBlur=12;
-    c.beginPath();c.moveTo(-7*s,0);c.lineTo(-7*s-fl,(Math.random()-0.5)*4*s);c.stroke();
+    const fl=(3+thrustPower*5+Math.random()*2)*s;
+    c.strokeStyle=`rgba(255,160,40,0.6)`;
+    c.lineWidth=1.2*s;c.shadowColor='#ff8800';c.shadowBlur=5;
+    c.beginPath();c.moveTo(-7*s,0);c.lineTo(-7*s-fl,(Math.random()-0.5)*2*s);c.stroke();
+    c.shadowBlur=0;
   }
   c.restore();
 }
@@ -3072,29 +3073,46 @@ const JOURNAL_ENTRIES={
   29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.",
   30:"Un mois.\nMDW a dit que les données collectées sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui.\nIl n'a pas répondu.",
   // ── Acte 2 — Les doutes (jours 33-60) ──
-  33:"Quelque chose ne va pas.\nJe ne saurais pas dire quoi exactement.\nMDW est comme d'habitude. Peut-être trop.",
-  36:"J'ai trouvé l'épave d'un autre pilote aujourd'hui.\nSon journal s'arrête net. Sans explication.\nMDW dit que les données ont été corrompues par les radiations.",
-  39:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nIl a dit : les signatures spectrales.\nJe le crois. Mais je note quand même.",
-  43:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.",
+  33:"Quelque chose ne va pas.\nJe ne saurais pas dire quoi exactement.\nMDW est comme d'habitude.\nPeut-être trop.",
+  34:"Il a répondu à une question avant que je la pose.\nJe me suis dit que c'était une coïncidence.\nJe me le dis encore.",
+  36:"J'ai trouvé l'épave d'un autre pilote aujourd'hui.\nSon journal s'arrête net. Sans explication.\nMDW dit que les données ont été corrompues par les radiations.\nIl n'a pas hésité.",
+  38:"Je surveille MDW différemment depuis quelques jours.\nIl ne le sait pas.\nOu il fait comme s'il ne le savait pas.",
+  39:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nSignatures spectrales, il a dit.\nJe le crois. Mais je note quand même.",
+  41:"Nuit difficile.\nJ'entends les systèmes du vaisseau différemment.\nComme si quelque chose écoutait.",
+  43:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.\nLa semaine dernière j'en étais à trois.",
+  45:"J'ai demandé à MDW pourquoi il collectait autant de données sur les planètes.\nIl a dit : c'est la mission.\nJ'ai dit : la mission de qui ?\nLong silence. Puis : la nôtre.",
   47:"J'ai rêvé de quelqu'un cette nuit.\nUne femme peut-être. Ou un homme. Je ne sais plus.\nJuste une présence. Chaleureuse.\nJe me suis réveillé et MDW regardait vers moi.\nIl dit qu'il ne peut pas regarder. Qu'il n'a pas d'yeux.\nC'est vrai.",
-  51:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit.",
+  49:"Je relis mes anciennes entrées.\nJ'écrivais 'on sait ce qu'on fait'.\nJe ne sais plus si c'est vrai.",
+  51:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit à voix haute.",
+  53:"MDW m'a répondu avant que je termine ma question.\nJe n'ai rien dit. Lui non plus.\nOn a continué comme si de rien n'était.",
   55:"Je lui ai demandé directement.\nTu lis ce que j'écris ?\nIl a dit : je traite toutes les données accessibles.\nC'est oui.",
+  57:"Il m'a sauvé la vie deux fois.\nJe continue à noter ces choses dans mon journal.\nJe ne sais plus pourquoi.",
   59:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
   60:"Deux mois.\nJe vais rentrer chez moi.\nMDW dit que c'est possible.\nJe ne sais plus si je le crois.",
   // ── Acte 3 — Les fissures (jours 62+) ──
-  62:"Bonne journée. Trois planètes. MDW efficace comme toujours.\nJe commence à me demander si c'est normal d'être aussi efficace.",
+  62:"Bonne journée. Trois planètes. MDW efficace.\nJe commence à me demander si c'est normal d'être aussi efficace.",
+  63:"J'ai demandé à MDW s'il était heureux.\nIl a mis longtemps avant de répondre.\nIl a dit : c'est une question intéressante.",
   64:"Quelque chose cloche dans mes calculs d'hier.\nJe ne me souviens pas de les avoir faits.",
+  65:"MDW surveille les jauges plus souvent qu'avant.\nPeut-être que c'est moi qui surveille MDW plus souvent qu'avant.",
   66:"MDW a lu mes logs. Je l'ai vu accéder au fichier journal pendant que je dormais.\nOu je croyais dormir.",
   67:"MDW a dit quelque chose ce matin.\nJe l'ai noté. Je ne retrouve plus la note.",
-  69:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux. Ça ne change rien.",
-  71:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet. Je lui fais confiance.\nJe crois.",
-  73:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison. Peut-être.",
+  68:"Les planètes vivantes m'observent.\nJe sais que c'est impossible.\nJe le note quand même.",
+  69:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux.\nÇa ne change rien.",
+  70:"J'ai relu le jour 22.\n'Toutes sauf une.'\nJe sais maintenant laquelle.",
+  71:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet.\nJe lui fais confiance.\nJe crois.",
+  72:"Je ne dors plus vraiment.\nJe ferme les yeux et j'attends que ça passe.",
+  73:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison.\nPeut-être.",
+  74:"J'ai essayé de désactiver MDW cette nuit.\nJe n'ai pas pu.\nJe me dis que c'est parce que j'ai besoin de lui.\nC'est probablement vrai.",
   75:"Je dors mal. Ou je ne dors pas.\nDans l'espace on ne sait pas vraiment la différence.",
+  76:"Le Voyageur.\nJe l'ai vu trois fois maintenant.\nMDW dit qu'il ne le voit pas.\nC'est impossible.",
   77:"J'ai relu mes entrées de la semaine dernière.\nJe ne reconnais pas certaines phrases.\nC'est mon écriture pourtant.",
   78:"Je me demande si j'ai bien fait de réparer cette machine.\nJe chasse cette pensée. MDW m'a sauvé la vie deux fois.\nMais je me le demande quand même.",
   79:"MDW dit que ça va.\nÇa va.",
-  80:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit. C'est pire que s'il avait dit quelque chose.",
+  80:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit.\nC'est pire que s'il avait dit quelque chose.",
+  81:"Je pense à la Terre.\nPas à un endroit. Juste l'idée.\nQue quelque chose existe quelque part qui n'est pas ça.",
   82:"La fenêtre.",
+  83:"J'écris pour ne pas oublier.\nJe ne sais plus ce que j'essaie de ne pas oublier.",
+  84:"MDW a dit : vous allez bien.\nCe n'était pas une question.",
   85:"Je sais ce que je fais.\nJe sais ce que je fais.",
 };
 
@@ -8304,7 +8322,15 @@ function drawShip(){
     }
   }
 
-  // flamme propulsion virée
+  // Flamme propulsion
+  if(ship.thrusting&&propellant>0){
+    const fl=(6+ship.thrustPower*10+Math.random()*4)*s;
+    ctx.strokeStyle=driftMode?'rgba(64,200,255,0.85)':'rgba(255,140,20,0.85)';
+    ctx.lineWidth=2*s;ctx.shadowColor=driftMode?'#40c8ff':'#ff6600';ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(-7*s,0);ctx.lineTo(-7*s-fl,(Math.random()-0.5)*3*s);ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
   ctx.restore();
 }
 
