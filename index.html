@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.2 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.3 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
       ▸ Simon veut rentrer — échanges jours 16/19/22<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.2</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.3</div>
 </div>
 
 <script>
@@ -3360,13 +3360,57 @@ function updatePlanets(dt){
       }
     }
 
+    // ── Mécaniques planètes spéciales ──
+    if(!p.mined&&dist<p.r+350){
+
+      // VIVANTE — produit O2 passivement + attire doucement
+      if(p.type.name==='VIVANTE'){
+        const proximity=Math.max(0,1-(dist-p.r)/280);
+        if(proximity>0){
+          oxygen=Math.min(maxOxygen,oxygen+0.8*proximity*dt);
+          const nx=(p.x-ship.x)/dist,ny=(p.y-ship.y)/dist;
+          ship.vx+=nx*0.0003*proximity*dt*60;
+          ship.vy+=ny*0.0003*proximity*dt*60;
+          if(!p._vivanteMsgShown){p._vivanteMsgShown=true;
+            setTimeout(()=>showSimonJournal("Elle produit quelque chose.\nJe respire mieux ici."),2000);}
+        }
+      }
+
+      // MIROIR — fausse le radar dans sa zone
+      if(p.type.name==='MIROIR'&&dist<p.r+350){
+        window._mirrorActive=true;window._mirrorPlanet=p;
+        if(!p._mirrorMsgShown){p._mirrorMsgShown=true;
+          setTimeout(()=>showMDWLine("Anomalie de réflexion. Les données radar sont peu fiables ici.",true),1500);}
+      } else if(p.type.name==='MIROIR'&&window._mirrorPlanet===p){
+        window._mirrorActive=false;
+      }
+
+      // DILATÉE — drain réduit dans la zone
+      if(p.type.name==='DILATÉE'&&dist<p.r+300){
+        window._dilatationActive=true;
+        if(!p._dilatMsgShown){p._dilatMsgShown=true;
+          setTimeout(()=>showMDWLine("Dilatation temporelle locale. Le temps passe différemment ici.",true),1000);}
+      } else if(p.type.name==='DILATÉE'&&!window._dilatationForced){
+        window._dilatationActive=false;
+      }
+
+      // BRISÉE — fragments endommagent la coque à vitesse élevée
+      if(p.type.name==='BRISÉE'&&dist<p.r+180){
+        const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+        if(spd>4&&Math.random()<0.003*dt*60){
+          hull=Math.max(0,hull-3);
+          spawnParticles(ship.x,ship.y,'#aa6600',3,0.5);
+          if(!p._briseeWarn&&hull<70){p._briseeWarn=true;
+            showMDWLine("Fragments en orbite. Réduisez la vitesse.",true);}
+        }
+      }
+    }
+
     // Découverte
     if(!p.discovered&&dist<p.r+80){
       p.discovered=true;
       discoveredPlanets++;
       pcVal.textContent=discoveredPlanets;
-      if(currentMission&&currentMission.text.includes('PLANÈTE'))missionCounter++;
-      p.type.effect();
       spawnParticles(p.x,p.y,p.type.glowColor,20,1.5);
       addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
       // Notification discrète dans le journal
@@ -8435,10 +8479,11 @@ function drawRadar(){
     rctx.fillStyle=p.color;rctx.shadowColor=p.color;rctx.shadowBlur=4;
     rctx.beginPath();rctx.arc(cx+dx,cy+dy,4,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
   }
-  // Planètes — point coloré selon type
+  // Planètes — point coloré selon type (effet miroir si actif)
   for(const p of planets){
     if(!p.type)continue;
-    const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
+    const mOff=window._mirrorActive?(Math.sin(Date.now()*0.001+p.pulse)*0.25):0;
+    const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R*(1+mOff),dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R*(1+mOff);
     if(Math.sqrt(dx*dx+dy*dy)>RADAR_R)continue;
     const col=p.type.glowColor||p.type.color||'#a070ff';
     // Extraire RGB du glowColor
@@ -8514,6 +8559,9 @@ function drawRadar(){
   rctx.restore();
   // Écho radar par-dessus le clipping
   drawRareRadarEffects();
+
+  // ── Effet miroir — positions radar faussées ──
+  const mirrorOffset=window._mirrorActive?(Math.sin(Date.now()*0.001)*0.3):0;
 
   // ── Indicateurs planètes proches ──
   const PR=getRadarRange();
