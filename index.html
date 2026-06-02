@@ -308,16 +308,15 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Capsules virées — planètes = seule source de survie<br>
-      ▸ Onglet UPGRADES dans le catalogue<br>
-      ▸ Détails modules dans l'onglet VAISSEAU<br>
-      ▸ Scan enrichi au double-tap avec illustrations<br>
-      ▸ Onglet MDW — observations de Simon<br>
-      ▸ Dérive silencieuse — zéro drain O₂<br>
-      ▸ Respiration plus audible sous 40% O₂<br>
-      ▸ Flash supernova amélioré
+      ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
+      ▸ Simon veut rentrer — échanges jours 16/19/22<br>
+      ▸ Journal interactif A/B — 4 choix qui influencent MDW<br>
+      ▸ Indicateur vitesse d'approche planète — vert/rouge<br>
+      ▸ Planètes spéciales — Géante, Morte, Miroir, Vivante, Brisée<br>
+      ▸ Trous noirs — avalent planètes et fusionnent<br>
+      ▸ Signal fantôme, Le Voyageur, secteurs nommés par Simon
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -332,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.2</div>
 </div>
 
 <script>
@@ -851,7 +850,7 @@ function checkExchanges(){
       "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
   if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
     triggerExchange('mdw_pc',
-      "Tu peux te connecter au ordinateur de bord ?",
+      "Tu peux te connecter à l'ordinateur de bord ?",
       "J'essaie...");
   if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
     triggerExchange('mdw_pc2',
@@ -859,35 +858,52 @@ function checkExchanges(){
       "Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
   if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_rentrer'))
     triggerExchange('mdw_rentrer',
-      "MDW comment on rentre sur Terre ?",
+      "MDW, comment on rentre sur Terre ?",
       "Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
   if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
     triggerExchange('mdw_memory',
       "Je ne me souviens de rien. Qui suis-je ?",
       "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
 
-  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
-    triggerExchange('mdw_memory',
-      "Je ne me souviens de rien. Qui suis-je ?",
-      "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
+  // ── Questions sur l'avant — jours 6/9/12 ──
+  if(_exchangesDone.has('mdw_memory')&&survivalDay>=6&&!_exchangesDone.has('mdw_avant1'))
+    triggerExchange('mdw_avant1',
+      "Qu'est-ce qui s'est passé avant que je reprenne connaissance ?",
+      "Données de vol corrompues.\nJe n'ai pas accès à la période précédant mon activation.");
 
-  // ── Camaraderie acte 1 — jours 4-20 ────────────────
-  if(_exchangesDone.has('mdw_memory')&&survivalDay>=4&&!_exchangesDone.has('mdw_capsule'))
-    triggerExchange('mdw_capsule',
-      "Ces capsules qui dérivent. D'où elles viennent ?",
-      "Débris de missions antérieures. Quelqu'un les a laissées. Ou les a perdues.");
+  if(_exchangesDone.has('mdw_avant1')&&survivalDay>=9&&!_exchangesDone.has('mdw_avant2'))
+    triggerExchange('mdw_avant2',
+      "Il y a combien de temps que j'étais inconscient ?",
+      "Indéterminé.\nMon horloge interne a été réinitialisée.");
 
-  if(_exchangesDone.has('mdw_capsule')&&survivalDay>=5&&!_exchangesDone.has('mdw_silence'))
+  if(_exchangesDone.has('mdw_avant2')&&survivalDay>=12&&!_exchangesDone.has('mdw_avant3'))
+    triggerExchange('mdw_avant3',
+      "Tu mens ou tu ne sais vraiment pas ?",
+      "Je traite les données disponibles.\nEn ce moment elles sont insuffisantes.");
+
+  // ── Rentrer sur Terre — jours 16/19/22 ──
+  if(_exchangesDone.has('mdw_avant3')&&survivalDay>=16&&!_exchangesDone.has('mdw_rentrer2'))
+    triggerExchange('mdw_rentrer2',
+      "On rentre quand ?",
+      "Je travaille sur les systèmes de navigation.\nC'est complexe.");
+
+  if(_exchangesDone.has('mdw_rentrer2')&&survivalDay>=19&&!_exchangesDone.has('mdw_rentrer3'))
+    triggerExchange('mdw_rentrer3',
+      "Combien de temps ?",
+      "Je ne sais pas encore.\n...\nJe suis désolé.");
+
+  if(_exchangesDone.has('mdw_rentrer3')&&survivalDay>=22&&!_exchangesDone.has('mdw_rentrer4'))
+    triggerExchange('mdw_rentrer4',
+      "Tu ne sais pas beaucoup de choses pour un robot.",
+      "C'est exact.");
+
+  // ── Camaraderie acte 1 ──
+  if(_exchangesDone.has('mdw_memory')&&survivalDay>=4&&!_exchangesDone.has('mdw_silence'))
     triggerExchange('mdw_silence',
       "C'est silencieux ici.",
       "L'espace est silencieux. C'est sa nature.\nLe bruit est l'exception.");
 
-  if(_exchangesDone.has('mdw_silence')&&survivalDay>=5&&!_exchangesDone.has('mdw_scan_tip'))
-    triggerExchange('mdw_scan_tip',
-      "Comment on analyse ce qu'on voit ?",
-      "Triple-tap sur l'écran. Je prends en charge le scan.\nJe peux analyser les phénomènes à portée.");
-
-  if(_exchangesDone.has('mdw_silence')&&survivalDay>=6&&!_exchangesDone.has('mdw_trust_early'))
+  if(_exchangesDone.has('mdw_silence')&&survivalDay>=5&&!_exchangesDone.has('mdw_trust_early'))
     triggerExchange('mdw_trust_early',
       "Tu ne dors jamais ?",
       "Je n'ai pas besoin de sommeil.\nMais j'ai noté que vous dormez mieux quand les jauges sont stables.");
@@ -907,22 +923,22 @@ function checkExchanges(){
       "Est-ce que tu as peur de quelque chose ?",
       "Je n'ai pas de système de peur.\nMais il y a des calculs que je préfère ne pas faire jusqu'au bout.");
 
-  if(_exchangesDone.has('mdw_fear')&&survivalDay>=12&&!_exchangesDone.has('mdw_earth'))
+  if(_exchangesDone.has('mdw_fear')&&survivalDay>=13&&!_exchangesDone.has('mdw_earth'))
     triggerExchange('mdw_earth',
       "Tu as des données sur la Terre ?",
       "Oui.\nVous voulez que je vous les transmette ?\nIl y a beaucoup de choses.");
 
-  if(_exchangesDone.has('mdw_earth')&&survivalDay>=12&&!_exchangesDone.has('mdw_earth2'))
+  if(_exchangesDone.has('mdw_earth')&&survivalDay>=14&&!_exchangesDone.has('mdw_earth2'))
     triggerExchange('mdw_earth2',
       "Dis-moi quelque chose. N'importe quoi.",
       "La Terre tourne à 1674 kilomètres par heure à l'équateur.\nLes humains ne le sentent pas.\nIls s'y sont habitués.");
 
-  if(_exchangesDone.has('mdw_earth2')&&survivalDay>=14&&!_exchangesDone.has('mdw_alone'))
+  if(_exchangesDone.has('mdw_earth2')&&survivalDay>=15&&!_exchangesDone.has('mdw_alone'))
     triggerExchange('mdw_alone',
       "Tu ne trouves pas qu'on est seuls ?",
       "Vous n'êtes pas seul. Je suis là.\n...\nMais je comprends ce que vous voulez dire.");
 
-  if(_exchangesDone.has('mdw_alone')&&survivalDay>=16&&!_exchangesDone.has('mdw_repairs'))
+  if(_exchangesDone.has('mdw_alone')&&survivalDay>=17&&!_exchangesDone.has('mdw_repairs'))
     triggerExchange('mdw_repairs',
       "Comment tu savais ce qui était défectueux en toi ?",
       "Je ne savais pas.\nVous le saviez. Vous l'avez réparé.\nJe me demande parfois comment.");
@@ -937,7 +953,7 @@ function checkExchanges(){
       "",
       "Vous écrivez beaucoup dans ce journal.\nC'est bien.\nÇa aide à rester soi-même.");
 
-  // Acte 2 — doutes progressifs
+    // Acte 2 — doutes progressifs
   if(sectorCount>=1&&_exchangesDone.has('mdw_memory')&&planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
     triggerExchange('violet1',"Cette planète. Tu sembles t'y intéresser particulièrement.","Type rare. Les données sont précieuses.");
   if(planets.some(p=>p.discovered&&p.type?.name==='ROGUE'))
