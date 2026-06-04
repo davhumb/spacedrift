@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.3 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.4 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.3</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.4</div>
 </div>
 
 <script>
@@ -564,7 +564,7 @@ function drawHullMarks(ctx,s){
 
 // ── Amarrage planètes ─────────────────────────
 let dockedPlanet=null,dockTimer=0,dockProgress=0;
-const DOCK_SPEED=4,DOCK_DURATION=8;
+const DOCK_SPEED=6,DOCK_DURATION=6;
 
 const PLANET_RESOURCES={
   'ROCHEUSE':   {label:'MINÉRAUX',    color:'#aaaaaa', credits:40,  effect:()=>{hull=Math.min(100,hull+35);energy=Math.min(100,energy+15);logEvent('🪨 +35 HULL +15 NRJ','ok');}},
@@ -588,7 +588,7 @@ function tryDock(){
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
-    if(dist<p.r+30&&speed<DOCK_SPEED){
+    if(dist<p.r+50&&speed<DOCK_SPEED){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
       logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
@@ -604,7 +604,7 @@ function updateDocking(dt){
   const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
 
   // Annuler seulement si vraiment loin ou trop rapide
-  if(speed>DOCK_SPEED*4||dist>dockedPlanet.r+120){
+  if(speed>DOCK_SPEED*5||dist>dockedPlanet.r+160){
     dockedPlanet.mined=true; // marquer même si abandonné — pas de re-mine
     dockedPlanet=null;dockProgress=0;dockTimer=0;return;
   }
@@ -1495,18 +1495,7 @@ function updateDecomp(dt){
   if(critical){
     decompEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(255,32,32,${0.06+Math.sin(Date.now()*0.004)*0.04}) 100%)`;
     // Particules de fuite du vaisseau
-    decompParticleTimer+=dt;
-    if(decompParticleTimer>0.1){
-      decompParticleTimer=0;
-      const angle=ship.angle+Math.PI+(Math.random()-0.5)*1.5;
-      particles.push({
-        x:ship.x+Math.cos(angle)*8,y:ship.y+Math.sin(angle)*8,
-        vx:Math.cos(angle)*(0.3+Math.random()*0.4)+ship.vx,
-        vy:Math.sin(angle)*(0.3+Math.random()*0.4)+ship.vy,
-        life:1,decay:0.015+Math.random()*0.02,r:1+Math.random(),
-        color:Math.random()<0.6?'#ff4020':'#ffaa00',
-      });
-    }
+    // fuites rouges virées
   }
 }
 
@@ -2481,7 +2470,7 @@ function updateSecondaryWormholes(dt){
     w.pulse+=dt*1.5;w.rotAngle+=dt*0.8;w.life-=dt;
     const dx=ship.x-w.x,dy=ship.y-w.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(!w.discovered&&dist<w.r+15){
+    if(!w.discovered&&dist<w.r+30){
       w.discovered=true;w.life=0;
       if(w.isReturn){triggerFinA();return;}
       currentUniverse=w.targetUniverse;
@@ -4423,7 +4412,7 @@ function updateDebris(dt){
       if(d.damage>3){triggerShake();triggerChromAber(3+d.damage*0.5,0.25);}
       ship.vx+=(dx/dist)*0.4;ship.vy+=(dy/dist)*0.4;
       d.vx-=(dx/dist)*0.5;d.vy-=(dy/dist)*0.5;
-      spawnParticles(ship.x,ship.y,'#ff2020',8,2);
+      spawnParticles(ship.x,ship.y,'#aaaaaa',5,1.5);
       triggerFlash('#ff2020');if(d.isBoss)triggerShake();
       playHit();logEvent('IMPACT ! -'+d.damage.toFixed(0)+' HULL','danger');
       resetCombo();
@@ -5282,7 +5271,7 @@ function updateGravWaves(dt){
     w.alpha=Math.max(0,w.alpha*(1-dt*0.3));
     // Perturbation sur le vaisseau quand l'onde le traverse
     const dist=Math.sqrt((ship.x-w.x)**2+(ship.y-w.y)**2);
-    if(Math.abs(dist-w.r)<15*viewZoom){
+    if(dist<w.r*viewZoom+30){
       const strength=w.mass*w.alpha*0.3;
       ship.vx+=(Math.random()-0.5)*strength;
       ship.vy+=(Math.random()-0.5)*strength;
@@ -9825,13 +9814,15 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
+      // Double-tap — scan approfondi
+      scanNearestPhenomenon();
       tapCount=0;lastTapTime=0;return;
     }
   }else{
     tapCount=1;
     playTapNote(1);
     // Démarrer appui long pour scan
-    scanHeld=true;scanHoldTime=0;
+    // appui long scan désactivé — double-tap suffit
   }
   lastTapTime=now;
   touchTarget={x,y};touchActive=true;scanHeld=true;
