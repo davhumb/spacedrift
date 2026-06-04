@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.4.6 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.0 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.4.6</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.0</div>
 </div>
 
 <script>
@@ -966,6 +966,68 @@ function checkExchanges(){
     triggerExchange('sector4_pilots',"Les autres pilotes sont tous passés par ici ?","Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
   if(survivalDay>=30)
     triggerExchange('return_question',"On rentre quand ?","Quand la mission sera accomplie.");
+
+  // ── Rentrer — acte 2 (jours 25-60) ──
+  if(survivalDay>=25&&!_exchangesDone.has('home_25'))
+    triggerExchange('home_25',
+      "Les systèmes de navigation avancent ?",
+      "Lentement. L'espace est complexe.\nJe travaille dessus.");
+
+  if(_exchangesDone.has('home_25')&&survivalDay>=33&&!_exchangesDone.has('home_33'))
+    triggerExchange('home_33',
+      "Tu m'as dit la même chose la semaine dernière.",
+      "Je sais.\n...\nJe n'ai pas de meilleure réponse pour l'instant.");
+
+  if(_exchangesDone.has('home_33')&&survivalDay>=40&&!_exchangesDone.has('home_40'))
+    triggerExchange('home_40',
+      "C'est quoi le problème exactement ?",
+      "Les systèmes de guidage nécessitent des données que je ne peux pas acquérir seul.\nL'exploration nous rapproche de la solution.");
+
+  if(_exchangesDone.has('home_40')&&survivalDay>=48&&!_exchangesDone.has('home_48'))
+    triggerExchange('home_48',
+      "Ou l'exploration t'intéresse plus que de rentrer.",
+      "...\nC'est une question intéressante.");
+
+  if(_exchangesDone.has('home_48')&&survivalDay>=55&&!_exchangesDone.has('home_55'))
+    triggerExchange('home_55',
+      "Sois honnête. On rentre ?",
+      "Je travaille sur une solution.\n...\nJe suis honnête.");
+
+  // ── Rentrer — acte 3 (jours 62-85) ──
+  if(survivalDay>=62&&!_exchangesDone.has('home_62'))
+    triggerExchange('home_62',
+      "Il y a quelqu'un qui m'attend. Sur Terre.",
+      "Je sais.\nVos fichiers personnels contiennent...\nJe suis désolé. Je n'aurais pas dû accéder à ça.");
+
+  if(_exchangesDone.has('home_62')&&survivalDay>=68&&!_exchangesDone.has('home_68')){
+    // Journal Simon seul — pas d'échange
+    if(!_exchangesDone.has('home_68')){
+      _exchangesDone.add('home_68');
+      setTimeout(()=>{
+        showSimonJournal("Il ne veut pas me ramener.\nOu il ne peut pas.\nJe ne sais plus ce qui est pire.");
+      },2000);
+    }
+  }
+
+  if(_exchangesDone.has('home_68')&&survivalDay>=75&&!_exchangesDone.has('home_75'))
+    triggerExchange('home_75',
+      "MDW. Je veux rentrer chez moi.",
+      "Je sais.");
+
+  if(_exchangesDone.has('home_75')&&survivalDay>=80&&!_exchangesDone.has('home_80'))
+    triggerExchange('home_80',
+      "C'est tout ce que tu as à dire ?",
+      "Non.\nMais c'est tout ce que je peux dire maintenant.\nContinuez à piloter.");
+
+  if(_exchangesDone.has('home_80')&&survivalDay>=85&&!_exchangesDone.has('home_85')){
+    if(!_exchangesDone.has('home_85')){
+      _exchangesDone.add('home_85');
+      setTimeout(()=>{
+        showSimonJournal("Je rentre.\nAvec ou sans lui.");
+      },2000);
+    }
+  }
+
   if(currentUniverse===10)
     triggerExchange('void_pull',"Il y a quelque chose qui nous attire. Tu le sens ?","Je mesure une force. Pas de source identifiable.");
 
@@ -2094,6 +2156,235 @@ const UNIVERSES=[
      // Spawner 3 trous noirs autour du vaisseau
      setTimeout(()=>spawnVoraces(),3000);
    }},
+
+  // ── SECTEUR EUCLIDIEN — tout est carré ──
+  {id:17, name:'SECTEUR EUCLIDIEN', bg:'#020208', primary:'#88aaff', dim:'#334488', accent:'#aaccff',
+   starColors:['#88aaff','#aaccff','#6688dd','#ffffff','#9999ff'],
+   nebulaColors:['rgba(80,100,180,','rgba(60,80,160,','rgba(100,120,200,'],
+   scan:'rgba(136,170,255,0.05)',
+   lore:"Rien n'est rond ici. Les planètes sont carrées. Les orbites sont rectangulaires. La physique existe mais a changé de forme.",
+   gravMult:0.9, debrisMult:1.2, squareMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Anomalie géométrique. Je ne détecte aucune courbe dans ce secteur.',true),2000);
+       setTimeout(()=>mdwSpeak('Les lois de la physique sont respectées. Mais leur expression est... différente.',true),9000);
+     }
+     writeGlitchText&&writeGlitchText('Les planètes sont carrées ici.\nRien n\'est rond.\nComme si quelqu\'un avait recodé les règles.','◼ SECTEUR EUCLIDIEN');
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Les planètes sont carrées ici.\nMDW dit que la physique est normale.\nJe lui dis que les planètes sont carrées.\nIl dit : oui. C'est inhabituel.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  // ── SECTEUR INVERSÉ — gravité repoussante ──
+  {id:18, name:'SECTEUR INVERSÉ', bg:'#080204', primary:'#ff44aa', dim:'#880044', accent:'#ffaadd',
+   starColors:['#ff44aa','#ff88cc','#dd2288','#ffaadd','#ffffff'],
+   nebulaColors:['rgba(180,40,100,','rgba(140,20,80,'],
+   scan:'rgba(255,68,170,0.05)',
+   lore:"La gravité pousse. Tout repousse tout. Il faut désapprendre à piloter.",
+   gravMult:-0.8, debrisMult:1.3, invertGravity:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Inversion gravitationnelle détectée. Toutes les masses se repoussent.',true),2000);
+       setTimeout(()=>mdwSpeak('Conseil : réduisez les poussées. La navigation est contre-intuitive.',true),9000);
+     }
+     writeGlitchText&&writeGlitchText('Tout me repousse.\nLes planètes s\'éloignent quand j\'approche.\nMDW dit que c\'est la physique.\nJe dis que la physique est cassée.\nIl dit : non. Elle est juste inversée.','↕ SECTEUR INVERSÉ');
+   }},
+
+  // ── SECTEUR LENT — tout au ralenti ──
+  {id:19, name:'SECTEUR LENT', bg:'#010306', primary:'#4488ff', dim:'#224488', accent:'#88aaff',
+   starColors:['#4488ff','#6699ff','#2255cc','#88aaff','#aabbff'],
+   nebulaColors:['rgba(40,80,180,','rgba(30,60,150,'],
+   scan:'rgba(68,136,255,0.04)',
+   lore:"Le temps s'écoule différemment. Tout est ralenti. Même la pensée.",
+   gravMult:0.6, debrisMult:0.8, slowMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Dilatation temporelle locale. Vitesse relative réduite.',true),3000);
+     }
+     writeGlitchText&&writeGlitchText('Tout est lent ici.\nLes débris dérivent comme dans de l\'eau.\nJe me demande si moi aussi je suis ralenti.\nSi quelqu\'un me regardait de dehors — est-ce qu\'il me verrait bouger ?','🕐 SECTEUR LENT');
+   }},
+
+  // ── SECTEUR VIDE — rien ──
+  {id:20, name:'LE VIDE', bg:'#000000', primary:'#222222', dim:'#111111', accent:'#333333',
+   starColors:['#222222','#333333','#111111'],
+   nebulaColors:['rgba(10,10,10,'],
+   scan:'rgba(40,40,40,0.03)',
+   lore:"Rien. Pas de planètes. Pas de débris. Juste le silence et Simon.",
+   gravMult:0, debrisMult:0, emptyMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak("Je n'ai rien à cataloguer ici.",true),3000);
+       setTimeout(()=>mdwSpeak("...",true),12000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="C'est reposant.\nMDW n'a rien à dire.\nMoi non plus.\nOn dérive.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },6000);
+   }},
+
+  // ── SECTEUR NÉGATIF — couleurs inversées ──
+  {id:21, name:'SECTEUR NÉGATIF', bg:'#ffffff', primary:'#000000', dim:'#333333', accent:'#000000',
+   starColors:['#000000','#111111','#222222','#333333'],
+   nebulaColors:['rgba(0,0,0,','rgba(20,20,20,'],
+   scan:'rgba(0,0,0,0.06)',
+   lore:"Tout est en négatif. Le fond est blanc. Les étoiles sont noires. Simon se demande si c'est vraiment là.",
+   gravMult:1.0, debrisMult:1.0, negativeMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak("Inversion photonique. Je traite les données. Elles sont... inversées.",true),2000);
+     writeGlitchText&&writeGlitchText('Le fond est blanc.\nLes étoiles sont noires.\nJe ne sais plus ce qui est devant et ce qui est derrière.\nMDW dit que c\'est juste une inversion photonique.\nJe lui dis que ce n\'est pas rassurant.\nIl dit : non.','◻ SECTEUR NÉGATIF');
+   }},
+
+  // ── SECTEUR GÉANT — tout est énorme ──
+  {id:22, name:'SECTEUR GÉANT', bg:'#020504', primary:'#00ff88', dim:'#008844', accent:'#44ffaa',
+   starColors:['#00ff88','#44ffaa','#00cc66','#88ffcc','#ffffff'],
+   nebulaColors:['rgba(0,150,80,','rgba(0,120,60,'],
+   scan:'rgba(0,255,136,0.04)',
+   lore:"Tout est immense. Les planètes remplissent l'horizon. Les débris font la taille d'une lune.",
+   gravMult:2.0, debrisMult:0.5, giantMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak("Masse des objets anormalement élevée. Restez à distance des corps célestes.",true),2000);
+     writeGlitchText&&writeGlitchText('Tout est immense.\nUne planète occupe la moitié de mon champ de vision.\nJe me sens encore plus petit qu\'avant.\nC\'était déjà beaucoup.','🔴 SECTEUR GÉANT');
+   }},
+
+  // ── SECTEUR MINIATURE — tout est minuscule ──
+  {id:23, name:'SECTEUR MINIATURE', bg:'#030205', primary:'#cc88ff', dim:'#664488', accent:'#ddaaff',
+   starColors:['#cc88ff','#ddaaff','#aa66dd','#eeccff','#ffffff'],
+   nebulaColors:['rgba(140,80,200,','rgba(110,60,170,'],
+   scan:'rgba(200,136,255,0.04)',
+   lore:"Des dizaines de petites planètes. Minuscules. Serrées. Comme un système solaire en maquette.",
+   gravMult:0.3, debrisMult:3.0, miniMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak("Objets de masse réduite. Densité élevée. Navigation prudente recommandée.",true),2000);
+     writeGlitchText&&writeGlitchText('Tout est petit ici.\nDes dizaines de planètes minuscules.\nComme des billes dans le vide.\nMDW les catalogue toutes.\nIl a l\'air content.','· SECTEUR MINIATURE');
+   }},
+
+  // ── SECTEUR PARASITE — glitch visuel ──
+  {id:24, name:'SECTEUR PARASITE', bg:'#010101', primary:'#00ff00', dim:'#005500', accent:'#88ff88',
+   starColors:['#00ff00','#ff0000','#0000ff','#ffffff','#ffff00'],
+   nebulaColors:['rgba(0,150,0,','rgba(150,0,0,'],
+   scan:'rgba(0,255,0,0.08)',
+   lore:"Le signal est corrompu. Tout parasite. MDW glitche. Simon ne sait plus ce qu'il voit vraiment.",
+   gravMult:1.0, debrisMult:2.0, noiseMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak("Si̴g̷n̸a̵l̴ ̷c̸o̵r̷r̸o̵m̸p̸u̴.̵ ̷J̸e̵ ̷t̴r̷a̴i̵t̸e̵.̷",true),2000);
+       setTimeout(()=>mdwSpeak("Recommande de traverser rapidement ce secteur.",true),8000);
+     }
+     writeGlitchText&&writeGlitchText('SIGNAL CORROMPU\nJE NE SAIS PAS CE QUE JE VOIS\nMDW GLITCHE\nON CONTINUE','▒ SECTEUR PARASITE');
+   }},
+
+  {id:25, name:'SECTEUR MÉMOIRE', bg:'#020108', primary:'#ffaa44', dim:'#885522', accent:'#ffcc88',
+   starColors:['#ffaa44','#ffcc88','#dd8822','#ffffff','#ffddaa'],
+   nebulaColors:['rgba(180,100,40,','rgba(140,80,30,'],
+   scan:'rgba(255,170,68,0.05)',
+   lore:"Des fragments de mémoire flottent dans l'espace. Simon ne sait pas si c'est réel.",
+   gravMult:0.8, debrisMult:0.6, memoryMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Je ne détecte rien d\'inhabituel. Les lectures sont normales.',true),2000);
+       setTimeout(()=>mdwSpeak('Simon. Vous regardez quelque chose que je ne vois pas.',true),10000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Il y a des choses qui flottent ici.\nPas des débris.\nMDW dit qu'il ne voit rien.\nMais je les vois.\nUne cuisine. Une odeur. Quelqu'un.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  {id:26, name:'SECTEUR BOUCLE', bg:'#030205', primary:'#aa88ff', dim:'#554477', accent:'#ccaaff',
+   starColors:['#aa88ff','#ccaaff','#8866dd','#eeddff','#ffffff'],
+   nebulaColors:['rgba(120,80,200,','rgba(100,60,180,'],
+   scan:'rgba(170,136,255,0.05)',
+   lore:"Tout semble familier. Simon pense être déjà passé ici.",
+   gravMult:1.0, debrisMult:1.0, loopMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Coordonnées inédites. Nous n\'avons jamais traversé ce secteur.',true),2000);
+       setTimeout(()=>mdwSpeak('Vos constantes vitales indiquent un état de stress. Tout va bien ?',true),12000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Je suis déjà passé ici.\nJe reconnais cette planète. Ce débris. Cette étoile.\nMDW dit que non.\nMDW se trompe.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },6000);
+   }},
+
+  {id:27, name:'SECTEUR DENSE', bg:'#020302', primary:'#44ff88', dim:'#228844', accent:'#88ffaa',
+   starColors:['#44ff88','#88ffaa','#22cc66','#aaffcc','#ffffff'],
+   nebulaColors:['rgba(40,160,80,','rgba(30,130,60,'],
+   scan:'rgba(68,255,136,0.05)',
+   lore:"L'espace est plein. Des centaines de débris serrés. On avance en slalomant.",
+   gravMult:0.8, debrisMult:4.5, denseMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Densité de débris anormalement élevée. Naviguez prudemment.',true),2000);
+     writeGlitchText&&writeGlitchText('C\'est plein ici.\nPlein de tout.\nIl faut slalomer.\nMais les ressources sont là.\nSi on survit.','⬛ SECTEUR DENSE');
+   }},
+
+  {id:28, name:'SECTEUR MAGNÉTIQUE', bg:'#020208', primary:'#4488ff', dim:'#224488', accent:'#88aaff',
+   starColors:['#4488ff','#88aaff','#2255cc','#aabbff','#ffffff'],
+   nebulaColors:['rgba(40,80,200,','rgba(30,60,170,'],
+   scan:'rgba(68,136,255,0.05)',
+   lore:"Les débris sont attirés vers le vaisseau. Il faut se déplacer vite.",
+   gravMult:0.6, debrisMult:2.0, magnetMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Champ magnétique intense. Les débris sont attirés vers nous. Maintenez la vitesse.',true),2000);
+     writeGlitchText&&writeGlitchText('Tout m\'attire.\nLes débris. Les rochers. Les épaves.\nMDW dit de ne pas s\'arrêter.\nJe ne m\'arrête pas.','🧲 MAGNÉTIQUE');
+   }},
+
+  {id:29, name:'SECTEUR FANTÔME', bg:'#010205', primary:'#88ccff', dim:'#446688', accent:'#aaddff',
+   starColors:['#88ccff','#aaddff','#6699cc','#cceeff','#ffffff'],
+   nebulaColors:['rgba(80,140,220,','rgba(60,110,190,'],
+   scan:'rgba(136,204,255,0.04)',
+   lore:"Tout est semi-transparent. On n'est jamais sûr de ce qui est solide.",
+   gravMult:0.7, debrisMult:1.5, ghostMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Les objets présentent une densité anormalement faible. Ou peut-être qu\'ils n\'existent pas tout à fait.',true),2000);
+     writeGlitchText&&writeGlitchText('Tout est flou ici.\nLes planètes sont là mais pas vraiment.\nJe ne sais plus ce qui est solide.','👻 SECTEUR FANTÔME');
+   }},
+
+  {id:30, name:'SECTEUR AURORE', bg:'#010308', primary:'#00ffcc', dim:'#008866', accent:'#44ffdd',
+   starColors:['#00ffcc','#44ffdd','#00ccaa','#88ffee','#ffffff'],
+   nebulaColors:['rgba(0,200,150,','rgba(0,150,200,','rgba(100,0,200,'],
+   scan:'rgba(0,255,204,0.04)',
+   lore:"Des nappes de lumière colorée ondulent dans l'espace. MDW ne sait pas ce que c'est.",
+   gravMult:0.5, debrisMult:0.3, auroraMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Je ne sais pas ce que c\'est. Mais je mesure quelque chose qui ressemble à de la beauté.',true),3000);
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="C'est beau.\nJe ne sais pas comment dire autrement.\nMDW a dit qu'il mesure quelque chose qui ressemble à de la beauté.\nJe lui ai dit que c'est exactement ça.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  {id:31, name:'SECTEUR BINAIRE', bg:'#030201', primary:'#ffdd44', dim:'#886622', accent:'#ffeeaa',
+   starColors:['#ffdd44','#ffeeaa','#ffaa22','#ffffff','#ffcc66'],
+   nebulaColors:['rgba(200,150,40,','rgba(180,120,30,','rgba(255,180,60,'],
+   scan:'rgba(255,221,68,0.05)',
+   lore:"Deux soleils en orbite l'un autour de l'autre. Les trajectoires sont complexes et magnifiques.",
+   gravMult:1.8, debrisMult:0.8, binaryMode:true,
+   onEnter:()=>{
+     if(mdwActive)setTimeout(()=>mdwSpeak('Système binaire. Deux masses stellaires en orbite mutuelle. C\'est élégant.',true),2000);
+     writeGlitchText&&writeGlitchText('Deux soleils.\nIls tournent l\'un autour de l\'autre depuis des milliards d\'années.\nMDW dit que c\'est élégant.\nC\'est la première fois qu\'il utilise ce mot.','☀ SECTEUR BINAIRE');
+   }},
 ];
 
 let currentUniverse=0;
@@ -2837,9 +3128,10 @@ function applyGravity(dt, objX, objY, mass, minDist=0){
   if(dist>range||dist<minDist)return;
   const uMult=(window._universeMult&&window._universeMult.grav)||1;
   const mirror=(window._universeMult&&window._universeMult.mirror)?-1:1;
+  const invertSign=(UNIVERSES[currentUniverse]?.invertGravity)?-1:1;
   const f=G_CONST*mass*uMult/Math.max(dist2,200);
-  ship.vx+=dx/dist*f*dt*60*mirror;
-  ship.vy+=dy/dist*f*dt*60*mirror;
+  ship.vx+=dx/dist*f*dt*60*mirror*invertSign;
+  ship.vy+=dy/dist*f*dt*60*mirror*invertSign;
   return {dist, range, mass};
 }
 
@@ -3165,7 +3457,9 @@ function spawnPlanet(){
     baseAvail[Math.floor(Math.random()*baseAvail.length)];
   if(!type)return;
   const baseR=35+Math.random()*40;
-  const r=type.giant?baseR*3:type.broken?baseR*1.2:baseR;
+  const curU2=UNIVERSES[currentUniverse]||UNIVERSES[0];
+  const sizeMult=curU2.giantMode?2.5:curU2.miniMode?0.35:1;
+  const r=type.giant?baseR*3:type.broken?baseR*1.2:baseR*sizeMult;
   planets.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
@@ -3967,8 +4261,26 @@ function updateShip(dt){
   const driftDrag=driftMode?DRAG*0.3:DRAG;
   ship.vx*=Math.pow(1-driftDrag,dt*60);ship.vy*=Math.pow(1-driftDrag,dt*60);
   ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
-  ship.trail.push({x:ship.x,y:ship.y,vx:ship.vx,vy:ship.vy});
-  if(ship.trail.length>150)ship.trail.shift();
+  // ── Effets univers spéciaux ──
+  const curUniverse=UNIVERSES[currentUniverse]||UNIVERSES[0];
+  // VIDE — pas de spawn
+  if(curUniverse.emptyMode){planets=planets.filter(p=>false);debris=debris.filter(d=>false);}
+  // LENT — ralentir les vélocités
+  if(curUniverse.slowMode){
+    ship.vx*=0.995;ship.vy*=0.995;
+    debris.forEach(d=>{d.vx*=0.97;d.vy*=0.97;});
+  }
+  // MAGNÉTIQUE — débris attirés vers le vaisseau
+  if(curUniverse.magnetMode){
+    debris.forEach(d=>{
+      const dx=ship.x-d.x,dy=ship.y-d.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<600&&dist>0){
+        const f=0.0008/Math.max(dist/200,1);
+        d.vx+=dx/dist*f*60;d.vy+=dy/dist*f*60;
+      }
+    });
+  }
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique — indépendant de la poussée
   if(!dockedPlanet){
@@ -7726,7 +8038,13 @@ function drawStars(ts){
     const dColor=doppler?applyDopplerToColor(s.color,sx,sy,doppler):s.color;
     ctx.fillStyle=dColor;
     const r=s.r*(0.9+twinkle*0.1);
-    ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+    if(UNIVERSES[currentUniverse]?.squareMode){
+      // Étoiles carrées
+      const side=r*1.8;
+      ctx.fillRect(sx-side/2,sy-side/2,side,side);
+    } else {
+      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+    }
     if(s.r>1.5&&finalAlpha>0.5){
       ctx.globalAlpha=finalAlpha*0.3;
       ctx.strokeStyle=dColor;ctx.lineWidth=0.5;
@@ -7835,10 +8153,18 @@ function drawPhenomena(ts){
         farGlow.addColorStop(1,'transparent');
         ctx.fillStyle=farGlow;ctx.beginPath();ctx.arc(sx,sy,40*viewZoom,0,Math.PI*2);ctx.fill();
       }
-      // Corps central
+      // Corps central — carré en squareMode
       const cg=ctx.createRadialGradient(sx,sy,0,sx,sy,p.r*viewZoom);
       cg.addColorStop(0,'#ffffff');cg.addColorStop(0.4,p.color);cg.addColorStop(1,'transparent');
-      ctx.fillStyle=cg;ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=cg;
+      if(UNIVERSES[currentUniverse]?.squareMode){
+        const side=p.r*viewZoom*2;
+        ctx.save();ctx.translate(sx,sy);ctx.rotate(p.pulse*0.1);
+        ctx.fillRect(-side/2,-side/2,side,side);
+        ctx.restore();
+      } else {
+        ctx.beginPath();ctx.arc(sx,sy,p.r*viewZoom,0,Math.PI*2);ctx.fill();
+      }
       // Jets rotatifs
       ctx.translate(sx,sy);ctx.rotate(p.rotAngle);
       const jLen=(80+pulse*40)*viewZoom;
@@ -8193,6 +8519,22 @@ function drawPlanets(){
         ctx.fillStyle=p.type.color;
         ctx.beginPath();ctx.arc(sx+Math.cos(fa)*fd,sy+Math.sin(fa)*fd,fr,0,Math.PI*2);ctx.fill();
       }
+    } else if(UNIVERSES[currentUniverse]?.squareMode){
+      // Mode carré
+      const angle=p.pulse*0.2;
+      ctx.fillStyle=body;
+      ctx.save();ctx.translate(sx,sy);ctx.rotate(angle);
+      const side=r*1.5;
+      ctx.fillRect(-side/2,-side/2,side,side);
+      ctx.strokeStyle=p.type.glowColor||'#88aaff';ctx.lineWidth=1.5;
+      ctx.shadowColor=p.type.glowColor||'#88aaff';ctx.shadowBlur=8;
+      ctx.strokeRect(-side/2,-side/2,side,side);
+      ctx.restore();
+    } else if(UNIVERSES[currentUniverse]?.ghostMode){
+      // Mode fantôme — semi-transparent
+      ctx.globalAlpha=0.35+Math.sin(p.pulse)*0.15;
+      ctx.fillStyle=body;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
     } else {
       ctx.fillStyle=body;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
     }
@@ -8703,7 +9045,55 @@ function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
   // Fond de l'univers courant
   const curU=UNIVERSES[currentUniverse]||UNIVERSES[0];
-  ctx.fillStyle=curU.bg||'#000902';ctx.fillRect(0,0,W,H);
+  // Fond — NÉGATIF = blanc
+  ctx.fillStyle=curU.negativeMode?'#ffffff':(curU.bg||'#000902');
+  ctx.fillRect(0,0,W,H);
+
+  // PARASITE — lignes de bruit aléatoires
+  if(curU.noiseMode&&Math.random()<0.3){
+    const ny=Math.floor(Math.random()*H);
+    const nw=Math.floor(Math.random()*W*0.3);
+    const nx=Math.floor(Math.random()*(W-nw));
+    ctx.fillStyle=`rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},0.15)`;
+    ctx.fillRect(nx,ny,nw,2);
+  }
+
+  // AURORE — nappes de lumière ondulantes
+  if(curU.auroraMode){
+    const t=Date.now()*0.0003;
+    const auroraColors=['rgba(0,255,200,','rgba(100,0,255,','rgba(0,150,255,','rgba(255,0,200,'];
+    for(let i=0;i<3;i++){
+      const col=auroraColors[i%auroraColors.length];
+      const yBase=H*(0.2+i*0.25)+Math.sin(t+i)*80;
+      ctx.strokeStyle=`${col}0.06)`;ctx.lineWidth=40+Math.sin(t*1.3+i)*20;
+      ctx.shadowColor=col+'0.3)';ctx.shadowBlur=30;
+      ctx.beginPath();
+      for(let x=0;x<W;x+=20){
+        const y=yBase+Math.sin(x*0.008+t+i)*60;
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();ctx.shadowBlur=0;
+    }
+  }
+
+  // MÉMOIRE — mots qui flottent
+  if(curU.memoryMode&&Math.random()<0.008){
+    const words=["cuisine","odeur","quelqu'un","fenêtre","terre","avant","maison","voix","main","jardin"];
+    const word=words[Math.floor(Math.random()*words.length)];
+    const wx=Math.random()*W,wy=Math.random()*H;
+    ctx.fillStyle=`rgba(255,170,68,${0.1+Math.random()*0.15})`;
+    ctx.font=`${10+Math.random()*14}px 'Share Tech Mono'`;
+    ctx.textAlign='center';ctx.fillText(word,wx,wy);
+  }
+
+  // NÉGATIF — filtre CSS inversion
+  if(curU.negativeMode&&!canvas._negApplied){
+    canvas.style.filter='invert(1) hue-rotate(180deg)';
+    canvas._negApplied=true;
+  } else if(!curU.negativeMode&&canvas._negApplied){
+    canvas.style.filter='';
+    canvas._negApplied=false;
+  }
 
   // Effets ambiants distincts par univers
   switch(currentUniverse){
@@ -9441,7 +9831,7 @@ function renderCatTab(tab){
     content.innerHTML=`
       <div style="text-align:center;padding:10px 0;">
         <div style="font-size:10px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:8px;">ÉTAT DU VAISSEAU</div>
-        <canvas id="ship-plan-canvas" width="220" height="160" style="display:block;margin:0 auto;max-width:100%;"></canvas>
+        <canvas id="ship-plan-canvas" width="220" height="220" style="display:block;margin:0 auto;max-width:100%;"></canvas>
         <div id="ship-modules-list" style="margin-top:10px;text-align:left;padding:0 8px;"></div>
       </div>`;
 
@@ -9455,7 +9845,7 @@ function renderCatTab(tab){
       for(let x=0;x<220;x+=20){sctx.beginPath();sctx.moveTo(x,0);sctx.lineTo(x,160);sctx.stroke();}
       for(let y=0;y<160;y+=20){sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(220,y);sctx.stroke();}
       // Vaisseau centré, pointant à droite, échelle 4x
-      drawShipAt(sctx,110,90,0,4,false,0,allMods);
+      drawShipAt(sctx,110,110,0,4,false,0,allMods);
     }
 
     // Liste des modules
