@@ -48,10 +48,15 @@
   .passenger-slot.active{color:var(--amber);}
 
   /* TORPILLE */
-  #boost-bar{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s;}
-  #boost-bar.visible{opacity:1;}
+  #boost-bar{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s;}
+  #boost-bar.visible{opacity:1;pointer-events:all;}
   #boost-bar .b-label{font-size:7px;letter-spacing:2px;color:var(--green-dim);}
-  #boost-bar .b-charge{font-family:'VT323',monospace;font-size:18px;color:var(--green);letter-spacing:2px;}
+  #boost-bar .b-btn{font-family:'VT323',monospace;font-size:18px;color:var(--green);letter-spacing:2px;
+    border:1px solid rgba(0,255,65,0.4);padding:4px 16px;cursor:pointer;
+    background:rgba(0,9,2,0.8);border-radius:2px;display:block;margin-top:2px;
+    transition:background 0.1s;-webkit-tap-highlight-color:transparent;}
+  #boost-bar .b-btn:active{background:rgba(0,255,65,0.15);}
+  #boost-bar .b-btn.cooldown{color:var(--green-dim);border-color:rgba(0,255,65,0.15);}
 
   .gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;}
   .gauge-label{font-size:11px;letter-spacing:2px;color:var(--green-dim);}
@@ -243,7 +248,7 @@
   </div>
   <div id="boost-bar">
     <div class="b-label">BOOST D'URGENCE</div>
-    <div class="b-charge" id="boost-charge">PRÊT</div>
+    <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()">⚡ PRÊT</button>
   </div>
   <div id="passengers"></div>
   <div id="gauges">
@@ -308,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.2 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.3 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -331,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.2</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.3</div>
 </div>
 
 <script>
@@ -1594,7 +1599,7 @@ const UPGRADES={
   thruster:  {name:'PROPULSEURS',   desc:'Augmente la poussée de 30% par niveau.',          cost:[250,500],     levels:2, apply:()=>{}},
   radar_ext: {name:'RADAR+',        desc:'Étend la portée radar de 200u par niveau.',       cost:[180,350],     levels:2, apply:()=>{}},
   shield:    {name:'BOUCLIER',      desc:'Absorbe un impact critique par jour.',            cost:[400],         levels:1, apply:()=>{}},
-  drone:     {name:'DRONE',         desc:'Attire automatiquement les capsules proches.',    cost:[350],         levels:1, apply:()=>{}},
+  drone:     {name:'DRONE',         desc:'Accélère l\'amarrage de 40%. Analyse auto à l\'approche.',    cost:[350],         levels:1, apply:()=>{}},
   scanner:   {name:'SCANNER',       desc:'Révèle le type de planète avant l\'approche.',    cost:[300],         levels:1, apply:()=>{}},
   boost:     {name:'BOOST D\'URGENCE', desc:'Double-tap — propulsion massive 1s. Recharge 60s.\nDernier recours face à un objet massif.', cost:[400], levels:1, apply:()=>{}},
 };
@@ -9191,10 +9196,19 @@ function updateHUD(){
   const boostCharge=document.getElementById('boost-charge');
   if(boostBar&&upgrades.boost>0){
     boostBar.classList.add('visible');
-    if(boostActive)boostCharge.textContent='ACTIF';
-    else if(boostCooldown>0)boostCharge.textContent=Math.ceil(boostCooldown)+'s';
-    else boostCharge.textContent='PRÊT';
-    boostCharge.style.color=boostCooldown>0?'rgba(0,255,65,0.4)':boostActive?'#ffaa00':'var(--green)';
+    if(boostActive){
+      boostCharge.textContent='⚡ ACTIF';
+      boostCharge.className='b-btn';
+      boostCharge.style.color='#ffaa00';boostCharge.style.borderColor='rgba(255,170,0,0.5)';
+    } else if(boostCooldown>0){
+      boostCharge.textContent=`⚡ ${Math.ceil(boostCooldown)}s`;
+      boostCharge.className='b-btn cooldown';
+      boostCharge.style.color='';boostCharge.style.borderColor='';
+    } else {
+      boostCharge.textContent='⚡ BOOST';
+      boostCharge.className='b-btn';
+      boostCharge.style.color='';boostCharge.style.borderColor='';
+    }
   } else if(boostBar){
     boostBar.classList.remove('visible');
   }
@@ -9811,8 +9825,6 @@ function handlePointerDown(e){
     if(tapCount>=3){tapCount=0;lastTapTime=0;return;}
     if(tapCount>=2){
       playTapNote(2);
-      // Double tap — boost d'urgence
-      if(upgrades.boost>0)triggerEmergencyBoost();
       tapCount=0;lastTapTime=0;return;
     }
   }else{
@@ -10042,9 +10054,9 @@ function renderCatTab(tab){
       thruster: {name:'PROPULSEURS',      icon:'🚀', desc:'Augmente la puissance de propulsion de 40%. Le vaisseau répond plus vite aux commandes.', effect:'Poussée +40%'},
       radar_ext:{name:'RADAR+',           icon:'📡', desc:'Étend la portée du radar de 50%. Vous détectez les objets plus loin.', effect:'Portée radar +50%'},
       shield:   {name:'BOUCLIER',         icon:'⚡', desc:'Déploie un bouclier énergétique qui absorbe les impacts. Se régénère avec l\'énergie.', effect:'Absorbe impacts'},
-      drone:    {name:'DRONE',            icon:'🤖', desc:'Un drone autonome collecte automatiquement les capsules à portée.', effect:'Collecte auto'},
-      scanner:  {name:'SCANNER',          icon:'🔭', desc:'Révèle le type de planète avant l\'approche. Plus de surprises.', effect:'Détecte planètes'},
-      boost:    {name:'BOOST D\'URGENCE', icon:'⚡', desc:'Double-tap pour une propulsion massive d\'une seconde. Recharge en 60s. Dernier recours face à un objet massif.', effect:'Double-tap boost'},
+      drone:    {name:'DRONE',            icon:'🤖', desc:'Accélère l\'amarrage de 40%. Analyse automatique à l\'approche des planètes.', effect:'Amarrage +40%'},
+      scanner:  {name:'SCANNER',          icon:'🔭', desc:'Révèle le type de planète et les modules d\'épaves avant l\'approche.', effect:'Détecte planètes+épaves'},
+      boost:    {name:'BOOST D\'URGENCE', icon:'⚡', desc:'Bouton central — propulsion massive 1 seconde. Recharge 60s. Dernier recours face à un objet massif.', effect:'Bouton boost'},
     };
     const pts=upgradePoints||0;
     let html=`<div style="font-size:11px;color:var(--amber);letter-spacing:2px;margin-bottom:12px;">POINTS : ${pts}</div>`;
@@ -10078,7 +10090,7 @@ function renderCatTab(tab){
       thruster:'Poussée +40%. Réponse plus rapide aux commandes.',
       radar_ext:'Portée radar +50%. Détecte les objets plus loin.',
       shield:'Absorbe les impacts énergétiques.',
-      drone:'Collecte automatiquement les capsules à portée.',
+      drone:'Accélère l\'amarrage de 40%. Analyse automatique à l\'approche des planètes.',
       scanner:'Révèle le type de planète avant l\'approche.',
       boost:'Double-tap — propulsion massive 1s. Recharge 60s.',
     };
