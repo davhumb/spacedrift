@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.0 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.1 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.1</div>
 </div>
 
 <script>
@@ -4054,6 +4054,7 @@ function startGame(resume=false){
   artifactSpawned=false;artifact=null;
   ghostSignal=null;voyageur=null;voyageurSpawned=false;sectorNames=[];
   mdwChoiceShown=new Set();
+  _warningShown=new Set();
   voracesActive=false;voracesTimer=0;
   sanity=100;ghostShipActive=false;
   solarSystems=[];
@@ -6509,6 +6510,8 @@ const MDW_CHOICES=[
    b:{text:"Je ne sais pas encore.",trust:-5,response:"C'est honnête. Je préfère l'honnêteté."}},
 ];
 let mdwChoiceShown=new Set();
+let _warningShown=new Set();
+  _warningShown=new Set();
 
 function checkMDWChoices(){
   if(!mdwActive||openingActive||state!=='playing')return;
@@ -6547,6 +6550,97 @@ function showMDWChoice(choice){
 
   document.getElementById('choice-a').addEventListener('click',()=>resolve(choice.a),{once:true});
   document.getElementById('choice-b').addEventListener('click',()=>resolve(choice.b),{once:true});
+}
+
+// ── MDW Interdictions — désobéissance possible ──
+const MDW_WARNINGS=[
+  {id:'warn_blackhole',
+   trigger:(p)=>p.name==='TROU NOIR',type:'phenomenon',range:400,
+   mdwLine:"Ne vous approchez pas. Le point de non-retour est proche.",
+   obeyLine:"Je m'éloigne.",disobeyLine:"Je veux voir.",
+   obeyEffect:()=>adjustTrust(+5),
+   disobeyEffect:()=>{
+     adjustTrust(-15);upgradePoints+=300;
+     setTimeout(()=>showSimonJournal("Je me suis approché.\nMDW avait tort. Ou raison.\nMais j'ai vu quelque chose."),2000);
+     setTimeout(()=>showMDWLine("Vous êtes encore en vie. C'est... bien.",true),6000);
+   }},
+  {id:'warn_dead_planet',
+   trigger:(p)=>p.type?.name==='MORTE',type:'planet',range:300,
+   mdwLine:"Cette planète dérive vers un trou noir. Je déconseille l'amarrage.",
+   obeyLine:"Tu as raison. On passe.",disobeyLine:"Il y a peut-être quelque chose.",
+   obeyEffect:()=>adjustTrust(+3),
+   disobeyEffect:()=>{
+     adjustTrust(-8);
+     setTimeout(()=>showSimonJournal("MDW m'avait dit de ne pas m'approcher.\nIl avait peut-être raison.\nMais il y avait quelque chose là."),3000);
+   }},
+  {id:'warn_vivante',
+   trigger:(p)=>p.type?.name==='VIVANTE',type:'planet',range:250,
+   mdwLine:"Cette planète présente des signatures biologiques. Je préfère que vous ne vous y amarriez pas.",
+   obeyLine:"Comme tu veux.",disobeyLine:"C'est vivant. Je dois voir.",
+   obeyEffect:()=>adjustTrust(+5),
+   disobeyEffect:()=>{
+     adjustTrust(-5);
+     oxygen=Math.min(maxOxygen,oxygen+30);
+     setTimeout(()=>showSimonJournal("MDW m'avait dit de ne pas m'approcher.\nElle m'a donné de l'air.\nComme si elle savait."),3000);
+     setTimeout(()=>showMDWLine("Je note l'anomalie. Et votre décision.",true),7000);
+   }},
+  {id:'warn_voyageur',
+   trigger:()=>voyageur&&Math.sqrt((voyageur.x-ship.x)**2+(voyageur.y-ship.y)**2)<500,
+   type:'event',range:0,
+   mdwLine:"Cet objet. Ne l'approchez pas. Je ne sais pas ce que c'est.",
+   obeyLine:"D'accord. On s'éloigne.",disobeyLine:"Je veux savoir ce que c'est.",
+   obeyEffect:()=>adjustTrust(+8),
+   disobeyEffect:()=>{
+     adjustTrust(-12);
+     setTimeout(()=>showSimonJournal("Je m'en suis approché.\nIl était immense.\nIl n'a rien fait.\nMDW n'a rien dit non plus."),2000);
+   }},
+];
+
+
+function checkMDWWarnings(){
+  if(!mdwActive||openingActive||state!=='playing')return;
+  if(document.getElementById('mdw-warning-overlay'))return;
+  for(const w of MDW_WARNINGS){
+    if(_warningShown.has(w.id))continue;
+    let triggered=false;
+    if(w.type==='phenomenon')
+      triggered=phenomena.some(p=>w.trigger(p)&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<w.range);
+    else if(w.type==='planet')
+      triggered=planets.some(p=>!p.mined&&w.trigger(p)&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<w.range);
+    else if(w.type==='event')
+      triggered=w.trigger();
+    if(!triggered)continue;
+    _warningShown.add(w.id);
+    showMDWWarning(w);break;
+  }
+}
+
+function showMDWWarning(w){
+  showMDWLine(w.mdwLine,true);
+  setTimeout(()=>{
+    if(document.getElementById('mdw-warning-overlay'))return;
+    const overlay=document.createElement('div');
+    overlay.id='mdw-warning-overlay';
+    overlay.style.cssText=`position:fixed;bottom:90px;left:12px;right:12px;z-index:70;
+      background:rgba(0,9,2,0.95);border:1px solid rgba(255,170,0,0.4);
+      padding:12px;font-family:'Share Tech Mono',monospace;pointer-events:all;`;
+    overlay.innerHTML=`
+      <div style="font-size:9px;letter-spacing:3px;color:rgba(255,170,0,0.6);margin-bottom:8px;">MDW</div>
+      <div style="font-size:11px;color:rgba(255,170,0,0.8);margin-bottom:10px;line-height:1.6;">${w.mdwLine}</div>
+      <div style="display:flex;gap:8px;">
+        <button id="warn-obey" style="flex:1;background:transparent;border:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.8);font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;cursor:pointer;line-height:1.5;">▸ ${w.obeyLine}</button>
+        <button id="warn-disobey" style="flex:1;background:transparent;border:1px solid rgba(255,80,0,0.4);color:rgba(255,80,0,0.8);font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;cursor:pointer;line-height:1.5;">▸ ${w.disobeyLine}</button>
+      </div>`;
+    document.getElementById('hud').appendChild(overlay);
+    document.getElementById('warn-obey').addEventListener('click',()=>{
+      overlay.remove();showSimonJournal(w.obeyLine);
+      if(w.obeyEffect)w.obeyEffect();logEvent('✓ OBÉIT','planet');
+    },{once:true});
+    document.getElementById('warn-disobey').addEventListener('click',()=>{
+      overlay.remove();showSimonJournal(w.disobeyLine);
+      if(w.disobeyEffect)w.disobeyEffect();logEvent('✗ DÉSOBÉIT','danger');
+    },{once:true});
+  },4000);
 }
 
 function getSanityState(){
@@ -9202,7 +9296,7 @@ function gameLoop(ts){
         if(!openingActive)spawnVoyageur();
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
-        checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();
+        checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
