@@ -308,7 +308,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -331,7 +331,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.2</div>
 </div>
 
 <script>
@@ -2385,6 +2385,74 @@ const UNIVERSES=[
      if(mdwActive)setTimeout(()=>mdwSpeak('Système binaire. Deux masses stellaires en orbite mutuelle. C\'est élégant.',true),2000);
      writeGlitchText&&writeGlitchText('Deux soleils.\nIls tournent l\'un autour de l\'autre depuis des milliards d\'années.\nMDW dit que c\'est élégant.\nC\'est la première fois qu\'il utilise ce mot.','☀ SECTEUR BINAIRE');
    }},
+
+  // ── SECTEUR FRACTAL — l'espace se replie ──
+  {id:32, name:'SECTEUR FRACTAL', bg:'#020105', primary:'#ff88ff', dim:'#881188', accent:'#ffaaff',
+   starColors:['#ff88ff','#ffaaff','#dd44dd','#ffccff','#ffffff'],
+   nebulaColors:['rgba(180,40,180,','rgba(140,20,140,'],
+   scan:'rgba(255,136,255,0.05)',
+   lore:"L'espace se replie sur lui-même. Sortir par la droite c'est revenir par la gauche.",
+   gravMult:1.0, debrisMult:1.5, fractalMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Erreur de coordonnées. Je détecte votre vaisseau à deux endroits simultanément.',true),2000);
+       setTimeout(()=>mdwSpeak('L\'espace est... récursif. Naviguez prudemment. Ou pas.',true),9000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Je suis sorti par la droite.\nJe suis revenu par la gauche.\nMDW dit que c'est la physique.\nJe dis que c'est de la triche.\nIl dit : c'est pareil.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  // ── SECTEUR DÉJÀ-VU — des copies de ton vaisseau ──
+  {id:33, name:'SECTEUR DÉJÀ-VU', bg:'#030208', primary:'#88ffee', dim:'#336655', accent:'#aaffee',
+   starColors:['#88ffee','#aaffee','#44ccbb','#ccffee','#ffffff'],
+   nebulaColors:['rgba(60,180,160,','rgba(40,150,130,'],
+   scan:'rgba(136,255,238,0.05)',
+   lore:"Des épaves qui ressemblent à ton propre vaisseau. MDW dit que c'est une coïncidence.",
+   gravMult:0.9, debrisMult:1.2, dejavuMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('C\'est une coïncidence statistique. Ne lisez pas les logs de ces épaves.',true),2000);
+       setTimeout(()=>mdwSpeak('Simon. Éloignez-vous de ces débris.',true),10000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Ces épaves.\nElles ressemblent à mon vaisseau.\nMDW dit de ne pas regarder les logs.\nPourquoi il dit ça ?";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+     // Spawner des épaves qui ressemblent au vaisseau du joueur
+     setTimeout(()=>spawnDejavuWrecks(),8000);
+   }},
+
+  // ── SECTEUR SYMBIOTIQUE — fluide conscient ──
+  {id:34, name:'SECTEUR SYMBIOTIQUE', bg:'#010408', primary:'#00ffaa', dim:'#006644', accent:'#44ffcc',
+   starColors:['#00ffaa','#44ffcc','#00cc88','#88ffcc','#aaffee'],
+   nebulaColors:['rgba(0,180,120,','rgba(0,140,100,','rgba(0,200,150,'],
+   scan:'rgba(0,255,170,0.05)',
+   lore:"L'espace est rempli d'un fluide bioluminescent. MDW pense qu'il est conscient.",
+   gravMult:0.4, debrisMult:0.5, symbioticMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Je détecte une substance organique dans tout le secteur. Elle répond à nos mouvements.',true),2000);
+       setTimeout(()=>mdwSpeak('Arrêtez de bouger. Je ne veux pas... le réveiller.',true),8000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Le fluide réagit quand je bouge.\nMDW dit d'arrêter.\nJe ralentis.\nLes filaments s'approchent.\nIls ne font pas mal.\nIls réparent la coque.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },6000);
+   }},
 ];
 
 let currentUniverse=0;
@@ -4282,6 +4350,33 @@ function updateShip(dt){
       }
     });
   }
+
+  // FRACTAL — wrap-around Pac-Man
+  if(curUniverse.fractalMode){
+    const wrapRange=2000;
+    if(ship.x>camX+wrapRange)ship.x-=wrapRange*2;
+    else if(ship.x<camX-wrapRange)ship.x+=wrapRange*2;
+    if(ship.y>camY+wrapRange)ship.y-=wrapRange*2;
+    else if(ship.y<camY-wrapRange)ship.y+=wrapRange*2;
+    // Les débris aussi
+    debris.forEach(d=>{
+      if(d.x>camX+wrapRange)d.x-=wrapRange*2;
+      else if(d.x<camX-wrapRange)d.x+=wrapRange*2;
+      if(d.y>camY+wrapRange)d.y-=wrapRange*2;
+      else if(d.y<camY-wrapRange)d.y+=wrapRange*2;
+    });
+  }
+
+  // SYMBIOTIQUE — drag fort + réparation coque au repos
+  if(curUniverse.symbioticMode){
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2);
+    // Drag bioluminescent
+    ship.vx*=Math.pow(0.94,dt*60);ship.vy*=Math.pow(0.94,dt*60);
+    // Au repos — le fluide répare la coque
+    if(speed<0.5&&hull<100)hull=Math.min(100,hull+0.3*dt);
+    // En mouvement — consommation énergie
+    if(speed>1)energy=Math.max(0,energy-speed*0.3*dt);
+  }
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique — indépendant de la poussée
   if(!dockedPlanet){
@@ -5624,7 +5719,25 @@ function drawWrecks(){
     const pulse=(Math.sin(w.pulse)+1)*0.5;
     ctx.save();ctx.translate(sx,sy);ctx.rotate(w.rot);
     const r=w.r*viewZoom;
-    ctx.strokeStyle=w.discovered?'rgba(255,170,0,0.3)':'rgba(255,170,0,0.7)';
+    // Épaves Déjà-Vu — ressemblent au vaisseau de Simon
+    if(w.isDejavu){
+      const dv_alpha=w.discovered?0.25:0.6+pulse*0.2;
+      ctx.strokeStyle=`rgba(136,255,238,${dv_alpha})`;
+      ctx.lineWidth=1.2;ctx.shadowColor='#88ffee';ctx.shadowBlur=w.discovered?3:10+pulse*5;
+      // Même forme que le vaisseau mais abîmée
+      ctx.beginPath();
+      ctx.moveTo(r*0.9,0);ctx.lineTo(-r*0.7,-r*0.5);
+      ctx.lineTo(-r*0.45,0);ctx.lineTo(-r*0.7,r*0.5);ctx.closePath();ctx.stroke();
+      // Hublot brisé
+      ctx.strokeStyle=`rgba(136,255,238,${dv_alpha*0.5})`;ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.arc(r*0.3,0,r*0.25,0,Math.PI*2);ctx.stroke();
+      // Label discret
+      if(!w.discovered){
+        ctx.fillStyle='rgba(136,255,238,0.5)';ctx.font=`${7*viewZoom}px 'Share Tech Mono'`;
+        ctx.textAlign='center';ctx.fillText(w.name,0,-r*0.9);
+      }
+      ctx.restore();continue;
+    }
     ctx.lineWidth=1.5;ctx.shadowColor='#ffaa00';ctx.shadowBlur=w.discovered?3:8+pulse*4;
     ctx.beginPath();
     ctx.moveTo(0,-r);ctx.lineTo(r*0.7,r*0.5);ctx.lineTo(-r*0.4,r*0.3);
@@ -6641,6 +6754,31 @@ function showMDWWarning(w){
       if(w.disobeyEffect)w.disobeyEffect();logEvent('✗ DÉSOBÉIT','danger');
     },{once:true});
   },4000);
+}
+
+function spawnDejavuWrecks(){
+  // Spawner 3 épaves qui ressemblent au vaisseau de Simon
+  const dejavuLogs=[
+    {pilot:'SIMON B. — RUN PRÉCÉDENT', text:'Je sais ce que je fais.\nJe sais ce que je fais.'},
+    {pilot:'BRENT / XKP-625', text:'MDW dit que tout va bien.\nJe ne le crois plus.'},
+    {pilot:'S. BRENT — LOG CORROMPU', text:'...Je reconnais cet endroit.\nJe suis déjà passé ici.'},
+  ];
+  for(let i=0;i<3;i++){
+    const angle=Math.random()*Math.PI*2;
+    const dist=400+Math.random()*600;
+    const log=dejavuLogs[i];
+    const w={
+      x:ship.x+Math.cos(angle)*dist,
+      y:ship.y+Math.sin(angle)*dist,
+      vx:(Math.random()-0.5)*0.02,vy:(Math.random()-0.5)*0.02,
+      r:14,pulse:Math.random()*Math.PI*2,
+      name:`XKP-625 #${Math.floor(totalRuns||1)+i}`,
+      log:log.text,pilot:log.pilot,
+      discovered:false,moduleKey:null,
+      isDejavu:true, // rendu spécial
+    };
+    wrecks.push(w);
+  }
 }
 
 function getSanityState(){
@@ -9167,6 +9305,34 @@ function gameLoop(ts){
         x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
       }
       ctx.stroke();ctx.shadowBlur=0;
+    }
+  }
+
+  // SYMBIOTIQUE — filaments bioluminescents
+  if(curU.symbioticMode){
+    const t=Date.now()*0.0005;
+    for(let i=0;i<8;i++){
+      const ox=Math.sin(t*0.7+i*2.1)*W*0.4+W/2;
+      const oy=Math.cos(t*0.5+i*1.8)*H*0.4+H/2;
+      const alpha=0.06+Math.sin(t+i)*0.03;
+      ctx.strokeStyle=`rgba(0,255,170,${alpha})`;
+      ctx.lineWidth=1+Math.sin(t+i)*0.5;ctx.shadowBlur=0;
+      ctx.beginPath();
+      for(let j=0;j<20;j++){
+        const px=ox+Math.sin(t*1.2+i+j*0.4)*80;
+        const py=oy+Math.cos(t*0.8+i+j*0.5)*80;
+        j===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // FRACTAL — effet tunnel aux bords
+  if(curU.fractalMode){
+    const alpha=0.04;
+    ctx.strokeStyle=`rgba(255,136,255,${alpha})`;ctx.lineWidth=1;
+    for(let i=1;i<=3;i++){
+      ctx.strokeRect(W/2-W/(i*2),H/2-H/(i*2),W/i,H/i);
     }
   }
 
