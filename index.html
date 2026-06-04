@@ -2455,16 +2455,13 @@ let sectorCount=0;
 // ── Trous de ver secondaires ──────────────────
 // Apparaissent aléatoirement dans l'espace — pas liés au signal
 let secondaryWormholes=[];
-let secondaryWormholeTimer=300; // premier après 5 min
+let secondaryWormholeTimer=60; // premier après 1 min
 
 function updateSecondaryWormholes(dt){
   secondaryWormholeTimer-=dt;
-  // Apparaissent dès le jour 4, rares — pas besoin d'avoir traversé un premier trou de ver
-  if(secondaryWormholeTimer<=0&&secondaryWormholes.length<1&&survivalDay>=4){
-    if(Math.random()<0.3){ // 30% de chance — reste rare
-      spawnSecondaryWormhole();
-    }
-    secondaryWormholeTimer=300+Math.random()*300; // 5-10 min entre chaque tentative
+  if(secondaryWormholeTimer<=0&&secondaryWormholes.length<2&&survivalDay>=4){
+    spawnSecondaryWormhole(); // garanti — toujours spawner
+    secondaryWormholeTimer=120+Math.random()*120; // 2-4 min entre chaque
   }
   for(const w of secondaryWormholes){
     w.pulse+=dt*1.5;w.rotAngle+=dt*0.8;w.life-=dt;
