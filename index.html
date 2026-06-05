@@ -2467,7 +2467,7 @@ function updateSecondaryWormholes(dt){
     w.pulse+=dt*1.5;w.rotAngle+=dt*0.8;w.life-=dt;
     const dx=ship.x-w.x,dy=ship.y-w.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(!w.discovered&&dist<w.r+30){
+    if(!w.discovered&&dist<w.r+60){
       w.discovered=true;w.life=0;
       if(w.isReturn){triggerFinA();return;}
       currentUniverse=w.targetUniverse;
@@ -2545,7 +2545,7 @@ function updateSecondaryWormholes(dt){
 
 function spawnSecondaryWormhole(){
   const angle=Math.random()*Math.PI*2;
-  const dist=800+Math.random()*700; // 800 à 1500u — à chercher
+  const dist=400+Math.random()*400; // 400-800u — visible et atteignable
   const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
   const target=available[Math.floor(Math.random()*available.length)];
   secondaryWormholes.push({
@@ -5663,7 +5663,7 @@ function updateWrecks(dt){
     w.rot+=w.rotV*dt*60;w.pulse+=dt*0.8;
     const dx=ship.x-w.x,dy=ship.y-w.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(!w.discovered&&dist<w.r+30){
+    if(!w.discovered&&dist<w.r+60){
       w.discovered=true;wrecksFound++;
       logEvent(`🛸 ÉPAVE : ${w.name}`,'warn');
       journalFullText=w.log;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
@@ -9125,6 +9125,30 @@ function drawRadar(){
   // Écho radar par-dessus le clipping
   drawRareRadarEffects();
 
+  // ── TdV secondaires sur le radar ──
+  for(const w of secondaryWormholes){
+    const u=UNIVERSES[w.targetUniverse];
+    if(!u)continue;
+    const col=u.primary||'#ffffff';
+    const wdx=(w.x-ship.x)/PR*RADAR_R;
+    const wdy=(w.y-ship.y)/PR*RADAR_R;
+    const wDist=Math.sqrt(wdx*wdx+wdy*wdy);
+    const pulse=Math.floor(Date.now()/400)%2===0;
+    if(wDist<=RADAR_R){
+      rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=8;
+      rctx.beginPath();rctx.arc(cx+wdx,cy+wdy,4,0,Math.PI*2);rctx.fill();
+      rctx.shadowBlur=0;
+    } else if(pulse){
+      // Flèche sur le bord
+      const wa=Math.atan2(wdy,wdx);
+      rctx.save();rctx.translate(cx+Math.cos(wa)*RADAR_R*0.88,cy+Math.sin(wa)*RADAR_R*0.88);
+      rctx.rotate(wa);rctx.fillStyle=col;rctx.globalAlpha=0.9;
+      rctx.shadowColor=col;rctx.shadowBlur=6;
+      rctx.beginPath();rctx.moveTo(6,0);rctx.lineTo(-3,-3);rctx.lineTo(-3,3);rctx.closePath();
+      rctx.fill();rctx.globalAlpha=1;rctx.restore();rctx.shadowBlur=0;
+    }
+  }
+
   // ── Effet miroir — positions radar faussées ──
   const mirrorOffset=window._mirrorActive?(Math.sin(Date.now()*0.001)*0.3):0;
 
@@ -9451,7 +9475,8 @@ function gameLoop(ts){
       if(state==='playing'&&!cataloguePaused){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateKeyboard(dt);updateResources(dt);updateDebris(dt);// capsules virées
-        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);// updateTorpedoes viréeupdateWrecks(dt);updatePassengers(dt);updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
+        updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateWrecks(dt);updatePassengers(dt);// updateTorpedoes virée
+        updateRareEvents(dt);updateCosmology(dt);updateTradePosts(dt);updateEnemies(dt);updateGravWaves(dt);updateSecondaryWormholes(dt);updateRelics(dt);updateDocking(dt);updateConvergence(dt);updateParticles(dt);updateFloatingTexts(dt);
         updateCombo(dt);updateBoss(dt);updateSpawning(dt);updateDay(dt);updateJournal(dt);
         updateMission();updateSignal(dt);updateDecomp(dt);updateAchievements(dt);updateMDW(dt);
         updateDriftMode(dt);updateHullSounds(dt);updateSpecialSectors(dt);updateGodSequence(dt);updateTerminalDialog(dt);updateMDWSectorDialogs(dt);updateZenMode();checkMDWEmergency();checkMDWMeta();
