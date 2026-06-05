@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.0 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.1 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.1</div>
 </div>
 
 <script>
@@ -7878,8 +7878,8 @@ function drawVoyageur(){
   ctx.shadowBlur=0;ctx.restore();
   // Sur le radar — point noir qui pulse
   const PR=getRadarRange();
-  const rdx=(voyageur.x-ship.x)/PR*RADAR_R;
-  const rdy=(voyageur.y-ship.y)/PR*RADAR_R;
+  const rdx=(voyageur.x-ship.x)/RADAR_RANGE*RADAR_R;
+  const rdy=(voyageur.y-ship.y)/RADAR_RANGE*RADAR_R;
   if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R){
     rctx.fillStyle=`rgba(60,60,120,${0.5+pulse*0.3})`;
     rctx.beginPath();rctx.arc(35+rdx,35+rdy,4,0,Math.PI*2);rctx.fill();
@@ -8072,8 +8072,8 @@ function drawGhostSignal(){
     ctx.beginPath();ctx.moveTo(sx,sy-6);ctx.lineTo(sx,sy+6);ctx.stroke();
   }
   const PR=getRadarRange();
-  const rdx=(ghostSignal.x-ship.x)/PR*RADAR_R;
-  const rdy=(ghostSignal.y-ship.y)/PR*RADAR_R;
+  const rdx=(ghostSignal.x-ship.x)/RADAR_RANGE*RADAR_R;
+  const rdy=(ghostSignal.y-ship.y)/RADAR_RANGE*RADAR_R;
   if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R&&Math.floor(Date.now()/300)%2===0){
     rctx.fillStyle='#ffff00';rctx.shadowColor='#ffff00';rctx.shadowBlur=8;
     rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
@@ -9322,8 +9322,8 @@ function drawRadar(){
     const u=UNIVERSES[w.targetUniverse];
     if(!u)continue;
     const col=u.primary||'#ffffff';
-    const wdx=(w.x-ship.x)/PR*RADAR_R;
-    const wdy=(w.y-ship.y)/PR*RADAR_R;
+    const wdx=(w.x-ship.x)/RADAR_RANGE*RADAR_R;
+    const wdy=(w.y-ship.y)/RADAR_RANGE*RADAR_R;
     const wDist=Math.sqrt(wdx*wdx+wdy*wdy);
     const pulse=Math.floor(Date.now()/400)%2===0;
     if(wDist<=RADAR_R){
@@ -9345,7 +9345,6 @@ function drawRadar(){
   const mirrorOffset=window._mirrorActive?(Math.sin(Date.now()*0.001)*0.3):0;
 
   // ── Indicateurs planètes proches ──
-  const PR=getRadarRange();
   [...planets].filter(p=>!p.mined)
     .sort((a,b)=>{
       const da=Math.sqrt((a.x-ship.x)**2+(a.y-ship.y)**2);
@@ -9356,8 +9355,8 @@ function drawRadar(){
     }).slice(0,3).forEach(p=>{
       const res=PLANET_RESOURCES[p.type?.name]||{color:'#00ff41'};
       const col=res.color||'#00ff41';
-      const pdx=(p.x-ship.x)/PR*RADAR_R;
-      const pdy=(p.y-ship.y)/PR*RADAR_R;
+      const pdx=(p.x-ship.x)/RADAR_RANGE*RADAR_R;
+      const pdy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
       if(Math.sqrt(pdx*pdx+pdy*pdy)<=RADAR_R){
         rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=4;
         rctx.beginPath();rctx.arc(cx+pdx,cy+pdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
