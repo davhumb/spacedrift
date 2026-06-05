@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.4 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.6 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.4</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.6</div>
 </div>
 
 <script>
@@ -3909,8 +3909,17 @@ function narrativeNext(){
 
 function narrativeDone(){
   narrativeBusy=false;
-  setTimeout(narrativeNext,600); // 600ms de respiration entre deux textes
+  if(narrativeQueue.length>0){
+    setTimeout(narrativeNext,500);
+  }
 }
+
+// Sécurité anti-blocage — toutes les 10s si la file est bloquée
+setInterval(()=>{
+  if(narrativeBusy&&narrativeQueue.length===0){
+    narrativeBusy=false;
+  }
+},10000);
 
 function showSimonJournal(text, label){
   narrativeQueue.push(()=>{
@@ -3921,8 +3930,8 @@ function showSimonJournal(text, label){
     journalDay.textContent=label||'JOURNAL';
     journalText.textContent='';
     journalText.style.color='rgba(0,255,65,0.85)';
-    // Durée = temps d'écriture + temps de lecture
-    const duration=Math.max(3000, text.length*55 + 2500);
+    // Durée réduite — plus fluide
+    const duration=Math.max(2000, text.length*40 + 1500);
     setTimeout(narrativeDone, duration);
   });
   narrativeNext();
@@ -3938,8 +3947,8 @@ function showMDWLine(text, speak=true){
     journalText.textContent='';
     journalText.style.color='rgba(255,170,0,0.85)';
     if(speak&&mdwActive)mdwSpeak_voice(text);
-    // Durée = temps d'écriture + temps de lecture + voix
-    const duration=Math.max(3500, text.length*60 + 3000);
+    // Durée réduite — voix + lecture
+    const duration=Math.max(2500, text.length*45 + 2000);
     setTimeout(narrativeDone, duration);
   });
   narrativeNext();
