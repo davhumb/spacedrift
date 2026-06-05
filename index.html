@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.2</div>
 </div>
 
 <script>
@@ -2463,14 +2463,7 @@ const UNIVERSES=[
      if(window.masterGain)window.masterGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.5);
      window._silentModeActive=true;
      // MDW en texte seulement — pas de voix
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="...\n∅ SILENCE DÉTECTÉ\n01001110\nVOUS ÊTES SEUL ICI";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='MDW';
-         journalText.textContent='';journalText.style.color='rgba(255,170,0,0.85)';
-       }
-     },3000);
+     setTimeout(()=>showMDWLine('...\n∅ SILENCE DÉTECTÉ\n01001110\nVOUS ÊTES SEUL ICI',false),3000);
      setTimeout(()=>{
        if(journalEl){
          journalFullText="Silence total.\nMDW ne parle plus.\nJe lis ses données directement.\nC'est pire.";
@@ -3392,7 +3385,7 @@ const PLANET_TYPES=[
        if(journalEl){
          journalFullText=mem;journalCharIdx=0;journalActive=true;journalWriteTimer=0;
          journalEl.classList.add('active');journalDay.textContent='MÉMOIRE';
-         journalText.textContent='';journalText.style.color='rgba(255,170,68,0.85)';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.75)';
        }
      },1000);
      setTimeout(()=>{if(mdwActive)mdwSpeak_voice("Vos constantes biologiques ont changé. Ça va ?");},8000);
@@ -4756,7 +4749,7 @@ function spawnGhostShip(){
     approached:false,
     timer:25+Math.random()*15,
   };
-  logEvent('👻 CONTACT RADAR INCONNU','warn');
+  logEvent('?? CONTACT RADAR INCONNU','warn');
 }
 
 function updateGhostShip(dt){
@@ -6209,7 +6202,7 @@ function initMDW(){
   if(mdwEl)return; // déjà initialisé
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
-  mdwEl.style.cssText=`position:fixed;bottom:135px;right:12px;pointer-events:none;z-index:15;text-align:right;opacity:0;transition:opacity 0.5s;max-width:220px;`;
+  mdwEl.style.cssText=`position:fixed;top:88px;right:12px;pointer-events:none;z-index:15;text-align:right;opacity:0;transition:opacity 0.5s;max-width:220px;`;
   mdwEl.innerHTML=`
     <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW</div>
     <div id="mdw-text" style="font-size:12px;color:#e8a030;letter-spacing:0.3px;background:rgba(9,4,0,0.92);border:1px solid rgba(200,120,32,0.25);border-right:2px solid #c07820;padding:6px 12px;line-height:1.6;font-family:'Share Tech Mono',monospace;text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
@@ -6275,8 +6268,8 @@ function updateMDW(dt){
 // MDW réagit aux événements du jeu
 function mdwReact(context){
   if(!mdwActive)return;
-  // Délai pour ne pas surcharger
-  setTimeout(()=>mdwSpeak(context),1000+Math.random()*2000);
+  if(Math.random()>0.35)return; // seulement 35% du temps
+  setTimeout(()=>mdwSpeak(context),3000+Math.random()*4000);
 }
 
 
@@ -8012,15 +8005,40 @@ function getSectorName(idx){
 
 function triggerSectorNameJournal(){
   const name=getSectorName(sectorCount);
-  const notes=[
-    `J'appelle ça : ${name}.`,
-    `Je baptise ce secteur : ${name}.\nMDW dit que les secteurs n'ont pas de noms. Celui-là en a un.`,
-    `${name}.\nC'est ce que je vois.`,
-    `Je note : ${name}.\nPour me souvenir. Si jamais.`,
+  // Séquences narratives — Simon réagit, MDW aide, le nom sort dans l'action
+  const sequences=[
+    // Gravité forte
+    ()=>{
+      showSimonJournal("La gravité ici est... différente.\nLe cap est difficile à tenir.");
+      setTimeout(()=>showMDWLine("Je suis connecté au système de pilotage. Je compense.",true),5000);
+      setTimeout(()=>showSimonJournal("Bien. On tient.\nQuittons "+name+"."),12000);
+    },
+    // Silence étrange
+    ()=>{
+      showSimonJournal("Quelque chose cloche ici.\nTrop calme.");
+      setTimeout(()=>showMDWLine("Je suggère de chercher un trou de ver.",true),5000);
+      setTimeout(()=>showSimonJournal("D'accord.\nPartis de "+name+"."),11000);
+    },
+    // Phénomène visuel
+    ()=>{
+      showSimonJournal("Tu vois ça MDW ?");
+      setTimeout(()=>showMDWLine("Je vois. Je ne sais pas ce que c'est.",true),4000);
+      setTimeout(()=>showSimonJournal("Moi non plus.\nJe note "+name+".\nPour me souvenir."),10000);
+    },
+    // Dérive
+    ()=>{
+      showSimonJournal("On dérive.\nMDW, le cap ?");
+      setTimeout(()=>showMDWLine("Cap maintenu. Secteur stable.",true),4000);
+      setTimeout(()=>showSimonJournal("Bien.\n"+name+". C'est ce que ça ressemble."),9000);
+    },
+    // Court — juste Simon qui note
+    ()=>{
+      setTimeout(()=>showSimonJournal(name+".\nC'est le nom que je donne à cet endroit.\nMDW ne dit rien."),5000);
+    },
   ];
-  setTimeout(()=>{
-    showSimonJournal(notes[Math.floor(Math.random()*notes.length)]);
-  },5000);
+  // Choisir une séquence selon le sectorCount pour varier
+  const seq=sequences[sectorCount%sequences.length];
+  seq();
 }
 // ── Signal fantôme ────────────────────────────
 let ghostSignal=null;
