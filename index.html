@@ -313,15 +313,15 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.3 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.5 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
-      ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
-      ▸ Simon veut rentrer — échanges jours 16/19/22<br>
-      ▸ Journal interactif A/B — 4 choix influencent MDW<br>
-      ▸ Planètes spéciales — Géante, Morte, Miroir, Vivante, Brisée<br>
-      ▸ Trous noirs — avalent planètes et fusionnent<br>
-      ▸ Signal fantôme, Le Voyageur, secteurs nommés
+      ▸ LE SECTEUR MUSÉE — tout figé, zéro mouvement<br>
+      ▸ SECTEUR CŒUR — pulse synchronisé, fréquence liée à la vitesse<br>
+      ▸ SECTEUR GRILLE — tout aligné géométriquement<br>
+      ▸ Texte TdV supprimé — ne spoile plus la destination<br>
+      ▸ Scan silencieux — catalogue, pas de voix<br>
+      ▸ Rayon scan ×2 avec module SCANNER<br>
+      ▸ Planètes générées en continu autour du vaisseau
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.3</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.5</div>
 </div>
 
 <script>
@@ -2579,6 +2579,72 @@ const UNIVERSES=[
      window._pulsarTimer=0;
      window._pulsarInverted=false;
    }},
+
+  // ── LE SECTEUR MUSÉE — tout est figé ──
+  {id:40, name:'LE SECTEUR MUSÉE', bg:'#020303', primary:'#aaccbb', dim:'#446655', accent:'#cceedd',
+   starColors:['#aaccbb','#cceedd','#88bbaa','#ddeedd','#ffffff'],
+   nebulaColors:['rgba(100,160,140,','rgba(80,130,110,'],
+   scan:'rgba(170,204,187,0.04)',
+   lore:"Tout est figé. Les débris ne bougent pas. Les planètes ne tournent pas. Même les particules sont arrêtées.",
+   gravMult:0, debrisMult:1.8, museumMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>showMDWLine("Je ne détecte aucun mouvement.",true),3000);
+       setTimeout(()=>showMDWLine("Ça ne devrait pas être possible.",true),10000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Tout est figé ici.\nMême la poussière.\nMême la lumière semble hésiter.\nMDW dit qu'il ne détecte aucun mouvement.\nJe retiens ma respiration.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  // ── SECTEUR CŒUR — tout pulse ensemble ──
+  {id:41, name:'SECTEUR CŒUR', bg:'#050102', primary:'#ff6677', dim:'#882233', accent:'#ffaabb',
+   starColors:['#ff6677','#ffaabb','#dd4455','#ffcccc','#ffffff'],
+   nebulaColors:['rgba(200,60,80,','rgba(160,40,60,','rgba(220,80,100,'],
+   scan:'rgba(255,102,119,0.05)',
+   lore:"Tout pulse au même rythme. L'univers bat comme un cœur humain.",
+   gravMult:0.9, debrisMult:1.0, heartMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>showMDWLine("Je détecte une fréquence. 0.83 Hz.\nC'est le rythme cardiaque humain au repos.",true),3000);
+       setTimeout(()=>showMDWLine("La fréquence change quand vous bougez.",true),12000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Tout bat.\nLes planètes. Les étoiles. L'espace lui-même.\nMDW dit que c'est le rythme cardiaque humain.\nC'est mon cœur.\nOu c'est l'espace qui bat comme moi.\nJe ne sais plus.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  // ── SECTEUR GRILLE — tout aligné géométriquement ──
+  {id:42, name:'SECTEUR GRILLE', bg:'#010208', primary:'#88ddff', dim:'#224466', accent:'#aaeeff',
+   starColors:['#88ddff','#aaeeff','#66bbdd','#cceeFF','#ffffff'],
+   nebulaColors:['rgba(80,160,220,','rgba(60,130,190,'],
+   scan:'rgba(136,221,255,0.04)',
+   lore:"Tout est aligné. Espacé régulièrement. Parfaitement ordonné. L'espace a été rangé.",
+   gravMult:0.8, debrisMult:1.2, gridMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>showMDWLine("Les positions sont régulières. Espacement identique. Ce n'est pas naturel.",true),2000);
+       setTimeout(()=>showMDWLine("Je ne trouve pas d'explication.",true),9000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="C'est trop propre.\nL'espace n'est jamais propre.\nTout est aligné. Tout est espacé pareil.\nComme si quelqu'un avait rangé l'univers.\nPourquoi ?";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
 ];
 
 let currentUniverse=0;
@@ -2796,17 +2862,7 @@ function drawSecondaryWormholes(){
     w.ringAngles[0]+=0.008;w.ringAngles[1]-=0.012;w.ringAngles[2]+=0.018;
     w.particleAngle+=0.015;
 
-    // Label destination si proche
-    const dist=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
-    if(dist<500){
-      ctx.save();
-      ctx.fillStyle=u.primary;ctx.font=`7px 'Share Tech Mono'`;
-      ctx.textAlign='center';ctx.shadowColor=u.primary;ctx.shadowBlur=6;
-      ctx.fillText(`🌀 ${u.name}`,sx,sy-r*viewZoom-14);
-      ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font=`6px 'Share Tech Mono'`;ctx.shadowBlur=0;
-      ctx.fillText(`${Math.floor(w.life)}s`,sx,sy+r*viewZoom+10);
-      ctx.restore();
-    }
+    // Label destination supprimé — ne spoile pas
 
     // Radar — losange pulsant
     const RADAR_RANGE=typeof getRadarRange!=='undefined'?getRadarRange():500;
@@ -4548,6 +4604,42 @@ function updateShip(dt){
   } else {
     window._pulsarInverted=false;
   }
+
+  // MUSÉE — tout immobile
+  if(curUniverse.museumMode){
+    debris.forEach(d=>{d.vx=0;d.vy=0;d.rotV=0;});
+    planets.forEach(p=>{p.orbitSpeed=0;});
+    phenomena.forEach(p=>{if(p.vx!==undefined){p.vx=0;p.vy=0;}});
+  }
+
+  // CŒUR — fréquence liée à la vitesse de Simon
+  if(curUniverse.heartMode){
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    const bpm=60+Math.min(speed*8,80); // 60 bpm au repos → 140 max
+    window._heartFreq=bpm/60; // Hz
+    window._heartPhase=(window._heartPhase||0)+window._heartFreq*dt*Math.PI*2;
+  } else {
+    window._heartPhase=0;window._heartFreq=0;
+  }
+
+  // GRILLE — repositionner les objets sur une grille
+  if(curUniverse.gridMode&&!window._gridSnapped){
+    window._gridSnapped=true;
+    const GRID=300;
+    planets.forEach((p,i)=>{
+      const col=(i%5)-2;const row=Math.floor(i/5)-1;
+      p.x=ship.x+col*GRID+(Math.random()-0.5)*40;
+      p.y=ship.y+row*GRID+(Math.random()-0.5)*40;
+      p.vx=0;p.vy=0;
+    });
+    debris.forEach((d,i)=>{
+      const col=(i%8)-4;const row=Math.floor(i/8)-2;
+      d.x=ship.x+col*GRID*0.6+(Math.random()-0.5)*20;
+      d.y=ship.y+row*GRID*0.6+(Math.random()-0.5)*20;
+      d.vx=0;d.vy=0;
+    });
+  }
+  if(!curUniverse.gridMode)window._gridSnapped=false;
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique — indépendant de la poussée
   if(!dockedPlanet){
@@ -9612,6 +9704,27 @@ function gameLoop(ts){
       ctx.shadowBlur=0;
     }
   }
+
+  // CŒUR — fond qui pulse
+  if(curU.heartMode&&window._heartPhase!==undefined){
+    const beat=Math.max(0,Math.sin(window._heartPhase));
+    const alpha=beat*0.06;
+    ctx.fillStyle=`rgba(255,60,80,${alpha})`;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // GRILLE — lignes de grille légères
+  if(curU.gridMode){
+    const GRID=300;
+    const ox=(ship.x%GRID)*viewZoom;const oy=(ship.y%GRID)*viewZoom;
+    ctx.strokeStyle='rgba(136,221,255,0.06)';ctx.lineWidth=0.5;
+    for(let x=-GRID*viewZoom;x<W+GRID*viewZoom;x+=GRID*viewZoom){
+      ctx.beginPath();ctx.moveTo(x-ox,0);ctx.lineTo(x-ox,H);ctx.stroke();
+    }
+    for(let y=-GRID*viewZoom;y<H+GRID*viewZoom;y+=GRID*viewZoom){
+      ctx.beginPath();ctx.moveTo(0,y-oy);ctx.lineTo(W,y-oy);ctx.stroke();
+    }
+  }
   if(curU.negativeMode&&!canvas._negApplied){
     canvas.style.filter='invert(1) hue-rotate(180deg)';
     canvas._negApplied=true;
@@ -9996,10 +10109,15 @@ function checkScanHint(){
 }
 
 function scanNearestPhenomenon(){
-  let closest=null,minDist=800;
-  let closestPlanet=null,minPlanetDist=600;
-  let closestWreck=null,minWreckDist=400;
-  let closestComet=null,minCometDist=400;
+  // Rayon selon module scanner
+  const hasScanner=installedModules.includes('scanner');
+  const SCAN_R=hasScanner?800:400;
+  const SCAN_R_PLANET=hasScanner?700:350;
+  const SCAN_R_WRECK=hasScanner?600:300;
+
+  let closest=null,minDist=SCAN_R;
+  let closestPlanet=null,minPlanetDist=SCAN_R_PLANET;
+  let closestWreck=null,minWreckDist=SCAN_R_WRECK;
 
   for(const p of phenomena){
     const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
@@ -10013,63 +10131,55 @@ function scanNearestPhenomenon(){
     const d=Math.sqrt((w.x-ship.x)**2+(w.y-ship.y)**2);
     if(d<minWreckDist){minWreckDist=d;closestWreck=w;}
   }
-  for(const c of comets){
-    const d=Math.sqrt((c.x-ship.x)**2+(c.y-ship.y)**2);
-    if(d<minCometDist){minCometDist=d;closestComet=c;}
-  }
 
-  // Trouver le plus proche de tout
   const candidates=[
     closest&&{type:'phenomenon',obj:closest,dist:minDist},
     closestPlanet&&{type:'planet',obj:closestPlanet,dist:minPlanetDist},
     closestWreck&&{type:'wreck',obj:closestWreck,dist:minWreckDist},
-    closestComet&&{type:'comet',obj:closestComet,dist:minCometDist},
   ].filter(Boolean).sort((a,b)=>a.dist-b.dist);
 
-  if(!candidates.length||candidates[0].dist>800){
-    if(mdwActive)showMDWLine('Rien à scanner à cette distance.',true);
+  haptic('collect');
+
+  if(!candidates.length){
+    // Discret — juste un log, pas de voix
     logEvent('📡 RIEN À PORTÉE','warn');
     return;
   }
 
   const best=candidates[0];
-  haptic('collect');
+  const scanKey=`scan_${best.type}_${best.obj.name||best.obj.x}`;
+  const alreadyScanned=autoScanned.has(scanKey);
 
   if(best.type==='phenomenon'){
     const p=best.obj;
     const deep=PHENOMENON_DEEP_ANALYSES[p.name];
     const entryName=`${p.name} — ANALYSE`;
-    if(deep){
-      addToCatalogue('phenomene',entryName,deep.text,
-        p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈',
-        deep.draw);
-      logEvent(`📡 ANALYSE : ${p.name}`,'planet');
-      if(mdwActive){
-        showMDWLine(deep.text,false);
-        const lines=deep.text.split('\n').filter(l=>l.trim());
-        lines.forEach((line,i)=>setTimeout(()=>mdwSpeak_voice(line),i*3500));
-      }
-    } else {
-      const basic=getAnalysis(p.name);
-      addToCatalogue('phenomene',entryName,basic,'◈');
-      if(mdwActive)showMDWLine(basic,true);
+    const text=deep?deep.text:getAnalysis(p.name);
+    const icon=p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈';
+    if(!alreadyScanned){
+      addToCatalogue('phenomene',entryName,text,icon,deep?.draw);
+      autoScanned.add(scanKey);
     }
+    // Affichage discret — une ligne, pas de voix
+    logEvent(`📡 ${p.name} — enregistré`,'planet');
 
-  } else if(best.type==='planet'){
+  }else if(best.type==='planet'){
     const p=best.obj;
     const desc=`${p.name}.\nClasse : ${p.type?.name||'inconnue'}.\n${p.type?.rare?'Planète rare.':'Corps céleste répertorié.'}`;
-    addToCatalogue('planet',`${p.name} — SCAN`,desc,'🪐');
-    if(mdwActive)showMDWLine(`${p.name}. Classe ${p.type?.name||'inconnue'}.`,true);
+    if(!alreadyScanned){
+      addToCatalogue('planet',`${p.name} — SCAN`,desc,'🪐');
+      autoScanned.add(scanKey);
+    }
+    logEvent(`📡 ${p.name} — classe ${p.type?.name||'?'}`,'planet');
 
-  } else if(best.type==='wreck'){
+  }else if(best.type==='wreck'){
     const w=best.obj;
     const desc=`Épave : ${w.name}.\n${w.log||'Données de vol corrompues.'}\n${w.moduleKey?'Module récupérable détecté.':'Aucun module.'}`;
-    addToCatalogue('planet',`ÉPAVE — ${w.name}`,desc,'💀');
-    if(mdwActive)showMDWLine(`Épave détectée. ${w.name}. ${w.moduleKey?'Un module est récupérable.':'Aucun module utilisable.'}`,true);
-
-  } else if(best.type==='comet'){
-    const desc="Comète en transit.\nComposition : glace et silicates.\nTrajectoire : non stable.";
-    if(mdwActive)showMDWLine("Comète. Corps mineur en transit. Composition standard.",true);
+    if(!alreadyScanned){
+      addToCatalogue('planet',`ÉPAVE — ${w.name}`,desc,'💀');
+      autoScanned.add(scanKey);
+    }
+    logEvent(`📡 ÉPAVE ${w.name}${w.moduleKey?' — MODULE DÉTECTÉ':''}`,'planet');
   }
 }
 
@@ -10318,7 +10428,7 @@ function renderCatTab(tab){
       radar_ext:{name:'RADAR+',           icon:'📡', desc:'Étend la portée du radar de 50%. Vous détectez les objets plus loin.', effect:'Portée radar +50%'},
       shield:   {name:'BOUCLIER',         icon:'⚡', desc:'Déploie un bouclier énergétique qui absorbe les impacts. Se régénère avec l\'énergie.', effect:'Absorbe impacts'},
       drone:    {name:'DRONE',            icon:'🤖', desc:'Accélère l\'amarrage de 40%. Analyse automatique à l\'approche des planètes.', effect:'Amarrage +40%'},
-      scanner:  {name:'SCANNER',          icon:'🔭', desc:'Révèle le type de planète et les modules d\'épaves avant l\'approche.', effect:'Détecte planètes+épaves'},
+      scanner:  {name:'SCANNER',          icon:'🔭', desc:'Double le rayon de scan (400u → 800u). Révèle modules d\'épaves à distance.', effect:'Scan ×2'},
       boost:    {name:'BOOST D\'URGENCE', icon:'⚡', desc:'Bouton central — propulsion massive 1 seconde. Recharge 60s. Dernier recours face à un objet massif.', effect:'Bouton boost'},
     };
     const pts=upgradePoints||0;
