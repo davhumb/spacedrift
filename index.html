@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.8 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.9 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.9</div>
 </div>
 
 <script>
@@ -837,8 +837,11 @@ function triggerExchange(id, pilotLine, mdwLine, delay=2500){
   pilotMDWExchange(pilotLine, mdwLine, delay);
 }
 
+let _resumeCooldown=0; // bloque les échanges au démarrage d'une reprise
+
 function checkExchanges(){
   if(!mdwActive||mdwSilent||openingActive)return;
+  if(_resumeCooldown>0)return;
   if(mdwTypingActive||mdwDialogQueue.length>0)return;
 
   // Séquence acte 1 — MDW s'allume et présente la mission
@@ -9688,7 +9691,8 @@ function gameLoop(ts){
         if(!openingActive)spawnVoyageur();
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
-        checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
+        if(_resumeCooldown>0)_resumeCooldown-=0.016;
+checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
@@ -10109,15 +10113,14 @@ function updateResumeBtn(){
             state='playing';
             if(mdwEl)mdwEl.style.opacity='0';
             ship.vy=worldVy||0;
-            // Message de reprise discret
+            // Nettoyer la file narrative avant de reprendre
+            clearNarrativeQueue();
+            narrativeBusy=false;
+            _resumeCooldown=5; // 5s avant que les échanges reprennent
+            // Message de reprise via la file
             setTimeout(()=>{
-              if(journalEl){
-                journalFullText='Jour '+survivalDay+'.\nLà où je m\'étais arrêté.';
-                journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-                journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-                journalText.textContent='';journalText.style.color='rgba(0,255,65,0.7)';
-              }
-            },1000);
+              showSimonJournal('Jour '+survivalDay+'.\nLà où je m\'étais arrêté.');
+            },1500);
           }
         });
       });
