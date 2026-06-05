@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.9 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.0 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.9</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.0</div>
 </div>
 
 <script>
@@ -9490,6 +9490,7 @@ function updateOrbitalIndicator(){
 // ── Main loop ────────────────────────────────
 let globalTs=0;
 function gameLoop(ts){
+  try{
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
   // Fond de l'univers courant
   const curU=UNIVERSES[currentUniverse]||UNIVERSES[0];
@@ -9734,6 +9735,15 @@ checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes()
       drawRadar();
       if(state==='playing')updateHUD();
     }
+  }
+  }catch(e){
+    console.error('gameLoop error:',e);
+    // Afficher l'erreur à l'écran sur mobile
+    const errDiv=document.getElementById('mobile-error')||document.createElement('div');
+    errDiv.id='mobile-error';
+    errDiv.style.cssText='position:fixed;bottom:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;font-size:11px;padding:8px;z-index:9999;font-family:monospace;white-space:pre-wrap;max-height:150px;overflow:auto;';
+    errDiv.textContent=(errDiv.textContent||'')+'\n'+e.message+'\n'+e.stack?.split('\n')[1];
+    document.body.appendChild(errDiv);
   }
   requestAnimationFrame(gameLoop);
 }
