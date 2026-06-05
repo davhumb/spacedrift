@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.6 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.5.8 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Choix Simon au démarrage — tuto ou ordinateur<br>
       ▸ Simon interroge MDW sur l'avant — jours 6/9/12<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.6</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.5.8</div>
 </div>
 
 <script>
@@ -2447,6 +2447,142 @@ const UNIVERSES=[
        }
      },6000);
    }},
+
+  // ── SECTEUR SILENCIEUX ──
+  {id:35, name:'SECTEUR SILENCIEUX', bg:'#010101', primary:'#888888', dim:'#444444', accent:'#aaaaaa',
+   starColors:['#888888','#aaaaaa','#666666','#cccccc','#ffffff'],
+   nebulaColors:['rgba(80,80,80,','rgba(60,60,60,'],
+   scan:'rgba(128,128,128,0.03)',
+   lore:"Aucun son. Pas de musique. MDW n'utilise plus sa voix. Simon doit lire entre les lignes.",
+   gravMult:0.9, debrisMult:1.0, silentMode:true,
+   onEnter:()=>{
+     // Couper la musique et la voix
+     if(window.masterGain)window.masterGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.5);
+     window._silentModeActive=true;
+     // MDW en texte seulement — pas de voix
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="...\n∅ SILENCE DÉTECTÉ\n01001110\nVOUS ÊTES SEUL ICI";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='MDW';
+         journalText.textContent='';journalText.style.color='rgba(255,170,0,0.85)';
+       }
+     },3000);
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Silence total.\nMDW ne parle plus.\nJe lis ses données directement.\nC'est pire.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },8000);
+   }},
+
+  // ── SECTEUR QUANTIQUE ──
+  {id:36, name:'SECTEUR QUANTIQUE', bg:'#020105', primary:'#ff88ff', dim:'#881188', accent:'#ffaaff',
+   starColors:['#ff88ff','#ffaaff','#dd44dd','#ffccff','#ffffff'],
+   nebulaColors:['rgba(200,50,200,','rgba(160,30,160,'],
+   scan:'rgba(255,136,255,0.05)',
+   lore:"Les objets n'ont pas de position fixe. Ils clignotent. Il faut s'arrêter pour les stabiliser.",
+   gravMult:0.7, debrisMult:1.5, quantumMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>mdwSpeak('Positions non déterminées. Les objets existent en superposition.',true),2000);
+       setTimeout(()=>mdwSpeak('Arrêtez de bouger. L\'observation stabilise la réalité.',true),9000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Les planètes clignotent.\nElles sont là. Puis pas là.\nMDW dit que si j'arrête de bouger, elles deviennent réelles.\nJ'essaie de rester immobile.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },5000);
+   }},
+
+  // ── LE FOYER — réplique de la Terre ──
+  {id:37, name:'LE FOYER', bg:'#020408', primary:'#88aaff', dim:'#2266aa', accent:'#cceeff',
+   starColors:['#88aaff','#aabbff','#ffffff','#cceeff','#ffeecc'],
+   nebulaColors:['rgba(80,120,220,','rgba(60,180,100,','rgba(200,180,100,'],
+   scan:'rgba(136,170,255,0.04)',
+   lore:"Une réplique de la Terre. Quelque chose cloche. MDW se tait.",
+   gravMult:1.0, debrisMult:0.4, foyerMode:true,
+   onEnter:()=>{
+     // MDW se tait — long silence puis une phrase
+     setTimeout(()=>{
+       if(mdwActive)showMDWLine("Ce n'est pas réel.\n...\nMais ça vous fait du bien.",true);
+     },8000);
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="Je reconnais quelque chose ici.\nLa couleur du ciel. La forme des nuages.\nCe n'est pas la Terre.\nMais c'est ce que j'en garde.\nMDW dit que ce n'est pas réel.\nJe sais.\nÇa ne change rien.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
+         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
+       }
+     },4000);
+     // Spawner une planète spéciale — "la Terre"
+     setTimeout(()=>{
+       const earthType={
+         name:'FOYER',massKey:'planet_ocean',color:'#2266aa40',glowColor:'#88aaff',ring:false,rare:true,
+         onApproach:()=>{
+           if(mdwActive)setTimeout(()=>showMDWLine("...",false),500);
+         },
+         effect:()=>{
+           sanity=Math.min(100,sanity+40);
+           oxygen=Math.min(maxOxygen,oxygen+50);
+           hull=Math.min(100,hull+30);
+           upgradePoints+=250;
+           logEvent('🌍 LE FOYER — +SANITY +O₂ +HULL','planet');
+           setTimeout(()=>showSimonJournal("J'ai amarré.\nCe n'était pas la Terre.\nMais pendant quelques secondes je n'ai pensé à rien d'autre."),2000);
+         },
+       };
+       const angle=Math.random()*Math.PI*2;
+       planets.push({
+         x:ship.x+Math.cos(angle)*500,y:ship.y+Math.sin(angle)*500,
+         vx:0,vy:0,r:55,pulse:0,orbitAngle:0,orbitSpeed:0,moons:[],
+         type:earthType,name:'LE FOYER',discovered:false,mined:false,
+       });
+     },5000);
+   }},
+
+  // ── SECTEUR DE L'OUBLI — journal corrompu ──
+  {id:38, name:'SECTEUR DE L\'OUBLI', bg:'#020206', primary:'#7777ff', dim:'#222277', accent:'#aaaaff',
+   starColors:['#7777ff','#9999ff','#5555dd','#aaaaff','#ccccff'],
+   nebulaColors:['rgba(80,80,200,','rgba(60,60,180,'],
+   scan:'rgba(119,119,255,0.04)',
+   lore:"Les entrées du journal deviennent illisibles. La mémoire vacille.",
+   gravMult:0.9, debrisMult:1.0, oubliMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>showMDWLine("Votre taux de cortisol augmente. Vous avez peur d'oublier.",true),3000);
+       setTimeout(()=>showMDWLine("Je préserve les données. Ne vous inquiétez pas.",true),10000);
+     }
+     setTimeout(()=>{
+       if(journalEl){
+         journalFullText="J̷o̴u̵r̸ ̶?̷?̴\nJ̵e̸ ̶n̸e̵ ̴m̷e̸ ̶s̸o̴u̷v̵i̸e̷n̸s̷ ̷p̵l̴u̸s̵.\nM̸D̸W̶ ̶d̷i̵t̷ ̸q̴u̵e̸ ̷t̵o̸u̴t̸ ̴v̶a̵ ̸b̶i̷e̸n̸.\nJ̷e̴ ̷l̸i̸s̷ ̵c̴e̸ ̷q̴u̵e̸ ̵j̷'̷a̵i̶ ̴é̶c̵r̷i̶t̷ ̸h̵i̵e̶r̸.\nJe̶ ̷n̵e̸ ̶r̷e̵c̴o̴n̸n̷a̸i̵s̷ ̴p̸a̵s̷ ̶m̷o̴n̵ ̸é̴c̵r̸i̸t̶u̵r̸e̷.";
+         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+         journalEl.classList.add('active');journalDay.textContent='J̴O̸U̵R̷N̶A̸L̵';
+         journalText.textContent='';journalText.style.color='rgba(119,119,255,0.85)';
+       }
+     },6000);
+   }},
+
+  // ── SECTEUR PULSARIEN — ondes de choc ──
+  {id:39, name:'SECTEUR PULSARIEN', bg:'#010208', primary:'#00ffff', dim:'#008888', accent:'#aaffff',
+   starColors:['#00ffff','#aaffff','#00cccc','#ccffff','#ffffff'],
+   nebulaColors:['rgba(0,180,200,','rgba(0,150,180,'],
+   scan:'rgba(0,255,255,0.05)',
+   lore:"Toutes les 5 secondes, une onde de choc. Pendant 0.5s les contrôles s'inversent.",
+   gravMult:0.8, debrisMult:1.3, pulsarianMode:true,
+   onEnter:()=>{
+     if(mdwActive){
+       setTimeout(()=>showMDWLine("Je détecte des ondes de choc régulières. Préparez-vous.",true),2000);
+       setTimeout(()=>showMDWLine("Je compense les interférences... pas complètement.",true),8000);
+     }
+     writeGlitchText&&writeGlitchText('Des ondes.\nRégulières.\nToutes les 5 secondes.\nPendant une fraction de seconde tout s\'inverse.\nMDW essaie de compenser.\nIl n\'y arrive pas tout à fait.','⚡ SECTEUR PULSARIEN');
+     window._pulsarTimer=0;
+     window._pulsarInverted=false;
+   }},
 ];
 
 let currentUniverse=0;
@@ -4315,8 +4451,9 @@ function updateShip(dt){
       const hasProp=propellant>0;
       const thrustMult=hasProp?1:0.2;
       const thrustForce=THRUST_FORCE*(installedModules.includes('thruster')?1.4:1);
-      ship.vx+=nx*thrustForce*thrustMult*dt*60;
-      ship.vy+=ny*thrustForce*thrustMult*dt*60;
+      const pulsarSign=window._pulsarInverted?-1:1; // inversion toutes les 5s
+      ship.vx+=nx*thrustForce*thrustMult*dt*60*pulsarSign;
+      ship.vy+=ny*thrustForce*thrustMult*dt*60*pulsarSign;
       ship.angle=Math.atan2(ny,nx);ship.thrusting=true;ship.thrustPower=Math.min(1,dist/100);
       if(hasProp){
         propellant=Math.max(0,propellant-PROPELLANT_THRUST_COST*dt*ship.thrustPower);
@@ -4370,12 +4507,50 @@ function updateShip(dt){
   // SYMBIOTIQUE — drag fort + réparation coque au repos
   if(curUniverse.symbioticMode){
     const speed=Math.sqrt(ship.vx**2+ship.vy**2);
-    // Drag bioluminescent
     ship.vx*=Math.pow(0.94,dt*60);ship.vy*=Math.pow(0.94,dt*60);
-    // Au repos — le fluide répare la coque
     if(speed<0.5&&hull<100)hull=Math.min(100,hull+0.3*dt);
-    // En mouvement — consommation énergie
     if(speed>1)energy=Math.max(0,energy-speed*0.3*dt);
+  }
+
+  // SILENCIEUX — O2 drain selon vitesse des taps
+  if(curUniverse.silentMode){
+    // Le stress = vitesse de déplacement
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    if(speed>3)oxygen=Math.max(0,oxygen-speed*0.01*dt);
+    // HUD s'estompe progressivement
+    if(!window._silentHudAlpha)window._silentHudAlpha=1;
+    window._silentHudAlpha=Math.max(0.2,window._silentHudAlpha-0.00005*dt*60);
+    const hudEl=document.getElementById('hud');
+    if(hudEl)hudEl.style.opacity=window._silentHudAlpha;
+  } else if(window._silentModeActive&&!curUniverse.silentMode){
+    // Restaurer à la sortie
+    window._silentModeActive=false;window._silentHudAlpha=1;
+    const hudEl=document.getElementById('hud');
+    if(hudEl)hudEl.style.opacity='1';
+    if(window.masterGain&&audioCtx)window.masterGain.gain.setTargetAtTime(0.12,audioCtx.currentTime,1);
+  }
+
+  // QUANTIQUE — objets clignotants
+  if(curUniverse.quantumMode){
+    const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+    window._quantumStable=speed<1.5;
+  } else {
+    window._quantumStable=true;
+  }
+
+  // PULSARIEN — onde de choc toutes les 5s
+  if(curUniverse.pulsarianMode){
+    if(window._pulsarTimer===undefined)window._pulsarTimer=0;
+    window._pulsarTimer+=dt;
+    if(window._pulsarTimer>=5){
+      window._pulsarTimer=0;
+      window._pulsarInverted=true;
+      triggerFlash('#00ffff',0.3);
+      triggerChromAber(2,0.15);
+      setTimeout(()=>{window._pulsarInverted=false;},500);
+    }
+  } else {
+    window._pulsarInverted=false;
   }
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique — indépendant de la poussée
@@ -8709,7 +8884,12 @@ function drawPlanets(){
       }
     }
 
-    // Cercle d'orbite — visible quand Simon s'approche
+    // Mode quantique — planètes clignotantes
+    if(UNIVERSES[currentUniverse]?.quantumMode&&!window._quantumStable){
+      const blink=Math.floor(Date.now()/300)%3;
+      if(blink===0)continue; // invisible parfois
+      ctx.globalAlpha=blink===1?0.4:1;
+    }
     if(distShip<p.r+300&&!p.mined){
       const orbitR=(p.r+120)*viewZoom;
       const alpha=Math.max(0,0.1*(1-(distShip-p.r-40)/260));
@@ -9379,7 +9559,19 @@ function gameLoop(ts){
     ctx.textAlign='center';ctx.fillText(word,wx,wy);
   }
 
-  // NÉGATIF — filtre CSS inversion
+  // PULSARIEN — anneau d'onde visible
+  if(curU.pulsarianMode&&window._pulsarTimer!==undefined){
+    const timeToNext=5-window._pulsarTimer;
+    if(timeToNext<1){
+      const alpha=(1-timeToNext)*0.3;
+      const r=(1-timeToNext)*Math.max(W,H)*0.8;
+      const [sx,sy]=worldToScreen(ship.x,ship.y);
+      ctx.strokeStyle=`rgba(0,255,255,${alpha})`;
+      ctx.lineWidth=3;ctx.shadowColor='#00ffff';ctx.shadowBlur=20*alpha;
+      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+  }
   if(curU.negativeMode&&!canvas._negApplied){
     canvas.style.filter='invert(1) hue-rotate(180deg)';
     canvas._negApplied=true;
