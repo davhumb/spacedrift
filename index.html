@@ -313,7 +313,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.5 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.6 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ LE SECTEUR MUSÉE — tout figé, zéro mouvement<br>
       ▸ SECTEUR CŒUR — pulse synchronisé, fréquence liée à la vitesse<br>
@@ -336,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.6</div>
 </div>
 
 <script>
@@ -4622,24 +4622,10 @@ function updateShip(dt){
     window._heartPhase=0;window._heartFreq=0;
   }
 
-  // GRILLE — repositionner les objets sur une grille
-  if(curUniverse.gridMode&&!window._gridSnapped){
-    window._gridSnapped=true;
-    const GRID=300;
-    planets.forEach((p,i)=>{
-      const col=(i%5)-2;const row=Math.floor(i/5)-1;
-      p.x=ship.x+col*GRID+(Math.random()-0.5)*40;
-      p.y=ship.y+row*GRID+(Math.random()-0.5)*40;
-      p.vx=0;p.vy=0;
-    });
-    debris.forEach((d,i)=>{
-      const col=(i%8)-4;const row=Math.floor(i/8)-2;
-      d.x=ship.x+col*GRID*0.6+(Math.random()-0.5)*20;
-      d.y=ship.y+row*GRID*0.6+(Math.random()-0.5)*20;
-      d.vx=0;d.vy=0;
-    });
+  // GRILLE — stopper la dérive des objets (pas de repositionnement forcé)
+  if(curUniverse.gridMode){
+    debris.forEach(d=>{d.vx*=0.9;d.vy*=0.9;});
   }
-  if(!curUniverse.gridMode)window._gridSnapped=false;
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
   // Amarrage automatique — indépendant de la poussée
   if(!dockedPlanet){
@@ -8200,9 +8186,9 @@ function drawGhostSignal(){
     ctx.beginPath();ctx.moveTo(sx-6,sy);ctx.lineTo(sx+6,sy);ctx.stroke();
     ctx.beginPath();ctx.moveTo(sx,sy-6);ctx.lineTo(sx,sy+6);ctx.stroke();
   }
-  const PR=getRadarRange();
-  const rdx=(ghostSignal.x-ship.x)/RADAR_RANGE*RADAR_R;
-  const rdy=(ghostSignal.y-ship.y)/RADAR_RANGE*RADAR_R;
+  const _gsRange=getRadarRange();
+  const rdx=(ghostSignal.x-ship.x)/_gsRange*RADAR_R;
+  const rdy=(ghostSignal.y-ship.y)/_gsRange*RADAR_R;
   if(Math.sqrt(rdx*rdx+rdy*rdy)<RADAR_R&&Math.floor(Date.now()/300)%2===0){
     rctx.fillStyle='#ffff00';rctx.shadowColor='#ffff00';rctx.shadowBlur=8;
     rctx.beginPath();rctx.arc(35+rdx,35+rdy,3,0,Math.PI*2);rctx.fill();rctx.shadowBlur=0;
