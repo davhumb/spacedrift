@@ -313,15 +313,14 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.6 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.8 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ LE SECTEUR MUSÉE — tout figé, zéro mouvement<br>
-      ▸ SECTEUR CŒUR — pulse synchronisé, fréquence liée à la vitesse<br>
-      ▸ SECTEUR GRILLE — tout aligné géométriquement<br>
-      ▸ Texte TdV supprimé — ne spoile plus la destination<br>
-      ▸ Scan silencieux — catalogue, pas de voix<br>
-      ▸ Rayon scan ×2 avec module SCANNER<br>
-      ▸ Planètes générées en continu autour du vaisseau
+      ▸ Transmissions radio — voix de pilotes perdus<br>
+      ▸ 14 messages fragmentés, rares, parasités<br>
+      ▸ Fix globalAlpha — épaves transparentes corrigées<br>
+      ▸ Fix RADAR_RANGE dans drawGhostSignal<br>
+      ▸ SECTEUR MUSÉE, CŒUR, GRILLE ajoutés<br>
+      ▸ Texte TdV supprimé — ne spoile plus
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -336,7 +335,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.6</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.8</div>
 </div>
 
 <script>
@@ -4991,6 +4990,48 @@ const RARE_EVENTS=[
   {name:'solar_system', minDay:1, weight:2, trigger:()=>spawnSolarSystem()},
   {name:'aurora',        minDay:1, weight:3, trigger:()=>triggerAurora()},
   {name:'plasma_stream', minDay:3, weight:2, trigger:()=>triggerPlasmaStream()},
+
+  // ── Transmissions radio — voix de pilotes perdus ──
+  {id:'radio_transmission', minDay:3, weight:1.5, trigger:()=>{
+    const TRANSMISSIONS=[
+      "... ne prenez pas le TdV orange.\nJe répète. Pas l'orange.\n*signal perdu*",
+      "Mayday mayday.\nJ'ai trouvé comment rentrer.\nLe signal vient de...\n*parasite*",
+      "MDW s'est mis à parler en boucle.\nLa même phrase. Toute la nuit.\nJe ne sais plus si c'est lui ou moi.",
+      "Jour 43.\nLe TdV s'est refermé derrière moi.\nIl n'y en a plus.",
+      "Ce n'est pas de l'espace.\nÇa ressemble à de l'espace.\nMais ce n'est pas de l'espace.",
+      "N'allez jamais dans le TdV rose.\nÇa a rendu mon robot complètement dingue.\nIl a saboté la propulsion.",
+      "Mayday.\nJ'ai emprunté un TdV et il m'a renvoyé en arrière.\nDes mois de progression balayés en un instant.",
+      "Le TdV a tout rendu minuscule.\nTout est petit. Les planètes. Les étoiles.\nPeut-être que je perds la tête.",
+      "Je crois que je ne rentrerai jamais chez moi.\nJe crois que l'univers m'en empêche.\nL'univers nous fait payer ce qu'on lui a fait.",
+      "On nous a dit que c'était une mission de cartographie.\nC'était un mensonge.",
+      "Il y a quelque chose dans les TdV qui n'est pas physique.\nMDW ne peut pas le mesurer.\nMoi je le sens.",
+      "Si tu entends ça — tourne-toi.\nReviens en arrière.\nIl n'y a rien à trouver ici.",
+      "J'ai trouvé l'ordre.\nJe sais dans quel sens les traverser.\nMais c'est trop tard pour moi.\n*coupé*",
+      "Expédition 7. Dernier message.\nNous avons compris ce que les TdV sont vraiment.\nNous aurions dû ne jamais les ouvrir.",
+    ];
+    const msg=TRANSMISSIONS[Math.floor(Math.random()*TRANSMISSIONS.length)];
+    // Afficher comme journal Simon — en vert, label TRANSMISSION
+    narrativeQueue.push(()=>{
+      if(!journalEl){narrativeDone();return;}
+      journalFullText=msg;
+      journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+      journalEl.classList.add('active');
+      journalDay.textContent='📡 TRANSMISSION';
+      journalText.textContent='';
+      journalText.style.color='rgba(180,255,180,0.7)';
+      const duration=Math.max(4000,msg.length*50+2000);
+      setTimeout(()=>{
+        journalEl.classList.remove('active');
+        journalActive=false;
+        narrativeDone();
+      },duration);
+    });
+    narrativeNext();
+    // MDW réagit brièvement
+    if(mdwActive)setTimeout(()=>showMDWLine('Source non identifiée. Signal trop ancien.',true),3000);
+    logEvent('📡 TRANSMISSION CAPTÉE','warn');
+    haptic('collect');
+  }},
 ];
 
 // ── BLOC 1 — Phénomènes cosmologiques ─────────
@@ -5981,6 +6022,7 @@ function updateWrecks(dt){
 }
 
 function drawWrecks(){
+  ctx.globalAlpha=1; // reset — évite héritage du mode fantôme
   for(const w of wrecks){
     const [sx,sy]=worldToScreen(w.x,w.y);
     if(sx<-100||sx>W+100||sy<-100||sy>H+100)continue;
@@ -9207,6 +9249,7 @@ function drawShip(){
 }
 
 function drawDebris(){
+  ctx.globalAlpha=1;
   for(const d of debris){
     const [sx,sy]=worldToScreen(d.x,d.y);
     ctx.save();ctx.translate(sx,sy);
@@ -9245,6 +9288,7 @@ function drawDebris(){
 
 
 function drawParticles(){
+  ctx.globalAlpha=1;
   for(const p of particles){
     const [sx,sy]=worldToScreen(p.x,p.y);
     ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=4;
