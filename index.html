@@ -85,11 +85,7 @@
   #screen .final-score{font-family:'VT323',monospace;font-size:40px;color:var(--amber);text-shadow:0 0 12px var(--amber);letter-spacing:4px;}
 
   .diff-row{display:flex;gap:10px;margin-top:4px;}
-  .diff-btn{padding:8px 18px;background:transparent;border:1px solid var(--green-dim);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;cursor:pointer;pointer-events:all;transition:all 0.15s;}
-  .diff-btn:hover{border-color:var(--green);color:var(--green);}
-  .diff-btn.selected-easy{border-color:var(--green);color:var(--green);text-shadow:0 0 8px var(--green);box-shadow:0 0 10px rgba(0,255,65,0.2);}
-  .diff-btn.selected-hard{border-color:var(--amber);color:var(--amber);text-shadow:0 0 8px var(--amber);box-shadow:0 0 10px rgba(255,170,0,0.2);}
-  .diff-btn.selected-harder{border-color:var(--red);color:var(--red);text-shadow:0 0 8px var(--red);box-shadow:0 0 10px rgba(255,32,32,0.2);}
+  /* diff-btn virés */
 
   .screen-btn{margin-top:4px;padding:12px 32px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:4px;cursor:pointer;pointer-events:all;transition:all 0.15s;text-shadow:0 0 8px var(--green);box-shadow:0 0 12px rgba(0,255,65,0.1),inset 0 0 12px rgba(0,255,65,0.05);}
   .screen-btn:hover,.screen-btn:active{background:rgba(0,255,65,0.1);box-shadow:0 0 20px rgba(0,255,65,0.3);}
@@ -157,12 +153,12 @@
   .reset-confirm-text{font-size:8px;letter-spacing:1px;color:rgba(255,60,60,0.7);}
   .reset-yes{padding:5px 16px;background:transparent;border:1px solid rgba(255,60,60,0.6);color:rgba(255,60,60,0.8);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
   .reset-no{padding:5px 16px;background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.5);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
-  #catalogue-btn{position:fixed;bottom:80px;right:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;transition:all 0.3s;}
-  #catalogue-btn.new-entry{border-color:rgba(0,255,65,0.9);color:rgba(0,255,65,1);animation:journalPulse 1s ease-in-out infinite;}
+  #cosmodex-btn{position:fixed;bottom:80px;right:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;transition:all 0.3s;}
+  #cosmodex-btn.new-entry{border-color:rgba(0,255,65,0.9);color:rgba(0,255,65,1);animation:journalPulse 1s ease-in-out infinite;}
   #home-btn{position:fixed;bottom:80px;left:10px;z-index:60;background:rgba(0,9,2,0.85);border:1px solid rgba(0,255,65,0.2);color:rgba(0,255,65,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 10px;cursor:pointer;pointer-events:all;}
   @keyframes journalPulse{0%,100%{box-shadow:0 0 4px rgba(0,255,65,0.3);}50%{box-shadow:0 0 12px rgba(0,255,65,0.8),0 0 20px rgba(0,255,65,0.4);}}
-  #catalogue-panel{position:fixed;inset:0;z-index:200;background:rgba(0,9,2,0.97);display:none;flex-direction:column;overflow:hidden;}
-  #catalogue-panel.open{display:flex;}
+  #cosmodex-panel{position:fixed;inset:0;z-index:200;background:rgba(0,9,2,0.97);display:none;flex-direction:column;overflow:hidden;}
+  #cosmodex-panel.open{display:flex;}
   #cat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(0,255,65,0.2);}
   #journal-text{font-size:14px;color:var(--green);line-height:1.8;letter-spacing:0.2px;opacity:0.9;text-shadow:0 0 8px rgba(0,255,65,0.3);}
   #journal-day{font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:4px;opacity:0.6;}
@@ -234,7 +230,7 @@
   <div id="boss-warning"><div class="warn-text">⚠ INCOMING ⚠</div></div>
 
   <div id="event-log"></div>
-  <button id="catalogue-btn">📋</button>
+  <button id="cosmodex-btn">📋</button>
   <button id="home-btn">⌂</button>
   <div id="day-pop">
     <div class="dp-num" id="dp-num">JOUR 2</div>
@@ -277,8 +273,8 @@
 
 <div id="launch-fade"></div>
 
-<!-- Panneau catalogue en pause -->
-<div id="catalogue-panel">
+<!-- Panneau cosmodex en pause -->
+<div id="cosmodex-panel">
   <div id="cat-header">
     <div style="font-size:10px;letter-spacing:3px;color:var(--green)">📋 JOURNAL DE BORD</div>
     <button id="cat-close" style="background:transparent;border:1px solid rgba(0,255,65,0.3);color:rgba(0,255,65,0.6);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 10px;cursor:pointer;">[ REPRENDRE ]</button>
@@ -305,23 +301,19 @@
   <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
   <div class="controls-hint">TAPEZ POUR PROPULSER · PINCEZ POUR ZOOMER<br>COLLECTEZ · EXPLOREZ · SURVIVEZ</div>
   <div class="diff-row">
-    <button class="diff-btn selected-easy" data-diff="easy">EASY</button>
-    <button class="diff-btn" data-diff="hard">HARD</button>
-    <button class="diff-btn" data-diff="harder">HARDER</button>
   </div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.9 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.0 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Redesign modules — positions fixes et cohérentes<br>
-      ▸ Réacteur — nacelles symétriques haut/bas arrière<br>
-      ▸ Blindage — plaques dorsale/ventrale fines<br>
-      ▸ Thruster — extension des nacelles réacteur<br>
-      ▸ Antenne — fine sur le nez, discrète<br>
-      ▸ Transmissions radio — 14 messages de pilotes perdus<br>
-      ▸ COSMODEX (catalogue) renommé à venir
+      ▸ Difficulté — STANDARD et ZEN uniquement<br>
+      ▸ CATALOGUE renommé COSMODEX<br>
+      ▸ Polices COSMODEX agrandies<br>
+      ▸ Tuto disseminé — MDW explique au bon moment<br>
+      ▸ Indicateur pré-amarrage — cercle et ancre visibles<br>
+      ▸ MDW conseille O2, coque, approche au premier besoin
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -329,14 +321,14 @@
   <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
   <div class="reset-confirm" id="reset-confirm">
-    <div class="reset-confirm-text">EFFACER UPGRADES · CATALOGUE · RUNS ?</div>
+    <div class="reset-confirm-text">EFFACER UPGRADES · COSMODEX · RUNS ?</div>
     <div style="display:flex;gap:10px;">
       <button class="reset-yes" id="reset-yes">[ OUI ]</button>
       <button class="reset-no" id="reset-no">[ NON ]</button>
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.9</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.0</div>
 </div>
 
 <script>
@@ -503,7 +495,7 @@ function spawnRelic(){
       rtype.effect();
       writeGlitchText&&writeGlitchText(rtype.text,`${rtype.icon} ${rtype.name}`);
       if(typeof mdwActive!=='undefined'&&mdwActive)setTimeout(()=>mdwSpeak(rtype.mdw,true),1500);
-      addToCatalogue&&addToCatalogue('relic',rtype.name,rtype.text,rtype.icon);
+      addToCosmodex&&addToCosmodex('relic',rtype.name,rtype.text,rtype.icon);
     },
   });
   logEvent(`${rtype.icon} RELIQUE DÉTECTÉE — ${rtype.name}`,'planet');
@@ -517,7 +509,7 @@ const CONTRACT_POOL=[
   // mission capsules virée
   {text:'DÉTRUIRE 5 ENNEMIS',        reward:250, check:()=>false}, // suivi via killCount
   {text:'TROUVER UNE ÉPAVE',         reward:100, check:()=>wrecksFound>=1},
-  {text:'TROUVER UNE RELIQUE',       reward:200, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&catalogueEntries.some(e=>e.type==='relic')},
+  {text:'TROUVER UNE RELIQUE',       reward:200, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&cosmodexEntries.some(e=>e.type==='relic')},
   {text:'SURVIVRE 15 JOURS',         reward:400, check:()=>survivalDay>=15},
   {text:'DÉCOUVRIR 5 PLANÈTES',      reward:250, check:()=>discoveredPlanets>=5},
   {text:'ATTEINDRE LE SIGNAL',       reward:500, check:()=>signalReached},
@@ -592,10 +584,14 @@ function tryDock(){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
       logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
+      if(!_tutDockShown&&mdwActive){_tutDockShown=true;
+        setTimeout(()=>showMDWLine('Amarrage enclenché. Les ressources se transfèrent automatiquement.',true),1000);}
       return;
     }
   }
 }
+
+let _tutDockShown=false,_tutO2Shown=false,_tutHullShown=false,_tutWormShown=false,_tutApproachShown=false;
 
 function updateDocking(dt){
   if(!dockedPlanet)return;
@@ -618,7 +614,7 @@ function updateDocking(dt){
     const res=PLANET_RESOURCES[dockedPlanet.type.name]||PLANET_RESOURCES['ROCHEUSE'];
     res.effect();
     upgradePoints+=(res.credits||30);
-    addToCatalogue&&addToCatalogue('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}. +${res.credits||30} crédits.`,'⚓');
+    addToCosmodex&&addToCosmodex('dock',dockedPlanet.name,`Amarrage. ${res.label}. Jour ${survivalDay}. +${res.credits||30} crédits.`,'⚓');
     score+=400;spawnParticles&&spawnParticles(ship.x,ship.y,res.color,15,1.2);
     dockedPlanet.mined=true;
     dockedPlanet=null;dockProgress=0;dockTimer=0;
@@ -1546,23 +1542,15 @@ function playGameOver(){}
 
 // ── Difficulty ──────────────────────────────
 const DIFF_CONFIG={
-  easy:{label:'EASY',color:'var(--green)',drainMult:1,badgeClass:'selected-easy'},
-  hard:{label:'HARD',color:'var(--amber)',drainMult:2,badgeClass:'selected-hard'},
-  harder:{label:'HARDER',color:'var(--red)',drainMult:4,badgeClass:'selected-harder'},
+  standard:{label:'STANDARD',color:'var(--green)',drainMult:1,badgeClass:''},
 };
-let selectedDiff='easy';
+let selectedDiff='standard';
 let drainMult=1;
-let hiScores={easy:0,hard:0,harder:0};
-const planetsFound={easy:0,hard:0,harder:0};
+let hiScores={standard:0};
+const planetsFound={standard:0};
 
 // Difficulty UI
-document.querySelectorAll('.diff-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    selectedDiff=btn.dataset.diff;
-    document.querySelectorAll('.diff-btn').forEach(b=>{b.className='diff-btn';});
-    btn.classList.add(DIFF_CONFIG[selectedDiff].badgeClass);
-  });
-});
+// diff-btn listener viré
 
 // ── State ───────────────────────────────────
 let state='menu',score=0,gameTime=0,lastTime=0,alarmCooldown=0;
@@ -1613,7 +1601,7 @@ function saveGame(){
       installedModules:installedModules||[],
       hiScores,
       unlockedAchIds:[...(unlockedAch||new Set())],
-      catalogue:catalogueEntries.map(e=>({...e,drawFn:undefined}))||[],
+      cosmodex:cosmodexEntries.map(e=>({...e,drawFn:undefined}))||[],
       pilotName,totalRuns,totalDays,
       lastBlackBox:blackBox,
     }));
@@ -1631,7 +1619,7 @@ function saveRun(){
       shipVx:ship.vx,shipVy:ship.vy,
       discoveredPlanets,upgrades,upgradePoints,
       installedModules:installedModules||[],
-      catalogueEntries:catalogueEntries||[],
+      cosmodexEntries:cosmodexEntries||[],
       journalShownDays:[...journalShownDays],
       _exchangesDone:[...(_exchangesDone||new Set())],
       sanity,
@@ -1660,7 +1648,7 @@ function loadRun(){
     if(d.upgrades)Object.assign(upgrades,d.upgrades);
     upgradePoints=d.upgradePoints||0;
     if(d.installedModules)installedModules=d.installedModules;
-    if(d.catalogueEntries)catalogueEntries=d.catalogueEntries;
+    if(d.cosmodexEntries)cosmodexEntries=d.cosmodexEntries;
     if(d.journalShownDays)d.journalShownDays.forEach(x=>journalShownDays.add(x));
     if(d._exchangesDone){_exchangesDone=new Set(d._exchangesDone);}
     sanity=d.sanity||100;
@@ -1687,7 +1675,7 @@ function loadGame(){
     if(d.installedModules)installedModules=d.installedModules;
     if(d.hiScores)Object.assign(hiScores,d.hiScores);
     if(d.unlockedAchIds&&unlockedAch)d.unlockedAchIds.forEach(id=>unlockedAch.add(id));
-    if(d.catalogue)catalogueEntries=d.catalogue;
+    if(d.cosmodex)cosmodexEntries=d.cosmodex;
     if(d.pilotName)pilotName=d.pilotName;
     if(d.lastBlackBox)lastBlackBox=d.lastBlackBox;
     if(typeof d.totalRuns==='number')totalRuns=d.totalRuns;
@@ -1695,11 +1683,11 @@ function loadGame(){
   }catch(e){}
 }
 
-// ── Catalogue cosmique ─────────────────────────
-let catalogueEntries=[];
-function addToCatalogue(type,name,desc,icon='◈',drawFn=null){
-  if(catalogueEntries.some(e=>e.name===name))return;
-  catalogueEntries.push({type,name,desc,icon,day:survivalDay||1,sector:sectorCount||0,drawFn});
+// ── Cosmodex cosmique ─────────────────────────
+let cosmodexEntries=[];
+function addToCosmodex(type,name,desc,icon='◈',drawFn=null){
+  if(cosmodexEntries.some(e=>e.name===name))return;
+  cosmodexEntries.push({type,name,desc,icon,day:survivalDay||1,sector:sectorCount||0,drawFn});
   if(typeof mdwActive!=='undefined'&&mdwActive){
     
   }
@@ -2215,7 +2203,7 @@ const UNIVERSES=[
    gravMult:0, debrisMult:0, emptyMode:true,
    onEnter:()=>{
      if(mdwActive){
-       setTimeout(()=>mdwSpeak("Je n'ai rien à cataloguer ici.",true),3000);
+       setTimeout(()=>mdwSpeak("Je n'ai rien à cosmodexr ici.",true),3000);
        setTimeout(()=>mdwSpeak("...",true),12000);
      }
      setTimeout(()=>{
@@ -2261,7 +2249,7 @@ const UNIVERSES=[
    gravMult:0.3, debrisMult:3.0, miniMode:true,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak("Objets de masse réduite. Densité élevée. Navigation prudente recommandée.",true),2000);
-     writeGlitchText&&writeGlitchText('Tout est petit ici.\nDes dizaines de planètes minuscules.\nComme des billes dans le vide.\nMDW les catalogue toutes.\nIl a l\'air content.','· SECTEUR MINIATURE');
+     writeGlitchText&&writeGlitchText('Tout est petit ici.\nDes dizaines de planètes minuscules.\nComme des billes dans le vide.\nMDW les cosmodex toutes.\nIl a l\'air content.','· SECTEUR MINIATURE');
    }},
 
   // ── SECTEUR PARASITE — glitch visuel ──
@@ -2667,6 +2655,7 @@ function updateSecondaryWormholes(dt){
     const dist=Math.sqrt(dx*dx+dy*dy);
     if(!w.discovered&&dist<w.r+60){
       w.discovered=true;w.life=0;
+      if(!_tutWormShown&&mdwActive){_tutWormShown=true;}
       if(w.isReturn){triggerFinA();return;}
       currentUniverse=w.targetUniverse;
       drainSanity();
@@ -2965,9 +2954,9 @@ function updateWormhole(dt){
       discovered:false,pulse:Math.random()*Math.PI*2,r:18,
     });
     const u=UNIVERSES[currentUniverse];
-    // Catalogue auto — chaque univers traversé est répertorié
+    // Cosmodex auto — chaque univers traversé est répertorié
     const anomalyDesc=u.lore||`Propriétés physiques inconnues.`;
-    addToCatalogue('univers',u.name,anomalyDesc,'🌀');
+    addToCosmodex('univers',u.name,anomalyDesc,'🌀');
     // MDW analyse le nouvel univers
     const anomalyNotes={
       0:'Secteur standard. Référence de calibration.',
@@ -3252,8 +3241,8 @@ function updateDay(dt){
   if(dayTimer>=DAY_DURATION){
     dayTimer=0;survivalDay++;showDayTransition(survivalDay);
     // Clignoter le bouton journal pour inciter à lire
-    const catBtn=document.getElementById('catalogue-btn');
-    if(catBtn&&!cataloguePaused)catBtn.classList.add('new-entry');
+    const catBtn=document.getElementById('cosmodex-btn');
+    if(catBtn&&!cosmodexPaused)catBtn.classList.add('new-entry');
   }
 }
 function showDayTransition(day){
@@ -3659,7 +3648,7 @@ const JOURNAL_ENTRIES={
 const PHASE2_TRANSMISSIONS=[
   "Expédition 3. Les données que vous collectez — demandez à votre robot ce qu'il en fait. J'aurais dû poser cette question plus tôt.",
   "Expédition 2. MDW ne sait pas que j'envoie ça. La mission se passe bien. Trop bien.",
-  "Expédition 4. Les planètes que MDW me fait cataloguer — il y a un pattern. Je ne l'ai pas encore compris.",
+  "Expédition 4. Les planètes que MDW me fait cosmodexr — il y a un pattern. Je ne l'ai pas encore compris.",
   "Expédition 5. Pas de contact avec la Terre depuis 30 jours. MDW dit que c'est normal. Trop calmement.",
 ];
 
@@ -3681,7 +3670,7 @@ const WRECK_LOGS=[
 
 const VERA_FRAGMENTS=[
   {id:0, label:'📖 FRAGMENT — MIRA / EXP. 3',
-   text:"MDW catalogue les planètes avec une précision qui m'inquiète un peu. Il note des choses que je n'aurais pas pensé à noter. Comme s'il savait exactement ce qu'on cherche.\n\nJe lui ai demandé. Il a souri — enfin, ce qui ressemble à un sourire pour un robot. Il a dit : 'Je suis programmé pour ça.'"},
+   text:"MDW cosmodex les planètes avec une précision qui m'inquiète un peu. Il note des choses que je n'aurais pas pensé à noter. Comme s'il savait exactement ce qu'on cherche.\n\nJe lui ai demandé. Il a souri — enfin, ce qui ressemble à un sourire pour un robot. Il a dit : 'Je suis programmé pour ça.'"},
   {id:1, label:'📖 FRAGMENT — ANDROS / EXP. 2',
    text:"Trois fois cette semaine, MDW m'a guidé vers des planètes 'prometteuses'. Les trois fois, il avait raison.\n\nÀ un moment j'ai demandé comment il faisait. Il a dit que les algorithmes de prédiction étaient avancés. J'ai accepté ça. Maintenant je me demande si j'aurais dû creuser davantage."},
   {id:2, label:'📖 FRAGMENT — KESSEL / EXP. 1',
@@ -3812,7 +3801,7 @@ function drawSolarSystems(){
       const dist=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
       if(!p.discovered&&dist<p.r+80){
         p.discovered=true;discoveredPlanets++;
-        addToCatalogue&&addToCatalogue('planet',p.name,`Système solaire. Classe ${p.type?.name}. Jour ${survivalDay}.`,'⭐');
+        addToCosmodex&&addToCosmodex('planet',p.name,`Système solaire. Classe ${p.type?.name}. Jour ${survivalDay}.`,'⭐');
         score+=150;
       }
 
@@ -3973,7 +3962,7 @@ function updatePlanets(dt){
       discoveredPlanets++;
       pcVal.textContent=discoveredPlanets;
       spawnParticles(p.x,p.y,p.type.glowColor,20,1.5);
-      addToCatalogue('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
+      addToCosmodex('planet',p.name,`Classe ${p.type.name}. Découverte jour ${survivalDay}.`,'🪐');
       // Notification discrète dans le journal
       setTimeout(()=>{
         if(!journalEl)return;
@@ -4242,7 +4231,7 @@ function showFirstChoice(){
 function startGame(resume=false){
   document.getElementById('hud').style.opacity='1';
   document.getElementById('home-btn').style.display='block';
-  document.getElementById('catalogue-btn').style.display='block';
+  document.getElementById('cosmodex-btn').style.display='block';
   requestWakeLock();
   initMDW();
   if(!resume){
@@ -4627,6 +4616,18 @@ function updateShip(dt){
     debris.forEach(d=>{d.vx*=0.9;d.vy*=0.9;});
   }
   camX+=(ship.x-camX)*0.03;camY+=(ship.y-camY)*0.03;
+  // Tuto approche — MDW dit ralentissez si trop vite près d'une planète
+  if(!_tutApproachShown&&mdwActive){
+    for(const p of planets){
+      const d=Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2);
+      const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+      if(d<p.r+120&&spd>DOCK_SPEED*2){
+        _tutApproachShown=true;
+        setTimeout(()=>showMDWLine('Ralentissez pour vous amarrer.',true),500);
+        break;
+      }
+    }
+  }
   // Amarrage automatique — indépendant de la poussée
   if(!dockedPlanet){
     const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
@@ -5972,7 +5973,7 @@ function updateWrecks(dt){
           writeGlitchText&&writeGlitchText(w.log,`📦 ${w.name}`);
           if(mdwActive)setTimeout(()=>mdwSpeak('Je connais cette épave.',true),2000);
           logEvent(`📦 BLACK BOX RÉCUPÉRÉE`,'planet');
-          addToCatalogue&&addToCatalogue('blackbox',w.name,w.log,'📦');
+          addToCosmodex&&addToCosmodex('blackbox',w.name,w.log,'📦');
         },1000);
       }
       // Fragment de VERA — une épave sur 5 environ
@@ -6131,7 +6132,7 @@ const MDW_DB={
     {t:"Ce type de planète est particulièrement utile.", v:false}, // utile à qui ?
   ],
   wreck:[
-    {t:"Épave. Je catalogue les données récupérables.", v:false},
+    {t:"Épave. Je cosmodex les données récupérables.", v:false},
     {t:"Les expéditions précédentes ont laissé des traces.", v:true},
     {t:"Je connais certaines de ces épaves.", v:true},    // comment ?
     {t:"Journal de bord récupéré. Je le traite.", v:false},
@@ -6682,8 +6683,8 @@ const PHENOMENON_TYPES=[
          '⬛ PLANÈTE ROGUE'
        );
        score+=800;logEvent('⬛ PLANÈTE ROGUE +800','planet');
-       if(typeof addToCatalogue!=='undefined')
-         addToCatalogue('rogue','PLANÈTE ROGUE-'+Math.floor(Math.random()*999),'Planète errante sans étoile. Structure artificielle détectée.','⬛');
+       if(typeof addToCosmodex!=='undefined')
+         addToCosmodex('rogue','PLANÈTE ROGUE-'+Math.floor(Math.random()*999),'Planète errante sans étoile. Structure artificielle détectée.','⬛');
      }
    }},
 
@@ -7217,7 +7218,7 @@ function triggerFinA(){
       if(fade>=1){
         clearInterval(fi);
         finAActive=false;
-        const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+        const earned=Math.floor(survivalDay*15+discoveredPlanets*25+cosmodexEntries.length*10+(score/80));
         upgradePoints+=earned;
         hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
         totalRuns=(totalRuns||0)+1;
@@ -7372,7 +7373,7 @@ function triggerFinB(){
         viewZoom=1;
         // Noir 4 secondes puis scores
         setTimeout(()=>{
-          const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+          const earned=Math.floor(survivalDay*15+discoveredPlanets*25+cosmodexEntries.length*10+(score/80));
           upgradePoints+=earned;
           hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
           totalRuns=(totalRuns||0)+1;
@@ -7686,7 +7687,7 @@ function updateGodFlare(dt){
     godFlareActive=false;
     ship._spinRate=0;
     // Retour au début — nouvelle run
-    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+catalogueEntries.length*10+(score/80));
+    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+cosmodexEntries.length*10+(score/80));
     upgradePoints+=earned;
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
     totalRuns=(totalRuns||0)+1;
@@ -7820,8 +7821,8 @@ const ENDINGS={
   },
   cartographe:{
     id:'cartographe',title:'FIN — L\'ARCHIVISTE',color:'#40c8ff',
-    condition:()=>catalogueEntries.length>=20&&sectorCount>=2,
-    text:`${catalogueEntries.length} entrées. Chaque planète. Chaque phénomène.\n\nVous avez fait ce pour quoi vous avez été envoyé.\nMDW compile. Les données partent vers nulle part — ou peut-être vers quelqu'un.\n\nLe catalogue n'est jamais complet. Il y a toujours plus loin.`,
+    condition:()=>cosmodexEntries.length>=20&&sectorCount>=2,
+    text:`${cosmodexEntries.length} entrées. Chaque planète. Chaque phénomène.\n\nVous avez fait ce pour quoi vous avez été envoyé.\nMDW compile. Les données partent vers nulle part — ou peut-être vers quelqu'un.\n\nLe cosmodex n'est jamais complet. Il y a toujours plus loin.`,
   },
   memoire:{
     id:'memoire',title:'FIN — LE SOUVENIR',color:'#c060ff',
@@ -8232,7 +8233,7 @@ function updateArtifact(dt){
       }
     },4000);
     score+=600;
-    addToCatalogue('phenomene','ARTEFACT INCONNU',
+    addToCosmodex('phenomene','ARTEFACT INCONNU',
       "Objet non répertorié. Ni épave, ni planète, ni phénomène connu.\nMDW n'a pas de données. C'est la première fois.",'◈');
   }
 }
@@ -8474,16 +8475,16 @@ function triggerEnding(ending){
   // Pas de game over — le jeu continue toujours
 }
 
-// ── Catalogue consultable ─────────────────────
-function showCatalogue(){
-  if(!catalogueEntries.length){
-    logEvent('📋 CATALOGUE VIDE','warn');return;
+// ── Cosmodex consultable ─────────────────────
+function showCosmodex(){
+  if(!cosmodexEntries.length){
+    logEvent('📋 COSMODEX VIDE','warn');return;
   }
   state='trade'; // réutilise le state trade pour bloquer le jeu
   const overlay=document.createElement('div');
-  overlay.id='catalogue-overlay';
+  overlay.id='cosmodex-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,9,2,0.96);z-index:100;display:flex;flex-direction:column;align-items:center;padding:20px 16px;overflow-y:auto;font-family:\'Share Tech Mono\',monospace;gap:8px;';
-  const entries=catalogueEntries.map(e=>`
+  const entries=cosmodexEntries.map(e=>`
     <div style="border-left:2px solid var(--green-dim);padding:6px 10px;text-align:left;width:100%;max-width:300px;box-sizing:border-box;">
       <div style="font-size:9px;color:var(--green);letter-spacing:1px;">${e.icon} ${e.name}</div>
       <div style="font-size:8px;color:var(--green-dim);margin-top:2px;">${e.desc}</div>
@@ -8491,8 +8492,8 @@ function showCatalogue(){
     </div>
   `).join('');
   overlay.innerHTML=`
-    <div style="font-family:'VT323',monospace;font-size:28px;color:var(--amber);text-shadow:0 0 12px var(--amber);letter-spacing:4px;margin-bottom:8px;">📋 CATALOGUE COSMIQUE</div>
-    <div style="font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:12px;">${catalogueEntries.length} ENTRÉE${catalogueEntries.length>1?'S':''}</div>
+    <div style="font-family:'VT323',monospace;font-size:28px;color:var(--amber);text-shadow:0 0 12px var(--amber);letter-spacing:4px;margin-bottom:8px;">📋 COSMODEX COSMIQUE</div>
+    <div style="font-size:8px;letter-spacing:2px;color:var(--green-dim);margin-bottom:12px;">${cosmodexEntries.length} ENTRÉE${cosmodexEntries.length>1?'S':''}</div>
     ${entries}
     <button id="cat-close" style="margin-top:16px;padding:10px 28px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;cursor:pointer;">[ FERMER ]</button>
   `;
@@ -8524,19 +8525,19 @@ function showGameOver(){
   saveGame();
   screen.innerHTML=`
     <div class="big-title red">GAME OVER</div>
-    <div class="tagline">${pilotName!=='INCONNU'?`PILOTE : ${pilotName}<br>`:''}SURVIE : ${survivalDay} JOUR${survivalDay>1?'S':''} · SECTEUR ${sectorCount}<br>🪐 ${discoveredPlanets} PLANÈTE${discoveredPlanets>1?'S':''} · 📋 ${catalogueEntries.length} ENTRÉES</div>
+    <div class="tagline">${pilotName!=='INCONNU'?`PILOTE : ${pilotName}<br>`:''}SURVIE : ${survivalDay} JOUR${survivalDay>1?'S':''} · SECTEUR ${sectorCount}<br>🪐 ${discoveredPlanets} PLANÈTE${discoveredPlanets>1?'S':''} · 📋 ${cosmodexEntries.length} ENTRÉES</div>
     ${modList?`<div class="tagline" style="color:var(--green-dim);font-size:8px">🔩 ${modList}</div>`:''}
     <div class="tagline" style="color:#00ff41;font-size:9px">+${earned} PTS UPGRADE · TROUVEZ UNE BALISE DE COMMERCE</div>
     <button class="screen-btn" id="btn-newrun-go">[ NOUVELLE DÉRIVE ]</button>
-    ${catalogueEntries.length?`<button class="screen-btn" id="btn-catalogue-go" style="font-size:10px;padding:8px 24px;margin-top:0;">[ 📋 CATALOGUE ]</button>`:''}
+    ${cosmodexEntries.length?`<button class="screen-btn" id="btn-cosmodex-go" style="font-size:10px;padding:8px 24px;margin-top:0;">[ 📋 COSMODEX ]</button>`:''}
     <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
   `;
   document.getElementById('btn-newrun-go').addEventListener('click',()=>{
     if(!audioCtx)initAudio();
     launchSequence(()=>startGame());
   });
-  const catBtn=document.getElementById('btn-catalogue-go');
-  if(catBtn)catBtn.addEventListener('click',()=>showCatalogue());
+  const catBtn=document.getElementById('btn-cosmodex-go');
+  if(catBtn)catBtn.addEventListener('click',()=>showCosmodex());
 }
 function drawNebulae(){
   for(const n of nebulae){
@@ -9822,7 +9823,7 @@ function gameLoop(ts){
       // On dessine juste le vaisseau si aucune fin active
       if(!finAActive&&!finBActive)drawShip();
     } else {
-      if(state==='playing'&&!cataloguePaused){
+      if(state==='playing'&&!cosmodexPaused){
         gameTime+=dt;score+=dt*10*difficulty;
         updateShip(dt);updateKeyboard(dt);updateResources(dt);updateDebris(dt);// capsules virées
         updatePlanets(dt);updatePhenomena(dt);updateComets(dt);updateWrecks(dt);updatePassengers(dt);// updateTorpedoes virée
@@ -10064,7 +10065,7 @@ const PHENOMENON_ANALYSES={
 // Choisir une variante aléatoire
 function getAnalysis(name){
   const variants=PHENOMENON_ANALYSES[name];
-  if(!variants)return'Phénomène non répertorié. Données insuffisantes.\nMDW tente de cataloguer. Aucun résultat.';
+  if(!variants)return'Phénomène non répertorié. Données insuffisantes.\nMDW tente de cosmodexr. Aucun résultat.';
   return variants[Math.floor(Math.random()*variants.length)];
 }
 
@@ -10093,7 +10094,7 @@ function checkScanHint(){
           mdwEl.style.opacity='1';
           setTimeout(()=>{mdwEl.style.opacity='0';},6000);
         }
-        addToCatalogue('phenomene',
+        addToCosmodex('phenomene',
           p.name+' (J'+survivalDay+')',
           analysis,
           p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈');
@@ -10153,7 +10154,7 @@ function scanNearestPhenomenon(){
     const text=deep?deep.text:getAnalysis(p.name);
     const icon=p.name==='TROU NOIR'?'🌀':p.name==='PULSAR'?'⚡':p.name==='MAGNÉTAR'?'💥':'◈';
     if(!alreadyScanned){
-      addToCatalogue('phenomene',entryName,text,icon,deep?.draw);
+      addToCosmodex('phenomene',entryName,text,icon,deep?.draw);
       autoScanned.add(scanKey);
     }
     // Affichage discret — une ligne, pas de voix
@@ -10163,7 +10164,7 @@ function scanNearestPhenomenon(){
     const p=best.obj;
     const desc=`${p.name}.\nClasse : ${p.type?.name||'inconnue'}.\n${p.type?.rare?'Planète rare.':'Corps céleste répertorié.'}`;
     if(!alreadyScanned){
-      addToCatalogue('planet',`${p.name} — SCAN`,desc,'🪐');
+      addToCosmodex('planet',`${p.name} — SCAN`,desc,'🪐');
       autoScanned.add(scanKey);
     }
     logEvent(`📡 ${p.name} — classe ${p.type?.name||'?'}`,'planet');
@@ -10172,7 +10173,7 @@ function scanNearestPhenomenon(){
     const w=best.obj;
     const desc=`Épave : ${w.name}.\n${w.log||'Données de vol corrompues.'}\n${w.moduleKey?'Module récupérable détecté.':'Aucun module.'}`;
     if(!alreadyScanned){
-      addToCatalogue('planet',`ÉPAVE — ${w.name}`,desc,'💀');
+      addToCosmodex('planet',`ÉPAVE — ${w.name}`,desc,'💀');
       autoScanned.add(scanKey);
     }
     logEvent(`📡 ÉPAVE ${w.name}${w.moduleKey?' — MODULE DÉTECTÉ':''}`,'planet');
@@ -10282,8 +10283,8 @@ function updateResumeBtn(){
   }
 }
 
-// ── Catalogue en pause ────────────────────────
-let cataloguePaused=false;
+// ── Cosmodex en pause ────────────────────────
+let cosmodexPaused=false;
 let currentCatTab='journal';
 
 function buyUpgradeFromCat(key){
@@ -10303,19 +10304,19 @@ function buyUpgradeFromCat(key){
   renderCatTab('upgrades');
 }
 
-function openCatalogue(){
+function openCosmodex(){
   if(state!=='playing')return;
-  cataloguePaused=true;
+  cosmodexPaused=true;
   // Arrêter le clignotement
-  const catBtn=document.getElementById('catalogue-btn');
+  const catBtn=document.getElementById('cosmodex-btn');
   if(catBtn)catBtn.classList.remove('new-entry');
-  document.getElementById('catalogue-panel').classList.add('open');
+  document.getElementById('cosmodex-panel').classList.add('open');
   renderCatTab(currentCatTab);
 }
 
-function closeCatalogue(){
-  cataloguePaused=false;
-  document.getElementById('catalogue-panel').classList.remove('open');
+function closeCosmodex(){
+  cosmodexPaused=false;
+  document.getElementById('cosmodex-panel').classList.remove('open');
   document.getElementById('cat-mdw-panel').style.display='none';
 }
 
@@ -10504,7 +10505,7 @@ function renderCatTab(tab){
     return;
   }
   const typeMap={planets:'planet',phenomenes:'phenomene',sectors:'univers'};
-  const filtered=(catalogueEntries||[]).filter(e=>e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')));
+  const filtered=(cosmodexEntries||[]).filter(e=>e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')));
   if(!filtered.length){content.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:9px;padding:8px">Rien encore.</div>';return;}
   content.innerHTML=filtered.map((e,i)=>`
     <div class="cat-entry" id="cat-entry-${i}">
@@ -10546,16 +10547,16 @@ function renderMDWQuestions(){
   });
 }
 
-// Binder les éléments catalogue
-document.getElementById('catalogue-btn').addEventListener('click',openCatalogue);
-document.getElementById('cat-close').addEventListener('click',closeCatalogue);
+// Binder les éléments cosmodex
+document.getElementById('cosmodex-btn').addEventListener('click',openCosmodex);
+document.getElementById('cat-close').addEventListener('click',closeCosmodex);
 document.querySelectorAll('.cat-tab').forEach(btn=>{
   btn.addEventListener('click',()=>renderCatTab(btn.dataset.tab));
 });
 function resetGame(){
   try{localStorage.removeItem('voidDrift_v1');}catch(e){}
   upgradePoints=0;totalRuns=0;totalDays=0;pilotName='INCONNU';
-  catalogueEntries=[];installedModules=[];
+  cosmodexEntries=[];installedModules=[];
   if(unlockedAch)unlockedAch.clear();
   hiScores={easy:0,hard:0,harder:0};
   Object.keys(upgrades).forEach(k=>upgrades[k]=0);
@@ -10670,7 +10671,7 @@ document.getElementById('home-btn').addEventListener('click',()=>{
     saveGame();
     document.getElementById('hud').style.opacity='0';
     document.getElementById('home-btn').style.display='none';
-    document.getElementById('catalogue-btn').style.display='none';
+    document.getElementById('cosmodex-btn').style.display='none';
     state='menu';
     showTitleScreen();
     setTimeout(updateResumeBtn,500);
