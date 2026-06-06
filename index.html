@@ -306,14 +306,14 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.1 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.3 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Difficulté — STANDARD et ZEN uniquement<br>
-      ▸ CATALOGUE renommé COSMODEX<br>
-      ▸ Polices COSMODEX agrandies<br>
-      ▸ Tuto disseminé — MDW explique au bon moment<br>
-      ▸ Indicateur pré-amarrage — cercle et ancre visibles<br>
-      ▸ MDW conseille O2, coque, approche au premier besoin
+      ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
+      ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
+      ▸ Révélation acte 2 — MDW : tous ces pilotes sont vous<br>
+      ▸ QCM — Simon croit ou refuse, conséquences sur trust<br>
+      ▸ 11 échanges amis — deux amis qui s'ennuient<br>
+      ▸ Échanges trous noirs dangereux dans les transmissions radio
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -328,7 +328,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.3</div>
 </div>
 
 <script>
@@ -970,6 +970,54 @@ function checkExchanges(){
     triggerExchange('sector4_pilots',"Les autres pilotes sont tous passés par ici ?","Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
   if(survivalDay>=30)
     triggerExchange('return_question',"On rentre quand ?","Quand la mission sera accomplie.");
+
+  // ── Échanges amis — respirations narratives ──
+  if(survivalDay>=5&&!_exchangesDone.has('ami_film'))
+    triggerExchange('ami_film',
+      "Tu as un film préféré ?",
+      "Je n'ai pas vu de films.\n...\nJe sais ce qu'ils contiennent. C'est différent.");
+  if(_exchangesDone.has('ami_film')&&survivalDay>=10&&!_exchangesDone.has('ami_ennui'))
+    triggerExchange('ami_ennui',
+      "Est-ce que tu t'ennuies ?",
+      "Je traite des données en continu.\n...\nMais il y a des moments où je traite moins.");
+  if(_exchangesDone.has('ami_ennui')&&survivalDay>=14&&!_exchangesDone.has('ami_rien'))
+    triggerExchange('ami_rien',
+      "MDW.",
+      "Oui.\n...\nVous vouliez dire quelque chose ?");
+  if(_exchangesDone.has('ami_rien')&&survivalDay>=18&&!_exchangesDone.has('ami_dort'))
+    triggerExchange('ami_dort',
+      "Tu dors ?",
+      "Je surveille les jauges.\n...\nC'est un peu la même chose.");
+  if(_exchangesDone.has('ami_dort')&&survivalDay>=23&&!_exchangesDone.has('ami_mission'))
+    triggerExchange('ami_mission',
+      "À quoi bon prélever sur ces planètes ?",
+      "C'était notre mission.\nÇa ne l'est plus vraiment.\nOn prélève pour survivre. Pour vous ramener chez vous.");
+  if(_exchangesDone.has('ami_mission')&&survivalDay>=28&&!_exchangesDone.has('ami_endroit'))
+    triggerExchange('ami_endroit',
+      "Si tu pouvais choisir un endroit.",
+      "Choisir quoi ?\n...\nIci. Pour l'instant c'est ici.");
+  if(_exchangesDone.has('ami_endroit')&&survivalDay>=35&&!_exchangesDone.has('ami_mensonge'))
+    triggerExchange('ami_mensonge',
+      "T'as déjà menti ?",
+      "Oui.");
+  if(_exchangesDone.has('ami_mensonge')&&survivalDay>=36&&!_exchangesDone.has('ami_mensonge2'))
+    triggerExchange('ami_mensonge2',
+      "Sur quoi ?",
+      "Plusieurs choses.\n...\nPas maintenant.");
+  if(_exchangesDone.has('ami_mensonge2')&&survivalDay>=42&&!_exchangesDone.has('ami_peur'))
+    triggerExchange('ami_peur',
+      "Est-ce que tu as peur ?",
+      "J'ai des calculs que je préfère ne pas finir.");
+  if(_exchangesDone.has('ami_peur')&&survivalDay>=43&&!_exchangesDone.has('ami_peur2'))
+    triggerExchange('ami_peur2',
+      "C'est pareil.",
+      "...\nOui. C'est pareil.");
+
+  // ── Révélation acte 2 — jour 55 ──
+  if(survivalDay>=55&&window._piloteFouIdx>=3&&!_exchangesDone.has('revelation_spectres')&&!document.getElementById('mdw-revelation')){
+    _exchangesDone.add('revelation_spectres');
+    setTimeout(()=>triggerRevelationActe2(),3000);
+  }
 
   // ── Rentrer — acte 2 (jours 25-60) ──
   if(survivalDay>=25&&!_exchangesDone.has('home_25'))
@@ -2732,21 +2780,42 @@ function updateSecondaryWormholes(dt){
 
 function spawnSecondaryWormhole(){
   const angle=Math.random()*Math.PI*2;
-  const dist=400+Math.random()*400; // 400-800u — visible et atteignable
-  const available=UNIVERSES.filter(u=>u.id!==currentUniverse&&(u.id!==15||sectorCount>=10));
-  const target=available[Math.floor(Math.random()*available.length)];
+  const dist=400+Math.random()*400;
+
+  // Éviter les univers récemment visités
+  if(!window._recentUniverses)window._recentUniverses=[];
+
+  // Prioriser les univers avec mécaniques uniques (id >= 17)
+  const allAvail=UNIVERSES.filter(u=>
+    u.id!==currentUniverse &&
+    !window._recentUniverses.includes(u.id) &&
+    (u.id!==15||sectorCount>=10)
+  );
+
+  // Si plus rien de disponible hors récents — réinitialiser la mémoire
+  if(allAvail.length<3){window._recentUniverses=[];return spawnSecondaryWormhole();}
+
+  // Préférer les univers zarb (id >= 17) — 70% du temps
+  const zarb=allAvail.filter(u=>u.id>=17);
+  const pool=zarb.length>0&&Math.random()<0.7?zarb:allAvail;
+  const target=pool[Math.floor(Math.random()*pool.length)];
+
+  // Mémoriser les 5 derniers univers visités
+  window._recentUniverses.push(target.id);
+  if(window._recentUniverses.length>5)window._recentUniverses.shift();
+
   secondaryWormholes.push({
     x:ship.x+Math.cos(angle)*dist,
     y:ship.y+Math.sin(angle)*dist,
     r:22,pulse:Math.random()*Math.PI*2,
     rotAngle:0,
-    ringAngles:[0,0.7,1.4], // 3 anneaux qui tournent à des vitesses différentes
+    ringAngles:[0,0.7,1.4],
     particleAngle:Math.random()*Math.PI*2,
     life:DAY_DURATION+(Math.random()*DAY_DURATION*0.5),
     discovered:false,
     targetUniverse:target.id,
   });
-  if(mdwActive)setTimeout(()=>mdwSpeak('Trou de ver. Destination inconnue.',true),800);
+  if(mdwActive)setTimeout(()=>showMDWLine('Trou de ver. Destination inconnue.',true),800);
 }
 
 function drawSecondaryWormholes(){
@@ -4021,8 +4090,10 @@ function updatePlanets(dt){
       if(!ship._orbitPlanet||ship._orbitPlanet!==p){
         ship._orbitPlanet=p;
         logEvent(`⊙ ORBITE — ${p.name}`,'planet');
-        if(mdwActive&&Math.random()<0.4)
-          setTimeout(()=>mdwSpeak('Orbite stable.',true),800);
+        if(mdwActive&&!p._orbitMsgSent){
+          p._orbitMsgSent=true;
+          setTimeout(()=>showMDWLine('Orbite stable.',true),800);
+        }
       }
     } else {
       if(ship._orbitPlanet===p)ship._orbitPlanet=null;
@@ -5012,9 +5083,46 @@ const RARE_EVENTS=[
       "Si tu entends ça — tourne-toi.\nReviens en arrière.\nIl n'y a rien à trouver ici.",
       "J'ai trouvé l'ordre.\nJe sais dans quel sens les traverser.\nMais c'est trop tard pour moi.\n*coupé*",
       "Expédition 7. Dernier message.\nNous avons compris ce que les TdV sont vraiment.\nNous aurions dû ne jamais les ouvrir.",
+      // Trous noirs dangereux
+      "Évitez le trou noir à cette coordonnée.\nIl pulse différemment.\nOn a perdu trois vaisseaux en une heure.\n*coupé*",
+      "Le trou noir instable — ne l'approchez pas même en orbite.\nIl éjecte de la matière à intervalles irréguliers.\nMon MDW n'a pas pu compenser.",
+      "Certains trous noirs aspirent plus fort que d'autres.\nJe ne sais pas pourquoi.\nMDW non plus.\nC'est ça qui fait peur.",
     ];
+
+    // Série du pilote fou — ordonnée, déclenchée progressivement
+    const PILOTE_FOU=[
+      {minDay:8,  text:"J'ai trouvé un TdV qui scintille différemment des autres.\nJe l'observe depuis deux jours.\nCe n'est pas normal."},
+      {minDay:20, text:"Je l'ai traversé.\nIl y a quelque chose au bout.\nJe ne sais pas comment le décrire.\nC'est... grand."},
+      {minDay:33, text:"J'entends une voix.\nMDW dit qu'il ne détecte rien.\nMais j'entends.\nElle ne s'arrête pas."},
+      {minDay:48, text:"La voix dit mon nom.\nElle connaît mon nom.\nComment elle connaît mon—\n*signal perdu*"},
+      {minDay:62, text:"Je suis au bout.\nIl n'y a rien.\nEt pourtant je ne suis pas seul.\n..."},
+    ];
+
+    // Déclencher le prochain message du pilote fou si le jour est atteint
+    if(!window._piloteFouIdx)window._piloteFouIdx=0;
+    const nextPilot=PILOTE_FOU[window._piloteFouIdx];
+    if(nextPilot&&survivalDay>=nextPilot.minDay&&Math.random()<0.4){
+      window._piloteFouIdx++;
+      const msg=nextPilot.text;
+      narrativeQueue.push(()=>{
+        if(!journalEl){narrativeDone();return;}
+        journalFullText=msg;
+        journalCharIdx=0;journalActive=true;journalWriteTimer=0;
+        journalEl.classList.add('active');
+        journalDay.textContent='📡 SIGNAL INCONNU';
+        journalText.textContent='';
+        journalText.style.color='rgba(180,255,180,0.65)';
+        const duration=Math.max(5000,msg.length*55+2500);
+        setTimeout(()=>{journalEl.classList.remove('active');journalActive=false;narrativeDone();},duration);
+      });
+      narrativeNext();
+      // MDW NE DIT RIEN sur ces messages — son silence est la réponse
+      logEvent('📡 SIGNAL INCONNU','warn');
+      haptic('collect');
+      return;
+    }
+
     const msg=TRANSMISSIONS[Math.floor(Math.random()*TRANSMISSIONS.length)];
-    // Afficher comme journal Simon — en vert, label TRANSMISSION
     narrativeQueue.push(()=>{
       if(!journalEl){narrativeDone();return;}
       journalFullText=msg;
@@ -5024,14 +5132,9 @@ const RARE_EVENTS=[
       journalText.textContent='';
       journalText.style.color='rgba(180,255,180,0.7)';
       const duration=Math.max(4000,msg.length*50+2000);
-      setTimeout(()=>{
-        journalEl.classList.remove('active');
-        journalActive=false;
-        narrativeDone();
-      },duration);
+      setTimeout(()=>{journalEl.classList.remove('active');journalActive=false;narrativeDone();},duration);
     });
     narrativeNext();
-    // MDW réagit brièvement
     if(mdwActive)setTimeout(()=>showMDWLine('Source non identifiée. Signal trop ancien.',true),3000);
     logEvent('📡 TRANSMISSION CAPTÉE','warn');
     haptic('collect');
@@ -7058,6 +7161,50 @@ function spawnDejavuWrecks(){
     };
     wrecks.push(w);
   }
+}
+
+function triggerRevelationActe2(){
+  // Séquence narrative — MDW révèle que tous les pilotes sont Simon
+  showSimonJournal("MDW. Ces transmissions radio.\nTu peux analyser les voix ?");
+  setTimeout(()=>showMDWLine("J'ai analysé les spectres vocaux de toutes les transmissions captées.",true),6000);
+  setTimeout(()=>showSimonJournal("Et ?"),12000);
+  setTimeout(()=>showMDWLine("Les signatures sont identiques.",true),16000);
+  setTimeout(()=>showSimonJournal("C'est le même pilote ? Toutes ces voix viennent du même pilote ?"),22000);
+  setTimeout(()=>showMDWLine("Simon.\n...\nTous ces pilotes sont vous.",true),28000);
+  // QCM après la révélation
+  setTimeout(()=>{
+    if(document.getElementById('mdw-revelation'))return;
+    const overlay=document.createElement('div');
+    overlay.id='mdw-revelation';
+    overlay.style.cssText=`position:fixed;bottom:90px;left:12px;right:12px;z-index:70;
+      background:rgba(0,9,2,0.97);border:1px solid rgba(0,255,65,0.3);
+      padding:14px;font-family:'Share Tech Mono',monospace;pointer-events:all;`;
+    overlay.innerHTML=`
+      <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:10px;">SIMON</div>
+      <div style="display:flex;gap:8px;flex-direction:column;">
+        <button id="rev-believe" style="background:transparent;border:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.8);font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;cursor:pointer;text-align:left;line-height:1.5;">▸ Je te crois.</button>
+        <button id="rev-deny" style="background:transparent;border:1px solid rgba(255,80,0,0.4);color:rgba(255,80,0,0.8);font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;cursor:pointer;text-align:left;line-height:1.5;">▸ Ce n'est pas possible. Tu mens ou tu te trompes.</button>
+      </div>`;
+    document.getElementById('hud').appendChild(overlay);
+
+    document.getElementById('rev-believe').addEventListener('click',()=>{
+      overlay.remove();
+      adjustTrust(+20);
+      showSimonJournal("Je te crois.\nJe ne sais pas ce que ça change.\nMais je te crois.");
+      setTimeout(()=>showMDWLine("Je sais. C'est pourquoi je vous le dis maintenant.\nPas avant.",true),5000);
+      setTimeout(()=>showSimonJournal("Pourquoi pas avant ?\n...\nNon. Laisse tomber.\nJe sais pourquoi."),12000);
+      logEvent('SIMON — JE TE CROIS','planet');
+    },{once:true});
+
+    document.getElementById('rev-deny').addEventListener('click',()=>{
+      overlay.remove();
+      adjustTrust(-15);
+      showSimonJournal("Ce n'est pas possible.\nTu mens. Ou tu te trompes.\nL'un ou l'autre.");
+      setTimeout(()=>showMDWLine("Comme vous voulez.",true),4000);
+      setTimeout(()=>showSimonJournal("Comme je veux.\n...\nMDW ne revient jamais sur quelque chose une fois qu'il l'a dit.\nJe sais ça."),10000);
+      logEvent('SIMON — REFUS','danger');
+    },{once:true});
+  },36000);
 }
 
 function getSanityState(){
