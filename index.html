@@ -306,7 +306,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.7 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.8 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
       ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
@@ -328,7 +328,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.7</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.8</div>
 </div>
 
 <script>
@@ -2027,35 +2027,35 @@ function updateSignal(dt){
 // ── Univers / Secteurs ────────────────────────
 const UNIVERSES=[
   // ── Univers originaux ──
-  {id:0, name:'SECTEUR ALPHA',   bg:'#000902', primary:'#00ff41', dim:'#00a828', accent:'#ffaa00',
+  {id:0, name:'SECTEUR ALPHA',   bg:'#000d03', primary:'#00ff41', dim:'#00a828', accent:'#ffaa00',
    starColors:['#ffffff','#ffe8c0','#c0d8ff','#c0ffc0','#aaffee'],
    nebulaColors:['rgba(80,0,160,','rgba(0,60,160,','rgba(0,120,80,','rgba(120,0,80,'],
    scan:'rgba(0,255,65,0.03)',
    lore:"Secteur de départ. Vert phosphore. Le vide standard.",
    gravMult:1.0, debrisMult:1.0},
 
-  {id:1, name:'SECTEUR IGNIS',   bg:'#090200', primary:'#ff6020', dim:'#a83000', accent:'#ffcc00',
+  {id:1, name:'SECTEUR IGNIS',   bg:'#1a0400', primary:'#ff6020', dim:'#a83000', accent:'#ffcc00',
    starColors:['#ffffff','#ffcc88','#ff8844','#ffaa44','#ffeecc'],
    nebulaColors:['rgba(160,40,0,','rgba(200,80,0,','rgba(120,20,0,','rgba(80,40,0,'],
    scan:'rgba(255,96,32,0.03)',
    lore:"Secteur chaud. Les étoiles ici brûlent plus fort. Les planètes brûlantes sont plus fréquentes.",
    gravMult:1.1, debrisMult:1.2},
 
-  {id:2, name:'SECTEUR GLACIUS', bg:'#000509', primary:'#40c8ff', dim:'#0080a8', accent:'#80eeff',
+  {id:2, name:'SECTEUR GLACIUS', bg:'#000820', primary:'#40c8ff', dim:'#0080a8', accent:'#80eeff',
    starColors:['#ffffff','#c0e8ff','#80d0ff','#aaeeff','#e0f8ff'],
    nebulaColors:['rgba(0,60,160,','rgba(0,80,200,','rgba(0,40,120,','rgba(20,60,140,'],
    scan:'rgba(64,200,255,0.03)',
    lore:"Secteur glacé. L'oxygène se recharge plus lentement ici. Les comètes sont plus nombreuses.",
    gravMult:0.9, debrisMult:0.8},
 
-  {id:3, name:'SECTEUR UMBRA',   bg:'#040009', primary:'#c060ff', dim:'#7020a8', accent:'#ff80ff',
+  {id:3, name:'SECTEUR UMBRA',   bg:'#0a0020', primary:'#c060ff', dim:'#7020a8', accent:'#ff80ff',
    starColors:['#ffffff','#e0c0ff','#c080ff','#ff80ff','#d0a0ff'],
    nebulaColors:['rgba(120,0,160,','rgba(80,0,120,','rgba(160,0,200,','rgba(60,0,100,'],
    scan:'rgba(192,96,255,0.03)',
    lore:"Secteur sombre. Les phénomènes cosmiques y sont plus fréquents. Le radar glitche souvent.",
    gravMult:1.2, debrisMult:1.0},
 
-  {id:4, name:'SECTEUR LUMEN',   bg:'#090909', primary:'#ffffff', dim:'#aaaaaa', accent:'#ffe080',
+  {id:4, name:'SECTEUR LUMEN',   bg:'#151510', primary:'#ffffff', dim:'#aaaaaa', accent:'#ffe080',
    starColors:['#ffffff','#ffffc0','#ffeecc','#ffe8aa','#f0f0ff'],
    nebulaColors:['rgba(200,200,160,','rgba(180,180,200,','rgba(220,200,180,','rgba(160,160,120,'],
    scan:'rgba(255,255,255,0.04)',
@@ -2063,7 +2063,7 @@ const UNIVERSES=[
    gravMult:1.0, debrisMult:0.7},
 
   // ── Nouveaux univers ──
-  {id:5, name:'SECTEUR NÉCROS',  bg:'#050505', primary:'#888888', dim:'#555555', accent:'#cccccc',
+  {id:5, name:'SECTEUR NÉCROS',  bg:'#080808', primary:'#888888', dim:'#555555', accent:'#cccccc',
    starColors:['#888888','#666666','#aaaaaa','#999999','#777777'],
    nebulaColors:['rgba(60,60,60,','rgba(40,40,50,','rgba(50,50,40,','rgba(30,30,30,'],
    scan:'rgba(128,128,128,0.03)',
@@ -2074,7 +2074,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Aucune étoile reconnue. Toutes mortes.',true),2000);
    }},
 
-  {id:6, name:'SECTEUR MIROIR',  bg:'#020009', primary:'#ff40ff', dim:'#880088', accent:'#40ffff',
+  {id:6, name:'SECTEUR MIROIR',  bg:'#100025', primary:'#ff40ff', dim:'#880088', accent:'#40ffff',
    starColors:['#ff80ff','#ff40aa','#aa40ff','#ff8080','#ffaaff'],
    nebulaColors:['rgba(160,0,160,','rgba(0,160,160,','rgba(160,80,0,','rgba(0,80,160,'],
    scan:'rgba(255,64,255,0.03)',
@@ -2086,7 +2086,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Quelque chose est différent ici. Le radar montre des directions qui ne correspondent pas à ma trajectoire. Comme un miroir.','🌀 ANOMALIE SECTORIELLE');
    }},
 
-  {id:7, name:'SECTEUR DENSE',   bg:'#020402', primary:'#80ff80', dim:'#408040', accent:'#ffdd00',
+  {id:7, name:'SECTEUR DENSE',   bg:'#011008', primary:'#80ff80', dim:'#408040', accent:'#ffdd00',
    starColors:['#ffffff','#c0ffc0','#80ff80','#aaffaa','#e0ffe0'],
    nebulaColors:['rgba(0,160,0,','rgba(40,120,0,','rgba(0,80,40,','rgba(20,100,20,'],
    scan:'rgba(128,255,128,0.04)',
@@ -2097,7 +2097,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Densité élevée. Naviguez prudemment.',true),1500);
    }},
 
-  {id:8, name:'SECTEUR ANCIEN',  bg:'#080302', primary:'#cc6020', dim:'#883010', accent:'#ff9944',
+  {id:8, name:'SECTEUR ANCIEN',  bg:'#180800', primary:'#cc6020', dim:'#883010', accent:'#ff9944',
    starColors:['#ff8844','#cc6622','#ff6600','#dd8844','#ffaa66'],
    nebulaColors:['rgba(120,40,0,','rgba(100,30,0,','rgba(80,20,0,','rgba(60,10,0,'],
    scan:'rgba(200,96,32,0.03)',
@@ -2109,7 +2109,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Les étoiles ici sont vieilles. Plus vieilles que tout ce que j\'ai vu. Je me demande si quelqu\'un d\'autre a déjà traversé ce secteur.','🌅 SECTEUR ANCIEN');
    }},
 
-  {id:9, name:'SECTEUR SIGNAL',  bg:'#000804', primary:'#00ffaa', dim:'#008855', accent:'#ffff00',
+  {id:9, name:'SECTEUR SIGNAL',  bg:'#001a08', primary:'#00ffaa', dim:'#008855', accent:'#ffff00',
    starColors:['#ffffff','#aaffee','#00ffcc','#88ffcc','#ccffee'],
    nebulaColors:['rgba(0,160,80,','rgba(0,120,100,','rgba(0,80,120,','rgba(40,160,80,'],
    scan:'rgba(0,255,170,0.04)',
@@ -2140,7 +2140,7 @@ const UNIVERSES=[
      },3000);
    }},
 
-  {id:11, name:'SECTEUR LENT',    bg:'#020308', primary:'#8080ff', dim:'#404080', accent:'#c0c0ff',
+  {id:11, name:'SECTEUR LENT',    bg:'#000520', primary:'#8080ff', dim:'#404080', accent:'#c0c0ff',
    starColors:['#8080ff','#6060cc','#a0a0ff','#c0c0ff','#4040aa'],
    nebulaColors:['rgba(40,40,120,','rgba(20,20,80,','rgba(60,60,160,','rgba(30,30,100,'],
    scan:'rgba(128,128,255,0.03)',
@@ -2151,7 +2151,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Tout est ralenti. Mon propre rythme cardiaque semble différent. MDW dit que c\'est physique. Que c\'est réel.','⏳ SECTEUR LENT');
    }},
 
-  {id:12, name:'SECTEUR BRUIT',   bg:'#040204', primary:'#ff40ff', dim:'#801080', accent:'#ff80ff',
+  {id:12, name:'SECTEUR BRUIT',   bg:'#150015', primary:'#ff40ff', dim:'#801080', accent:'#ff80ff',
    starColors:['#ff40ff','#ff80ff','#cc00cc','#ff00ff','#aa00aa'],
    nebulaColors:['rgba(160,0,160,','rgba(120,0,120,','rgba(200,0,200,','rgba(80,0,80,'],
    scan:'rgba(255,64,255,0.04)',
@@ -2162,7 +2162,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Le radar montre tout et rien. MDW recalibre depuis 10 minutes. Il n\'a pas l\'air inquiet. Moi si.','📻 SECTEUR BRUIT');
    }},
 
-  {id:13, name:'SECTEUR CHAUD',   bg:'#080200', primary:'#ff6600', dim:'#aa3300', accent:'#ffcc00',
+  {id:13, name:'SECTEUR CHAUD',   bg:'#200500', primary:'#ff6600', dim:'#aa3300', accent:'#ffcc00',
    starColors:['#ff6600','#ff4400','#ffaa00','#ff8800','#ffcc44'],
    nebulaColors:['rgba(200,60,0,','rgba(180,40,0,','rgba(220,80,0,','rgba(160,30,0,'],
    scan:'rgba(255,102,0,0.04)',
@@ -2174,7 +2174,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('La chaleur ici est omniprésente. Pas une étoile proche — juste le fond du secteur lui-même. Comme si l\'espace brûlait.','🔥 SECTEUR CHAUD');
    }},
 
-  {id:14, name:'SECTEUR CRISTAL', bg:'#020408', primary:'#aaffff', dim:'#408888', accent:'#ffffff',
+  {id:14, name:'SECTEUR CRISTAL', bg:'#001520', primary:'#aaffff', dim:'#408888', accent:'#ffffff',
    starColors:['#aaffff','#ffffff','#88eeff','#ccffff','#44ccdd'],
    nebulaColors:['rgba(100,220,240,','rgba(80,180,200,','rgba(120,240,255,','rgba(60,160,180,'],
    scan:'rgba(170,255,255,0.04)',
@@ -2186,7 +2186,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR TERMINAL — avant dieu ──
-  {id:15, name:'SECTEUR TERMINAL',bg:'#060606', primary:'#ffffff', dim:'#888888', accent:'#ffffff',
+  {id:15, name:'SECTEUR TERMINAL',bg:'#101010', primary:'#ffffff', dim:'#888888', accent:'#ffffff',
    starColors:['#ffffff','#eeeeee','#dddddd','#cccccc','#bbbbbb'],
    nebulaColors:['rgba(200,200,200,','rgba(180,180,180,','rgba(220,220,220,','rgba(160,160,160,'],
    scan:'rgba(255,255,255,0.05)',
@@ -2199,7 +2199,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText("Les étoiles s'éteignent. Une par une. MDW ne dit rien. Pour la première fois depuis le début, il ne dit rien.",'◈ SECTEUR TERMINAL');
      window._terminalWhiten=0;
    }},
-  {id:16, name:'LES VORACES',   bg:'#020000', primary:'#ff2000', dim:'#880000', accent:'#ff6020',
+  {id:16, name:'LES VORACES',   bg:'#200000', primary:'#ff2000', dim:'#880000', accent:'#ff6020',
    starColors:['#ff4020','#ff2000','#aa1000','#880000'],
    nebulaColors:['rgba(150,20,0,','rgba(100,10,0,'],
    scan:'rgba(255,30,0,0.08)',
@@ -2215,7 +2215,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR EUCLIDIEN — tout est carré ──
-  {id:17, name:'SECTEUR EUCLIDIEN', bg:'#020208', primary:'#88aaff', dim:'#334488', accent:'#aaccff',
+  {id:17, name:'SECTEUR EUCLIDIEN', bg:'#080020', primary:'#88aaff', dim:'#334488', accent:'#aaccff',
    starColors:['#88aaff','#aaccff','#6688dd','#ffffff','#9999ff'],
    nebulaColors:['rgba(80,100,180,','rgba(60,80,160,','rgba(100,120,200,'],
    scan:'rgba(136,170,255,0.05)',
@@ -2238,7 +2238,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR INVERSÉ — gravité repoussante ──
-  {id:18, name:'SECTEUR INVERSÉ', bg:'#080204', primary:'#ff44aa', dim:'#880044', accent:'#ffaadd',
+  {id:18, name:'SECTEUR INVERSÉ', bg:'#200008', primary:'#ff44aa', dim:'#880044', accent:'#ffaadd',
    starColors:['#ff44aa','#ff88cc','#dd2288','#ffaadd','#ffffff'],
    nebulaColors:['rgba(180,40,100,','rgba(140,20,80,'],
    scan:'rgba(255,68,170,0.05)',
@@ -2253,7 +2253,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR LENT — tout au ralenti ──
-  {id:19, name:'SECTEUR LENT', bg:'#010306', primary:'#4488ff', dim:'#224488', accent:'#88aaff',
+  {id:19, name:'SECTEUR DILATÉ', bg:'#000520', primary:'#4488ff', dim:'#224488', accent:'#88aaff',
    starColors:['#4488ff','#6699ff','#2255cc','#88aaff','#aabbff'],
    nebulaColors:['rgba(40,80,180,','rgba(30,60,150,'],
    scan:'rgba(68,136,255,0.04)',
@@ -2313,7 +2313,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR MINIATURE — tout est minuscule ──
-  {id:23, name:'SECTEUR MINIATURE', bg:'#030205', primary:'#cc88ff', dim:'#664488', accent:'#ddaaff',
+  {id:23, name:'SECTEUR MINIATURE', bg:'#0a0018', primary:'#cc88ff', dim:'#664488', accent:'#ddaaff',
    starColors:['#cc88ff','#ddaaff','#aa66dd','#eeccff','#ffffff'],
    nebulaColors:['rgba(140,80,200,','rgba(110,60,170,'],
    scan:'rgba(200,136,255,0.04)',
@@ -2325,7 +2325,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR PARASITE — glitch visuel ──
-  {id:24, name:'SECTEUR PARASITE', bg:'#010101', primary:'#00ff00', dim:'#005500', accent:'#88ff88',
+  {id:24, name:'SECTEUR PARASITE', bg:'#080808', primary:'#00ff00', dim:'#005500', accent:'#88ff88',
    starColors:['#00ff00','#ff0000','#0000ff','#ffffff','#ffff00'],
    nebulaColors:['rgba(0,150,0,','rgba(150,0,0,'],
    scan:'rgba(0,255,0,0.08)',
@@ -2381,7 +2381,7 @@ const UNIVERSES=[
      },6000);
    }},
 
-  {id:27, name:'SECTEUR DENSE', bg:'#020302', primary:'#44ff88', dim:'#228844', accent:'#88ffaa',
+  {id:27, name:'SECTEUR PLEIN', bg:'#001808', primary:'#44ff88', dim:'#228844', accent:'#88ffaa',
    starColors:['#44ff88','#88ffaa','#22cc66','#aaffcc','#ffffff'],
    nebulaColors:['rgba(40,160,80,','rgba(30,130,60,'],
    scan:'rgba(68,255,136,0.05)',
@@ -2403,7 +2403,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Tout m\'attire.\nLes débris. Les rochers. Les épaves.\nMDW dit de ne pas s\'arrêter.\nJe ne m\'arrête pas.','🧲 MAGNÉTIQUE');
    }},
 
-  {id:29, name:'SECTEUR FANTÔME', bg:'#010205', primary:'#88ccff', dim:'#446688', accent:'#aaddff',
+  {id:29, name:'SECTEUR FANTÔME', bg:'#000818', primary:'#88ccff', dim:'#446688', accent:'#aaddff',
    starColors:['#88ccff','#aaddff','#6699cc','#cceeff','#ffffff'],
    nebulaColors:['rgba(80,140,220,','rgba(60,110,190,'],
    scan:'rgba(136,204,255,0.04)',
@@ -2414,7 +2414,7 @@ const UNIVERSES=[
      writeGlitchText&&writeGlitchText('Tout est flou ici.\nLes planètes sont là mais pas vraiment.\nJe ne sais plus ce qui est solide.','👻 SECTEUR FANTÔME');
    }},
 
-  {id:30, name:'SECTEUR AURORE', bg:'#010308', primary:'#00ffcc', dim:'#008866', accent:'#44ffdd',
+  {id:30, name:'SECTEUR AURORE', bg:'#001518', primary:'#00ffcc', dim:'#008866', accent:'#44ffdd',
    starColors:['#00ffcc','#44ffdd','#00ccaa','#88ffee','#ffffff'],
    nebulaColors:['rgba(0,200,150,','rgba(0,150,200,','rgba(100,0,200,'],
    scan:'rgba(0,255,204,0.04)',
@@ -2432,7 +2432,7 @@ const UNIVERSES=[
      },5000);
    }},
 
-  {id:31, name:'SECTEUR BINAIRE', bg:'#030201', primary:'#ffdd44', dim:'#886622', accent:'#ffeeaa',
+  {id:31, name:'SECTEUR BINAIRE', bg:'#181000', primary:'#ffdd44', dim:'#886622', accent:'#ffeeaa',
    starColors:['#ffdd44','#ffeeaa','#ffaa22','#ffffff','#ffcc66'],
    nebulaColors:['rgba(200,150,40,','rgba(180,120,30,','rgba(255,180,60,'],
    scan:'rgba(255,221,68,0.05)',
@@ -2444,7 +2444,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR FRACTAL — l'espace se replie ──
-  {id:32, name:'SECTEUR FRACTAL', bg:'#020105', primary:'#ff88ff', dim:'#881188', accent:'#ffaaff',
+  {id:32, name:'SECTEUR FRACTAL', bg:'#100018', primary:'#ff88ff', dim:'#881188', accent:'#ffaaff',
    starColors:['#ff88ff','#ffaaff','#dd44dd','#ffccff','#ffffff'],
    nebulaColors:['rgba(180,40,180,','rgba(140,20,140,'],
    scan:'rgba(255,136,255,0.05)',
@@ -2466,7 +2466,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR DÉJÀ-VU — des copies de ton vaisseau ──
-  {id:33, name:'SECTEUR DÉJÀ-VU', bg:'#030208', primary:'#88ffee', dim:'#336655', accent:'#aaffee',
+  {id:33, name:'SECTEUR DÉJÀ-VU', bg:'#001518', primary:'#88ffee', dim:'#336655', accent:'#aaffee',
    starColors:['#88ffee','#aaffee','#44ccbb','#ccffee','#ffffff'],
    nebulaColors:['rgba(60,180,160,','rgba(40,150,130,'],
    scan:'rgba(136,255,238,0.05)',
@@ -2490,7 +2490,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR SYMBIOTIQUE — fluide conscient ──
-  {id:34, name:'SECTEUR SYMBIOTIQUE', bg:'#010408', primary:'#00ffaa', dim:'#006644', accent:'#44ffcc',
+  {id:34, name:'SECTEUR SYMBIOTIQUE', bg:'#001520', primary:'#00ffaa', dim:'#006644', accent:'#44ffcc',
    starColors:['#00ffaa','#44ffcc','#00cc88','#88ffcc','#aaffee'],
    nebulaColors:['rgba(0,180,120,','rgba(0,140,100,','rgba(0,200,150,'],
    scan:'rgba(0,255,170,0.05)',
@@ -2557,7 +2557,7 @@ const UNIVERSES=[
    }},
 
   // ── LE FOYER — réplique de la Terre ──
-  {id:37, name:'LE FOYER', bg:'#020408', primary:'#88aaff', dim:'#2266aa', accent:'#cceeff',
+  {id:37, name:'LE FOYER', bg:'#001020', primary:'#88aaff', dim:'#2266aa', accent:'#cceeff',
    starColors:['#88aaff','#aabbff','#ffffff','#cceeff','#ffeecc'],
    nebulaColors:['rgba(80,120,220,','rgba(60,180,100,','rgba(200,180,100,'],
    scan:'rgba(136,170,255,0.04)',
@@ -2602,7 +2602,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR DE L'OUBLI — journal corrompu ──
-  {id:38, name:'SECTEUR DE L\'OUBLI', bg:'#020206', primary:'#7777ff', dim:'#222277', accent:'#aaaaff',
+  {id:38, name:'SECTEUR DE L\'OUBLI', bg:'#080020', primary:'#7777ff', dim:'#222277', accent:'#aaaaff',
    starColors:['#7777ff','#9999ff','#5555dd','#aaaaff','#ccccff'],
    nebulaColors:['rgba(80,80,200,','rgba(60,60,180,'],
    scan:'rgba(119,119,255,0.04)',
@@ -2624,7 +2624,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR PULSARIEN — ondes de choc ──
-  {id:39, name:'SECTEUR PULSARIEN', bg:'#010208', primary:'#00ffff', dim:'#008888', accent:'#aaffff',
+  {id:39, name:'SECTEUR PULSARIEN', bg:'#001828', primary:'#00ffff', dim:'#008888', accent:'#aaffff',
    starColors:['#00ffff','#aaffff','#00cccc','#ccffff','#ffffff'],
    nebulaColors:['rgba(0,180,200,','rgba(0,150,180,'],
    scan:'rgba(0,255,255,0.05)',
@@ -2641,7 +2641,7 @@ const UNIVERSES=[
    }},
 
   // ── LE SECTEUR MUSÉE — tout est figé ──
-  {id:40, name:'LE SECTEUR MUSÉE', bg:'#020303', primary:'#aaccbb', dim:'#446655', accent:'#cceedd',
+  {id:40, name:'LE SECTEUR MUSÉE', bg:'#001510', primary:'#aaccbb', dim:'#446655', accent:'#cceedd',
    starColors:['#aaccbb','#cceedd','#88bbaa','#ddeedd','#ffffff'],
    nebulaColors:['rgba(100,160,140,','rgba(80,130,110,'],
    scan:'rgba(170,204,187,0.04)',
@@ -2663,7 +2663,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR CŒUR — tout pulse ensemble ──
-  {id:41, name:'SECTEUR CŒUR', bg:'#050102', primary:'#ff6677', dim:'#882233', accent:'#ffaabb',
+  {id:41, name:'SECTEUR CŒUR', bg:'#200008', primary:'#ff6677', dim:'#882233', accent:'#ffaabb',
    starColors:['#ff6677','#ffaabb','#dd4455','#ffcccc','#ffffff'],
    nebulaColors:['rgba(200,60,80,','rgba(160,40,60,','rgba(220,80,100,'],
    scan:'rgba(255,102,119,0.05)',
@@ -2685,7 +2685,7 @@ const UNIVERSES=[
    }},
 
   // ── SECTEUR GRILLE — tout aligné géométriquement ──
-  {id:42, name:'SECTEUR GRILLE', bg:'#010208', primary:'#88ddff', dim:'#224466', accent:'#aaeeff',
+  {id:42, name:'SECTEUR GRILLE', bg:'#000820', primary:'#88ddff', dim:'#224466', accent:'#aaeeff',
    starColors:['#88ddff','#aaeeff','#66bbdd','#cceeFF','#ffffff'],
    nebulaColors:['rgba(80,160,220,','rgba(60,130,190,'],
    scan:'rgba(136,221,255,0.04)',
@@ -3319,22 +3319,22 @@ function playTypeSound(){
 
 function updateJournal(dt){
   if(!journalActive)return;
-  journalWriteTimer+=dt;
-  const target=Math.floor(journalWriteTimer*30);
-  if(target>journalCharIdx&&journalCharIdx<journalFullText.length){
-    const prevIdx=journalCharIdx;
-    journalCharIdx=Math.min(target,journalFullText.length);
-    // Son à chaque nouveau caractère visible (pas les espaces ni les sauts de ligne)
-    const newChars=journalFullText.slice(prevIdx,journalCharIdx);
-    if(newChars.replace(/[\s\n]/g,'').length>0)playTypeSound();
-    // Limiter à 2 lignes
-    let text=journalFullText.slice(0,journalCharIdx);
-    const lines=text.split('\n');
-    if(lines.length>2)text=lines.slice(0,2).join('\n');
-    journalText.textContent=text;
+  // Affichage instantané — 2 lignes max
+  if(journalCharIdx===0&&journalFullText.length>0){
+    journalCharIdx=journalFullText.length;
+    // Tronquer à 2 lignes
+    const lines=journalFullText.split('\n').filter(l=>l.trim().length>0);
+    const display=lines.slice(0,2).join('\n');
+    journalText.textContent=display;
+    // Son de clavier unique pour suggérer le live
+    if(display.length>0)playTypeSound();
+    setTimeout(()=>{if(display.length>0)playTypeSound();},80);
+    setTimeout(()=>{if(display.length>0)playTypeSound();},160);
   }
-  const readTime=Math.min(12, Math.max(5, journalFullText.length/30));
-  if(journalCharIdx>=journalFullText.length&&journalWriteTimer>journalFullText.length/30+readTime){
+  // Timer de lecture — basé sur la longueur du texte
+  journalWriteTimer+=dt;
+  const readTime=Math.max(2.5, journalFullText.split('\n').filter(l=>l.trim()).slice(0,2).join('').length/25);
+  if(journalWriteTimer>readTime){
     journalActive=false;journalEl.classList.remove('active');
   }
 }
