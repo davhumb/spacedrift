@@ -306,7 +306,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.0 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.1 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Difficulté — STANDARD et ZEN uniquement<br>
       ▸ CATALOGUE renommé COSMODEX<br>
@@ -328,7 +328,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.0</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.1</div>
 </div>
 
 <script>
@@ -682,7 +682,7 @@ let boostCooldown=0,boostActive=false,boostTimer=0;
 function triggerEmergencyBoost(){
   if(!upgrades.boost||boostCooldown>0||boostActive)return;
   boostActive=true;boostTimer=1.0;boostCooldown=60;
-  const angle=ship.angle+Math.PI;
+  const angle=ship.angle; // vers l'avant — direction du nez
   ship.vx+=Math.cos(angle)*12;ship.vy+=Math.sin(angle)*12;
   triggerFlash('#00ff41',0.3);haptic('wormhole');
   triggerChromAber(3,0.2);
@@ -4124,8 +4124,10 @@ function showMDWLine(text, speak=true){
     journalText.textContent='';
     journalText.style.color='rgba(255,170,0,0.85)';
     if(speak&&mdwActive)mdwSpeak_voice(text);
-    // Durée réduite — voix + lecture
-    const duration=Math.max(2500, text.length*45 + 2000);
+    // Durée = écriture complète + temps de lecture — jamais moins que 3s
+    const writeTime=text.length*55; // temps d'écriture caractère par caractère
+    const readTime=Math.max(2500,text.length*40);
+    const duration=writeTime+readTime;
     setTimeout(narrativeDone, duration);
   });
   narrativeNext();
@@ -9353,13 +9355,44 @@ function drawRadar(){
   const RADAR_RANGE=getRadarRange();
   rctx.clearRect(0,0,70,70);
   const cx=35,cy=35;
+  const now=Date.now();
+
+  // ── Balayage sonar — angle qui tourne ──
+  if(!window._radarSweepAngle)window._radarSweepAngle=0;
+  window._radarSweepAngle=(window._radarSweepAngle+0.025)%(Math.PI*2);
+  const sweepAngle=window._radarSweepAngle;
+
   // Glitch magnétar
   const gx=radarGlitch>0?(Math.random()-0.5)*radarGlitch*8:0;
   const gy=radarGlitch>0?(Math.random()-0.5)*radarGlitch*8:0;
   rctx.save();if(radarGlitch>0)rctx.translate(gx,gy);
+
+  // Fond du radar
   rctx.strokeStyle=radarGlitch>0.5?'rgba(255,68,136,0.3)':'rgba(0,255,65,0.1)';rctx.lineWidth=1;
   [0.33,0.66,1].forEach(f=>{rctx.beginPath();rctx.arc(cx,cy,RADAR_R*f,0,Math.PI*2);rctx.stroke();});
   rctx.beginPath();rctx.moveTo(cx-RADAR_R,cy);rctx.lineTo(cx+RADAR_R,cy);rctx.moveTo(cx,cy-RADAR_R);rctx.lineTo(cx,cy+RADAR_R);rctx.stroke();
+
+  // Traînée de balayage — sillage vert
+  const trailLen=Math.PI*0.6;
+  const grad=rctx.createConicalGradient?null:null; // pas dispo partout
+  rctx.save();
+  for(let i=0;i<12;i++){
+    const a=sweepAngle-i*trailLen/12;
+    const alpha=(1-i/12)*0.18;
+    rctx.strokeStyle=`rgba(0,255,65,${alpha})`;
+    rctx.lineWidth=RADAR_R;
+    rctx.beginPath();rctx.moveTo(cx,cy);
+    rctx.arc(cx,cy,RADAR_R/2,a-trailLen/12,a);
+    rctx.stroke();
+  }
+  rctx.restore();
+
+  // Ligne de balayage principale
+  rctx.strokeStyle='rgba(0,255,65,0.7)';rctx.lineWidth=1.5;
+  rctx.shadowColor='rgba(0,255,65,0.8)';rctx.shadowBlur=4;
+  rctx.beginPath();rctx.moveTo(cx,cy);
+  rctx.lineTo(cx+Math.cos(sweepAngle)*RADAR_R,cy+Math.sin(sweepAngle)*RADAR_R);
+  rctx.stroke();rctx.shadowBlur=0;
   // Phénomènes sur radar
   for(const p of phenomena){
     const dx=(p.x-ship.x)/RADAR_RANGE*RADAR_R,dy=(p.y-ship.y)/RADAR_RANGE*RADAR_R;
@@ -9443,29 +9476,7 @@ function drawRadar(){
   // Écho radar par-dessus le clipping
   drawRareRadarEffects();
 
-  // ── TdV secondaires sur le radar ──
-  for(const w of secondaryWormholes){
-    const u=UNIVERSES[w.targetUniverse];
-    if(!u)continue;
-    const col=u.primary||'#ffffff';
-    const wdx=(w.x-ship.x)/RADAR_RANGE*RADAR_R;
-    const wdy=(w.y-ship.y)/RADAR_RANGE*RADAR_R;
-    const wDist=Math.sqrt(wdx*wdx+wdy*wdy);
-    const pulse=Math.floor(Date.now()/400)%2===0;
-    if(wDist<=RADAR_R){
-      rctx.fillStyle=col;rctx.shadowColor=col;rctx.shadowBlur=8;
-      rctx.beginPath();rctx.arc(cx+wdx,cy+wdy,4,0,Math.PI*2);rctx.fill();
-      rctx.shadowBlur=0;
-    } else if(pulse){
-      // Flèche sur le bord
-      const wa=Math.atan2(wdy,wdx);
-      rctx.save();rctx.translate(cx+Math.cos(wa)*RADAR_R*0.88,cy+Math.sin(wa)*RADAR_R*0.88);
-      rctx.rotate(wa);rctx.fillStyle=col;rctx.globalAlpha=0.9;
-      rctx.shadowColor=col;rctx.shadowBlur=6;
-      rctx.beginPath();rctx.moveTo(6,0);rctx.lineTo(-3,-3);rctx.lineTo(-3,3);rctx.closePath();
-      rctx.fill();rctx.globalAlpha=1;rctx.restore();rctx.shadowBlur=0;
-    }
-  }
+  // TdV secondaires — pas sur le radar, à découvrir en explorant
 
   // ── Effet miroir — positions radar faussées ──
   const mirrorOffset=window._mirrorActive?(Math.sin(Date.now()*0.001)*0.3):0;
