@@ -313,14 +313,15 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.8 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.6.9 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Transmissions radio — voix de pilotes perdus<br>
-      ▸ 14 messages fragmentés, rares, parasités<br>
-      ▸ Fix globalAlpha — épaves transparentes corrigées<br>
-      ▸ Fix RADAR_RANGE dans drawGhostSignal<br>
-      ▸ SECTEUR MUSÉE, CŒUR, GRILLE ajoutés<br>
-      ▸ Texte TdV supprimé — ne spoile plus
+      ▸ Redesign modules — positions fixes et cohérentes<br>
+      ▸ Réacteur — nacelles symétriques haut/bas arrière<br>
+      ▸ Blindage — plaques dorsale/ventrale fines<br>
+      ▸ Thruster — extension des nacelles réacteur<br>
+      ▸ Antenne — fine sur le nez, discrète<br>
+      ▸ Transmissions radio — 14 messages de pilotes perdus<br>
+      ▸ COSMODEX (catalogue) renommé à venir
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -335,7 +336,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.8</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.6.9</div>
 </div>
 
 <script>
@@ -5665,25 +5666,19 @@ const SHIP_MODULES={
     desc:'Recharge énergie +1.5/s',
     color:'#ffaa00',
     mdwLine:"Ce réacteur. Série ancienne. Fiable. Je l'installe correctement cette fois.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.003;
-      const pulse=(Math.sin(t)+1)*0.5;
-      // Corps réacteur — boîtier rectangulaire bien visible
-      ctx.strokeStyle='#ffaa00';ctx.lineWidth=1.5;ctx.shadowColor='#ffaa00';ctx.shadowBlur=6;
-      ctx.strokeRect(-16*s,-5*s,8*s,10*s);
-      ctx.fillStyle='rgba(255,170,0,0.15)';ctx.fillRect(-16*s,-5*s,8*s,10*s);
-      // Noyau pulsant
-      ctx.fillStyle=`rgba(255,${180+Math.floor(pulse*75)},0,${0.6+pulse*0.3})`;
-      ctx.beginPath();ctx.arc(-12*s,0,3*s,0,Math.PI*2);ctx.fill();
-      // Tuyau de connexion
-      ctx.strokeStyle='rgba(255,170,0,0.5)';ctx.lineWidth=2*s;
-      ctx.beginPath();ctx.moveTo(-8*s,0);ctx.lineTo(-6*s,0);ctx.stroke();
-      // Échappement chaud
-      ctx.strokeStyle=`rgba(255,${120+Math.floor(pulse*100)},0,${0.4+pulse*0.3})`;
-      ctx.lineWidth=1;ctx.setLineDash([2,2]);
-      ctx.beginPath();ctx.moveTo(-16*s,-3*s);ctx.lineTo(-20*s,-2*s);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(-16*s,3*s);ctx.lineTo(-20*s,2*s);ctx.stroke();
-      ctx.setLineDash([]);ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
+      // Deux nacelles symétriques — haut et bas à l'arrière
+      for(const sy of [-1,1]){
+        c.strokeStyle='#ffaa00';c.lineWidth=1.2;c.shadowColor='#ffaa00';c.shadowBlur=5;
+        c.beginPath();c.moveTo(-6*s,sy*7*s);c.lineTo(-14*s,sy*7*s);c.lineTo(-16*s,sy*5*s);c.lineTo(-8*s,sy*5*s);c.closePath();c.stroke();
+        c.fillStyle=`rgba(255,170,0,${0.15+pulse*0.1})`;c.fill();
+        // Lueur d'échappement
+        c.strokeStyle=`rgba(255,${140+Math.floor(pulse*80)},0,${0.5+pulse*0.3})`;
+        c.lineWidth=1.5*s;
+        c.beginPath();c.moveTo(-16*s,sy*6*s);c.lineTo(-19*s,sy*6*s);c.stroke();
+      }
+      c.shadowBlur=0;
     },
     onTick:(dt)=>{energy=Math.min(100,energy+1.5*dt);},
   },
@@ -5692,19 +5687,18 @@ const SHIP_MODULES={
     desc:'O₂ max +25',
     color:'#00ffcc',
     mdwLine:"Réservoir pressurisé. Encore 34% de sa capacité d'origine. Suffisant.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.002;
-      const pulse=(Math.sin(t)+1)*0.5;
-      // Deux réservoirs cylindriques sur le dessus
-      ctx.strokeStyle='#00ffcc';ctx.lineWidth=1.5;ctx.shadowColor='#00ffcc';ctx.shadowBlur=5;
-      ctx.beginPath();ctx.ellipse(-2*s,-13*s,5*s,3*s,0,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle=`rgba(0,255,200,${0.1+pulse*0.1})`;ctx.fill();
-      ctx.beginPath();ctx.ellipse(5*s,-12*s,3*s,2*s,0,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='rgba(0,255,200,0.08)';ctx.fill();
-      // Tuyau de liaison
-      ctx.strokeStyle='rgba(0,255,200,0.4)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(-2*s,-10*s);ctx.lineTo(-2*s,-8*s);ctx.stroke();
-      ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.002)+1)*0.5;
+      // Flanc supérieur — deux petits réservoirs alignés
+      c.strokeStyle='#00ffcc';c.lineWidth=1.2;c.shadowColor='#00ffcc';c.shadowBlur=4;
+      c.beginPath();c.roundRect(-4*s,-10*s,5*s,3*s,1);c.stroke();
+      c.fillStyle=`rgba(0,255,200,${0.12+pulse*0.08})`;c.fill();
+      c.beginPath();c.roundRect(3*s,-10*s,4*s,3*s,1);c.stroke();
+      c.fillStyle='rgba(0,255,200,0.08)';c.fill();
+      // Tuyau de liaison fin
+      c.strokeStyle='rgba(0,255,200,0.35)';c.lineWidth=0.8;
+      c.beginPath();c.moveTo(0*s,-7*s);c.lineTo(0*s,-5*s);c.stroke();
+      c.shadowBlur=0;
     },
     onTick:()=>{},
     onApply:()=>{maxOxygen=Math.min(150,maxOxygen+25);},
@@ -5714,22 +5708,16 @@ const SHIP_MODULES={
     desc:'Dégâts coque -30%',
     color:'#8899bb',
     mdwLine:"Plaques de blindage. Légères mais efficaces. J'en ai vu tenir des années.",
-    draw:(ctx,s)=>{
-      ctx.shadowColor='#8899bb';ctx.shadowBlur=4;
-      // Plaque ventrale principale
-      ctx.strokeStyle='#8899bb';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(-4*s,7*s);ctx.lineTo(10*s,7*s);ctx.lineTo(12*s,12*s);ctx.lineTo(-6*s,12*s);ctx.closePath();ctx.stroke();
-      ctx.fillStyle='rgba(136,153,187,0.25)';ctx.fill();
-      // Rivets
-      ctx.fillStyle='#aabbdd';
-      for(const rx of [-2,2,6,10]){
-        ctx.beginPath();ctx.arc(rx*s,9*s,0.8*s,0,Math.PI*2);ctx.fill();
-      }
-      // Plaque dorsale — plus petite
-      ctx.strokeStyle='rgba(136,153,187,0.6)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(-4*s,-7*s);ctx.lineTo(8*s,-7*s);ctx.lineTo(9*s,-11*s);ctx.lineTo(-5*s,-11*s);ctx.closePath();ctx.stroke();
-      ctx.fillStyle='rgba(136,153,187,0.15)';ctx.fill();
-      ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      c.shadowColor='#8899bb';c.shadowBlur=3;
+      // Plaque ventrale — suit la ligne du vaisseau
+      c.strokeStyle='#8899bb';c.lineWidth=1.5;
+      c.beginPath();c.moveTo(8*s,8*s);c.lineTo(-5*s,8*s);c.lineTo(-8*s,10*s);c.lineTo(10*s,10*s);c.closePath();c.stroke();
+      c.fillStyle='rgba(136,153,187,0.2)';c.fill();
+      // Plaque dorsale symétrique
+      c.beginPath();c.moveTo(8*s,-8*s);c.lineTo(-5*s,-8*s);c.lineTo(-8*s,-10*s);c.lineTo(10*s,-10*s);c.closePath();c.stroke();
+      c.fillStyle='rgba(136,153,187,0.15)';c.fill();
+      c.shadowBlur=0;
     },
     onTick:()=>{},
   },
@@ -5738,20 +5726,19 @@ const SHIP_MODULES={
     desc:'Drain O₂ -35%',
     color:'#40d0ff',
     mdwLine:"Recycleur atmosphérique. Le filtre est usé mais je peux le contourner.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.001;
-      ctx.strokeStyle='#40d0ff';ctx.lineWidth=1.5;ctx.shadowColor='#40d0ff';ctx.shadowBlur=5;
-      // Boîtier principal
-      ctx.strokeRect(-8*s,-16*s,10*s,7*s);
-      ctx.fillStyle='rgba(64,208,255,0.1)';ctx.fillRect(-8*s,-16*s,10*s,7*s);
-      // Tuyaux en U
-      ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(-6*s,-9*s);ctx.lineTo(-6*s,-14*s);ctx.lineTo(0*s,-14*s);ctx.lineTo(0*s,-9*s);ctx.stroke();
-      // Bulle filtrante pulsante
-      ctx.fillStyle=`rgba(64,208,255,${0.3+Math.sin(t)*0.15})`;
-      ctx.beginPath();ctx.arc(-3*s,-18*s,2.5*s,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(64,208,255,0.6)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(-3*s,-18*s,2.5*s,0,Math.PI*2);ctx.stroke();
-      ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.0015)+1)*0.5;
+      // Petit boîtier sur le dessus du fuselage
+      c.strokeStyle='#40d0ff';c.lineWidth=1.2;c.shadowColor='#40d0ff';c.shadowBlur=4;
+      c.strokeRect(0*s,-14*s,7*s,5*s);
+      c.fillStyle='rgba(64,208,255,0.1)';c.fillRect(0*s,-14*s,7*s,5*s);
+      // Indicateur pulsant
+      c.fillStyle=`rgba(64,208,255,${0.4+pulse*0.3})`;
+      c.beginPath();c.arc(3.5*s,-11.5*s,1.5*s,0,Math.PI*2);c.fill();
+      // Connexion au fuselage
+      c.strokeStyle='rgba(64,208,255,0.4)';c.lineWidth=0.8;
+      c.beginPath();c.moveTo(3.5*s,-9*s);c.lineTo(3.5*s,-7*s);c.stroke();
+      c.shadowBlur=0;
     },
     onTick:()=>{},
   },
@@ -5760,26 +5747,17 @@ const SHIP_MODULES={
     desc:'Radar +250u',
     color:'#cc80ff',
     mdwLine:"Antenne à gain élevé. Elle captera des signaux que vous préférerez peut-être ne pas recevoir.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.004;
-      const pulse=(Math.sin(t)+1)*0.5;
-      ctx.strokeStyle='#cc80ff';ctx.lineWidth=2;ctx.shadowColor='#cc80ff';ctx.shadowBlur=6;
-      // Tige principale longue
-      ctx.beginPath();ctx.moveTo(14*s,0);ctx.lineTo(30*s,0);ctx.stroke();
-      // Tête en étoile
-      ctx.lineWidth=1.5;
-      for(let i=0;i<4;i++){
-        const a=i*Math.PI/2;
-        ctx.beginPath();ctx.moveTo(28*s,0);
-        ctx.lineTo(28*s+Math.cos(a)*4*s,Math.sin(a)*4*s);ctx.stroke();
-      }
-      // Globe pulsant
-      ctx.fillStyle=`rgba(204,128,255,${0.3+pulse*0.4})`;
-      ctx.beginPath();ctx.arc(30*s,0,2.5*s,0,Math.PI*2);ctx.fill();
-      // Anneau signal
-      ctx.strokeStyle=`rgba(204,128,255,${0.2+pulse*0.3})`;ctx.lineWidth=1;
-      ctx.beginPath();ctx.arc(30*s,0,(4+pulse*3)*s,0,Math.PI*2);ctx.stroke();
-      ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.004)+1)*0.5;
+      c.strokeStyle='#cc80ff';c.lineWidth=1.2;c.shadowColor='#cc80ff';c.shadowBlur=5;
+      // Antenne fine sur le nez — discrète et élégante
+      c.beginPath();c.moveTo(14*s,0);c.lineTo(22*s,0);c.stroke();
+      // Petite tête
+      c.beginPath();c.moveTo(20*s,-2*s);c.lineTo(22*s,0);c.lineTo(20*s,2*s);c.stroke();
+      // Signal pulsant
+      c.strokeStyle=`rgba(204,128,255,${0.2+pulse*0.25})`;c.lineWidth=0.8;
+      c.beginPath();c.arc(22*s,0,(3+pulse*2)*s,0,Math.PI*2);c.stroke();
+      c.shadowBlur=0;
     },
     onTick:()=>{},
   },
@@ -5788,25 +5766,19 @@ const SHIP_MODULES={
     desc:'Poussée +40%',
     color:'#ff6020',
     mdwLine:"Propulseur vectoriel. Je dois recalibrer les axes. Donnez-moi quelques secondes.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.004;
-      const pulse=(Math.sin(t)+1)*0.5;
-      ctx.shadowColor='#ff6020';ctx.shadowBlur=8;
-      // Aile supérieure — grande et angulaire
-      ctx.strokeStyle='#ff6020';ctx.lineWidth=2;
-      ctx.beginPath();
-      ctx.moveTo(-6*s,-8*s);ctx.lineTo(-20*s,-18*s);ctx.lineTo(-22*s,-10*s);ctx.lineTo(-10*s,-8*s);
-      ctx.closePath();ctx.stroke();
-      ctx.fillStyle='rgba(255,96,32,0.2)';ctx.fill();
-      // Aile inférieure symétrique
-      ctx.beginPath();
-      ctx.moveTo(-6*s,8*s);ctx.lineTo(-20*s,18*s);ctx.lineTo(-22*s,10*s);ctx.lineTo(-10*s,8*s);
-      ctx.closePath();ctx.stroke();ctx.fill();
-      // Tuyères — lumière pulsante
-      ctx.fillStyle=`rgba(255,${140+Math.floor(pulse*115)},0,${0.5+pulse*0.4})`;
-      ctx.beginPath();ctx.arc(-21*s,-12*s,2*s,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(-21*s,12*s,2*s,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.004)+1)*0.5;
+      c.shadowColor='#ff6020';c.shadowBlur=5;
+      // Extension des nacelles réacteur — plus grandes, plus puissantes
+      for(const sy of [-1,1]){
+        c.strokeStyle='#ff6020';c.lineWidth=1.2;
+        c.beginPath();c.moveTo(-6*s,sy*9*s);c.lineTo(-16*s,sy*9*s);c.lineTo(-18*s,sy*7*s);c.lineTo(-8*s,sy*7*s);c.closePath();c.stroke();
+        c.fillStyle='rgba(255,96,32,0.15)';c.fill();
+        // Tuyère active
+        c.fillStyle=`rgba(255,${130+Math.floor(pulse*100)},0,${0.5+pulse*0.3})`;
+        c.beginPath();c.arc(-17*s,sy*8*s,1.5*s,0,Math.PI*2);c.fill();
+      }
+      c.shadowBlur=0;
     },
     onTick:()=>{},
   },
@@ -5815,27 +5787,23 @@ const SHIP_MODULES={
     desc:'Énergie max +30, recharge +50%',
     color:'#ffee44',
     mdwLine:"Cellule à haute densité. Elle ne devrait plus exister. Quelqu'un l'a préservée.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.003;
-      const pulse=(Math.sin(t)+1)*0.5;
-      ctx.shadowColor='#ffee44';ctx.shadowBlur=8+pulse*6;
-      // Cristal hexagonal sous la coque
-      ctx.strokeStyle='#ffee44';ctx.lineWidth=1.5;
-      const hx=4*s,hy=12*s,hr=5*s;
-      ctx.beginPath();
+    draw:(c,s)=>{
+      const pulse=(Math.sin(Date.now()*0.003)+1)*0.5;
+      c.shadowColor='#ffee44';c.shadowBlur=6+pulse*4;
+      // Cristal hexagonal compact sous le fuselage
+      c.strokeStyle='#ffee44';c.lineWidth=1.2;
+      const hx=2*s,hy=11*s,hr=4*s;
+      c.beginPath();
       for(let i=0;i<6;i++){
-        const a=i*Math.PI/3;
-        i===0?ctx.moveTo(hx+hr*Math.cos(a),hy+hr*Math.sin(a)):ctx.lineTo(hx+hr*Math.cos(a),hy+hr*Math.sin(a));
+        const a=i*Math.PI/3-Math.PI/6;
+        i===0?c.moveTo(hx+hr*Math.cos(a),hy+hr*Math.sin(a)):c.lineTo(hx+hr*Math.cos(a),hy+hr*Math.sin(a));
       }
-      ctx.closePath();ctx.stroke();
-      ctx.fillStyle=`rgba(255,238,68,${0.1+pulse*0.2})`;ctx.fill();
-      // Noyau interne
-      ctx.fillStyle=`rgba(255,255,100,${0.4+pulse*0.4})`;
-      ctx.beginPath();ctx.arc(hx,hy,2*s,0,Math.PI*2);ctx.fill();
-      // Connexion au vaisseau
-      ctx.strokeStyle='rgba(255,238,68,0.4)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(4*s,8*s);ctx.lineTo(4*s,7*s);ctx.stroke();
-      ctx.shadowBlur=0;
+      c.closePath();c.stroke();
+      c.fillStyle=`rgba(255,238,68,${0.1+pulse*0.15})`;c.fill();
+      // Noyau
+      c.fillStyle=`rgba(255,255,120,${0.5+pulse*0.4})`;
+      c.beginPath();c.arc(hx,hy,1.5*s,0,Math.PI*2);c.fill();
+      c.shadowBlur=0;
     },
     onTick:(dt)=>{energy=Math.min(130,energy+1.5*dt);},
     onApply:()=>{energy=Math.min(130,energy+30);},
@@ -5845,26 +5813,24 @@ const SHIP_MODULES={
     desc:'Champs grav. visibles +loin',
     color:'#c060ff',
     mdwLine:"Capteur de déformation métrique. Je ne savais pas que quelqu'un en fabriquait encore.",
-    draw:(ctx,s)=>{
-      const t=Date.now()*0.002;
-      const rot=t;
-      ctx.shadowColor='#c060ff';ctx.shadowBlur=6;
-      // Bras de support
-      ctx.strokeStyle='rgba(192,96,255,0.5)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(2*s,8*s);ctx.lineTo(2*s,14*s);ctx.stroke();
-      // Sphère principale
-      ctx.strokeStyle='#c060ff';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.arc(2*s,18*s,5*s,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='rgba(192,96,255,0.1)';ctx.fill();
+    draw:(c,s)=>{
+      const rot=Date.now()*0.002;
+      c.shadowColor='#c060ff';c.shadowBlur=5;
+      // Petit bras sous le fuselage
+      c.strokeStyle='rgba(192,96,255,0.5)';c.lineWidth=0.8;
+      c.beginPath();c.moveTo(-2*s,7*s);c.lineTo(-2*s,12*s);c.stroke();
+      // Sphère capteur
+      c.strokeStyle='#c060ff';c.lineWidth=1.2;
+      c.beginPath();c.arc(-2*s,16*s,4*s,0,Math.PI*2);c.stroke();
+      c.fillStyle='rgba(192,96,255,0.08)';c.fill();
       // Anneau en orbite
-      ctx.strokeStyle='rgba(192,96,255,0.7)';ctx.lineWidth=1;
-      ctx.save();ctx.translate(2*s,18*s);ctx.rotate(rot);
-      ctx.beginPath();ctx.ellipse(0,0,7*s,2*s,0,0,Math.PI*2);ctx.stroke();
-      ctx.restore();
-      // Point central lumineux
-      ctx.fillStyle='rgba(220,160,255,0.8)';
-      ctx.beginPath();ctx.arc(2*s,18*s,1.5*s,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;
+      c.strokeStyle='rgba(192,96,255,0.6)';c.lineWidth=0.8;
+      c.save();c.translate(-2*s,16*s);c.rotate(rot);
+      c.beginPath();c.ellipse(0,0,6*s,1.5*s,0,0,Math.PI*2);c.stroke();
+      c.restore();
+      c.fillStyle='rgba(220,160,255,0.7)';
+      c.beginPath();c.arc(-2*s,16*s,1.2*s,0,Math.PI*2);c.fill();
+      c.shadowBlur=0;
     },
     onTick:()=>{},
   },
