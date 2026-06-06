@@ -306,7 +306,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.5 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.7.6 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
       ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
@@ -328,7 +328,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.7.6</div>
 </div>
 
 <script>
@@ -4206,6 +4206,25 @@ function runSequence(steps, idx=0){
 const narrativeQueue=[];
 let narrativeBusy=false;
 
+// ── Dilatation temporelle narrative ──
+// Le temps ralentit pendant les dialogues importants
+let narrativeTimeDilation=1.0; // 1.0 = normal, 0.15 = très lent
+let _narrativeDilationTimer=0;
+
+function setNarrativeDilation(factor, duration){
+  narrativeTimeDilation=factor;
+  _narrativeDilationTimer=duration;
+}
+
+function updateNarrativeDilation(dt){
+  if(_narrativeDilationTimer>0){
+    _narrativeDilationTimer-=dt;
+    if(_narrativeDilationTimer<=0){
+      narrativeTimeDilation=1.0;
+    }
+  }
+}
+
 function narrativeNext(){
   if(narrativeBusy||!narrativeQueue.length)return;
   const item=narrativeQueue.shift();
@@ -4236,9 +4255,15 @@ function showSimonJournal(text, label){
     journalDay.textContent=label||'JOURNAL';
     journalText.textContent='';
     journalText.style.color='rgba(0,255,65,0.85)';
-    // Durée réduite — plus fluide
+    // Ralentir le temps pendant la lecture
     const duration=Math.max(2000, text.length*40 + 1500);
-    setTimeout(narrativeDone, duration);
+    setNarrativeDilation(0.2, duration/1000);
+    setTimeout(()=>{
+      journalEl.classList.remove('active');
+      journalActive=false;
+      narrativeTimeDilation=1.0;
+      narrativeDone();
+    },duration);
   });
   narrativeNext();
 }
@@ -4253,11 +4278,15 @@ function showMDWLine(text, speak=true){
     journalText.textContent='';
     journalText.style.color='rgba(255,170,0,0.85)';
     if(speak&&mdwActive)mdwSpeak_voice(text);
-    // Durée = écriture complète + temps de lecture — jamais moins que 3s
-    const writeTime=text.length*55; // temps d'écriture caractère par caractère
+    // Ralentir le temps pendant MDW parle
+    const writeTime=text.length*55;
     const readTime=Math.max(2500,text.length*40);
     const duration=writeTime+readTime;
-    setTimeout(narrativeDone, duration);
+    setNarrativeDilation(0.25, duration/1000);
+    setTimeout(()=>{
+      narrativeTimeDilation=1.0;
+      narrativeDone();
+    }, duration);
   });
   narrativeNext();
 }
@@ -9358,6 +9387,29 @@ function drawShip(){
 
   // vecteur vitesse viré
 
+  // ── Vecteur rétrograde — aide au freinage ──
+  const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  if(spd>1.5){
+    const retroAngle=Math.atan2(-ship.vy,-ship.vx);
+    const alpha=Math.min(0.6,spd*0.04);
+    const len=Math.min(22,spd*2)*viewZoom;
+    const rx=sx+Math.cos(retroAngle)*len;
+    const ry=sy+Math.sin(retroAngle)*len;
+    ctx.strokeStyle=`rgba(255,200,0,${alpha})`;
+    ctx.lineWidth=1;ctx.shadowColor='rgba(255,200,0,0.4)';ctx.shadowBlur=3;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(rx,ry);ctx.stroke();
+    // Petite flèche à la pointe
+    ctx.setLineDash([]);
+    const aw=4*viewZoom;
+    ctx.beginPath();
+    ctx.moveTo(rx,ry);
+    ctx.lineTo(rx-Math.cos(retroAngle-0.4)*aw,ry-Math.sin(retroAngle-0.4)*aw);
+    ctx.lineTo(rx-Math.cos(retroAngle+0.4)*aw,ry-Math.sin(retroAngle+0.4)*aw);
+    ctx.closePath();ctx.fillStyle=`rgba(255,200,0,${alpha})`;ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
   // ── Traînée — 150 points, dégradé selon vitesse et drift ──
   // Traînée positionnelle — trajectory simple
   const trailLen=ship.trail.length;
@@ -9842,7 +9894,10 @@ function updateOrbitalIndicator(){
 let globalTs=0;
 function gameLoop(ts){
   try{
-  const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
+  const rawDt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;globalTs=ts;
+  // Dilatation temporelle narrative — ralentit pendant les dialogues
+  updateNarrativeDilation(rawDt);
+  const dt=rawDt*narrativeTimeDilation;
   // Fond de l'univers courant
   const curU=UNIVERSES[currentUniverse]||UNIVERSES[0];
   // Fond — NÉGATIF = blanc
@@ -9954,6 +10009,22 @@ function gameLoop(ts){
   } else if(!curU.negativeMode&&canvas._negApplied){
     canvas.style.filter='';
     canvas._negApplied=false;
+  }
+
+  // ── Alarmes visuelles périphériques ──
+  if(state==='playing'){
+    const t=Date.now()*0.004;
+    const pulse=Math.max(0,Math.sin(t*2.5));
+    if(oxygen<25&&oxygen>0){
+      const g=ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.85);
+      g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(0,180,255,${pulse*0.14})`);
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    }
+    if(hull<25&&hull>0){
+      const g=ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.85);
+      g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(255,30,0,${pulse*0.16})`);
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    }
   }
 
   // Effets ambiants distincts par univers
