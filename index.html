@@ -48,7 +48,7 @@
   .passenger-slot.active{color:var(--amber);}
 
   /* TORPILLE */
-  #boost-bar{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s;}
+  #boost-bar{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);pointer-events:all;text-align:center;opacity:1;transition:opacity 0.3s;}
   #boost-bar.visible{opacity:1;pointer-events:all;}
   #boost-bar .b-label{font-size:7px;letter-spacing:2px;color:var(--green-dim);}
   #boost-bar .b-btn{font-family:'VT323',monospace;font-size:18px;color:var(--green);letter-spacing:2px;
@@ -195,7 +195,7 @@
 
   <div id="radar">
     <canvas id="radar-canvas" width="70" height="70"></canvas>
-    <div id="radar-planets" style="text-align:center;margin-top:3px;font-family:'VT323',monospace;line-height:1;"><span id="pc-val" style="font-size:28px;color:rgba(255,170,0,0.95);">0</span><span style="color:rgba(255,170,0,0.4);font-size:14px;">/250</span></div>
+    <div id="radar-planets" style="text-align:center;margin-top:3px;font-family:'VT323',monospace;line-height:1;"><span id="pc-val" style="font-size:28px;color:#ffaa00;text-shadow:0 0 8px rgba(255,170,0,0.8);">0</span><span style="color:rgba(255,170,0,0.6);font-size:14px;">/250</span></div>
   </div>
   <div id="top-bar">
     <div id="title-block">
@@ -244,7 +244,7 @@
   <div id="boost-bar">
     <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
       <button id="brake-btn" style="background:rgba(0,9,2,0.8);border:1px solid rgba(0,255,65,0.35);color:rgba(0,255,65,0.75);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 14px;cursor:pointer;letter-spacing:2px;-webkit-tap-highlight-color:transparent;">⏹ FREIN</button>
-      <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="">⚡ BOOST</button>
+      <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="display:none;">⚡ BOOST</button>
     </div>
   </div>
   <div id="passengers"></div>
@@ -695,6 +695,11 @@ async function renderLeaderboard(){
       headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
     });
     const lb=await r.json();
+    if(lb&&lb.code){
+      // Erreur Supabase (ex: table inexistante)
+      el.innerHTML='<div style="opacity:0.4;font-size:8px;color:rgba(255,80,80,0.6);">ERREUR DB: '+lb.code+'</div>';
+      return;
+    }
     if(!Array.isArray(lb)||!lb.length){el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';return;}
     el.innerHTML=lb.map((e,i)=>`
       <div style="display:flex;justify-content:space-between;gap:8px;opacity:${1-i*0.07};font-size:${i===0?'12px':'10px'}">
@@ -702,7 +707,7 @@ async function renderLeaderboard(){
         <span style="color:rgba(255,170,0,${i===0?'0.95':'0.7'});white-space:nowrap">${e.planets}/250</span>
       </div>`).join('');
   }catch(err){
-    try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');const lb=m.leaderboard||[];el.innerHTML=lb.length?lb.map((e,i)=>`<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08}"><span>${i+1}. ${e.pilot}</span><span style="color:rgba(255,170,0,0.8)">${e.planets}/250</span></div>`).join(''):'<div style="opacity:0.4">Aucun run.</div>';}catch(e2){}
+    el.innerHTML='<div style="opacity:0.4;font-size:8px;">HORS LIGNE</div>';
   }
 }
 function triggerEmergencyBoost(){
@@ -9459,25 +9464,26 @@ function updateHUD(){
     val.textContent=Math.ceil(b.val)+'%';
   }
   // Boost d'urgence — indicateur
-  const boostBar=document.getElementById('boost-bar');
   const boostCharge=document.getElementById('boost-charge');
-  if(boostBar&&upgrades.boost>0){
-    boostBar.classList.add('visible');
-    if(boostActive){
-      boostCharge.textContent='⚡ ACTIF';
-      boostCharge.className='b-btn';
-      boostCharge.style.color='#ffaa00';boostCharge.style.borderColor='rgba(255,170,0,0.5)';
-    } else if(boostCooldown>0){
-      boostCharge.textContent=`⚡ ${Math.ceil(boostCooldown)}s`;
-      boostCharge.className='b-btn cooldown';
-      boostCharge.style.color='';boostCharge.style.borderColor='';
+  if(boostCharge){
+    if(upgrades.boost>0){
+      boostCharge.style.display='inline-block';
+      if(boostActive){
+        boostCharge.textContent='⚡ ACTIF';
+        boostCharge.className='b-btn';
+        boostCharge.style.color='#ffaa00';boostCharge.style.borderColor='rgba(255,170,0,0.5)';
+      } else if(boostCooldown>0){
+        boostCharge.textContent=`⚡ ${Math.ceil(boostCooldown)}s`;
+        boostCharge.className='b-btn cooldown';
+        boostCharge.style.color='';boostCharge.style.borderColor='';
+      } else {
+        boostCharge.textContent='⚡ BOOST';
+        boostCharge.className='b-btn';
+        boostCharge.style.color='';boostCharge.style.borderColor='';
+      }
     } else {
-      boostCharge.textContent='⚡ BOOST';
-      boostCharge.className='b-btn';
-      boostCharge.style.color='';boostCharge.style.borderColor='';
+      boostCharge.style.display='none';
     }
-  } else if(boostBar){
-    boostBar.classList.remove('visible');
   }
 }
 
