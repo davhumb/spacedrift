@@ -691,18 +691,15 @@ async function renderLeaderboard(){
   if(!el)return;
   el.innerHTML='<div style="opacity:0.3;font-size:9px;letter-spacing:2px;">CHARGEMENT...</div>';
   try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),5000);
     const r=await fetch(`${SUPA_URL}/rest/v1/leaderboard?select=pilot,planets,days&order=planets.desc&limit=10`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`},
-      signal:controller.signal
+      method:'GET',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY
+      }
     });
-    clearTimeout(timeout);
+    if(!r.ok){el.innerHTML=`<div style="font-size:8px;color:rgba(255,80,80,0.6);">HTTP ${r.status}</div>`;return;}
     const lb=await r.json();
-    if(lb&&lb.code){
-      el.innerHTML=`<div style="opacity:0.4;font-size:8px;color:rgba(255,80,80,0.6);">ERREUR: ${lb.code}</div>`;
-      return;
-    }
     if(!Array.isArray(lb)||!lb.length){el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';return;}
     el.innerHTML=lb.map((e,i)=>`
       <div style="display:flex;justify-content:space-between;gap:8px;opacity:${1-i*0.07};font-size:${i===0?'12px':'10px'}">
@@ -710,7 +707,7 @@ async function renderLeaderboard(){
         <span style="color:rgba(255,170,0,${i===0?'0.95':'0.7'});white-space:nowrap">${e.planets}/250</span>
       </div>`).join('');
   }catch(err){
-    el.innerHTML='<div style="opacity:0.4;font-size:8px;">HORS LIGNE</div>';
+    el.innerHTML=`<div style="font-size:8px;color:rgba(255,80,80,0.5);">${err.message||'ERREUR'}</div>`;
   }
 }
 function triggerEmergencyBoost(){
@@ -6927,19 +6924,12 @@ function triggerRevelationActe2(){
   },36000);
 }
 
-let _mdwPT=0,_lastMDWP=0,_pAgg=0,_pEleg=0,_lSpd=0;
+let _lastBHWarn=0;
 function updateMDWPilotProfile(dt){
   if(!mdwActive||state!=='playing')return;
-  _mdwPT+=dt;if(_mdwPT<25)return;
-  const now=Date.now();if(now-_lastMDWP<25000)return;
-  const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  const now=Date.now();if(now-_lastBHWarn<30000)return;
   const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*14);
-  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Simon. Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;return;}
-  const delta=Math.abs(spd-_lSpd);_lSpd=spd;
-  if(delta>2)_pAgg++;else _pEleg++;
-  if(_pAgg>_pEleg*1.5&&Math.random()<0.3){showMDWLine(['Pilotage agressif.','Consommation élevée.','Plus de patience.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;_pAgg=0;}
-  else if(spd<0.3&&Math.random()<0.2){showMDWLine(['Mode dérive. Efficace.','Bonne derive.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;}
-  else if(_pEleg>_pAgg*2&&Math.random()<0.2){showMDWLine(['Trajectoire elegante.','Efficace.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;_pEleg=0;}
+  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_lastBHWarn=now;}
 }
 function getSanityState(){
   if(sanity>80)return'STABLE';
