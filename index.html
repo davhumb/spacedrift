@@ -249,8 +249,10 @@
     </div>
   </div>
   <div id="boost-bar">
-    <div class="b-label">BOOST D'URGENCE</div>
-    <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()">⚡ PRÊT</button>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+      <button id="brake-btn" style="background:rgba(0,9,2,0.8);border:1px solid rgba(0,255,65,0.35);color:rgba(0,255,65,0.75);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 14px;cursor:pointer;letter-spacing:2px;-webkit-tap-highlight-color:transparent;">⏹ FREIN</button>
+      <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="display:none;">⚡ BOOST</button>
+    </div>
   </div>
   <div id="passengers"></div>
   <div id="gauges">
@@ -304,22 +306,36 @@
     <canvas id="title-canvas" width="80" height="80"></canvas>
   </div>
   <div id="title-voidrift">VOID DRIFT</div>
-  <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
-  <div class="controls-hint">TAPEZ POUR PROPULSER · PINCEZ POUR ZOOMER<br>COLLECTEZ · EXPLOREZ · SURVIVEZ</div>
-  <div class="diff-row">
+  <div class="tagline">CARTOGRAPHIEZ 250 PLANÈTES · RENTREZ CHEZ VOUS<br><span class="blink">_</span></div>
+
+  <!-- Saisie nom pilote et vaisseau -->
+  <div style="margin:12px 0;width:100%;max-width:280px;">
+    <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:4px;">PILOTE</div>
+    <input id="pilot-name-input" type="text" maxlength="20" placeholder="VOTRE NOM"
+      style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.9);font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
+    <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin:10px 0 4px;">VAISSEAU</div>
+    <input id="ship-name-input" type="text" maxlength="20" placeholder="XKP-625"
+      style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.25);color:rgba(0,255,65,0.7);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
   </div>
+
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
-  <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.1 — NOUVEAUTÉS</div>
+  <!-- Leaderboard local -->
+  <div id="leaderboard-block" style="margin-top:16px;width:100%;max-width:280px;text-align:left;">
+    <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES</div>
+    <div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div>
+  </div>
+
+  <div style="margin-top:16px;text-align:left;max-width:280px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.2 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
-      ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
-      ▸ Révélation acte 2 — MDW : tous ces pilotes sont vous<br>
-      ▸ QCM — Simon croit ou refuse, conséquences sur trust<br>
-      ▸ 11 échanges amis — deux amis qui s'ennuient<br>
-      ▸ Échanges trous noirs dangereux dans les transmissions radio
+      ▸ Nom pilote et vaisseau personnalisables<br>
+      ▸ Leaderboard local — 10 meilleurs runs<br>
+      ▸ Bouton frein dédié<br>
+      ▸ MDW commente le pilotage<br>
+      ▸ Trous noirs — aspiration totale et croissance<br>
+      ▸ Compteur planètes 0/250
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -334,7 +350,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.1</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.2</div>
 </div>
 
 <script>
@@ -685,6 +701,40 @@ function updateBreathing(){
 // ── Boost d'urgence ───────────────────────────
 let boostCooldown=0,boostActive=false,boostTimer=0;
 
+
+// ── Leaderboard local ──
+function saveToLeaderboard(planets, days, sectors){
+  try{
+    const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
+    if(!meta.leaderboard)meta.leaderboard=[];
+    meta.leaderboard.push({
+      pilot:pilotName,ship:shipName,
+      planets,days,sectors,
+      date:new Date().toLocaleDateString('fr-FR')
+    });
+    // Trier par planètes desc, garder top 10
+    meta.leaderboard.sort((a,b)=>b.planets-a.planets);
+    meta.leaderboard=meta.leaderboard.slice(0,10);
+    localStorage.setItem('voidrift_meta',JSON.stringify(meta));
+  }catch(e){}
+}
+
+function renderLeaderboard(){
+  const list=document.getElementById('leaderboard-list');
+  if(!list)return;
+  try{
+    const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
+    const lb=meta.leaderboard||[];
+    if(!lb.length){list.textContent='Aucun run enregistré.';return;}
+    list.innerHTML=lb.map((r,i)=>
+      `<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08};">
+        <span>${i+1}. ${r.pilot} · ${r.ship}</span>
+        <span style="color:rgba(255,170,0,0.8);">${r.planets}/250</span>
+      </div>`
+    ).join('');
+  }catch(e){}
+}
+
 function triggerEmergencyBoost(){
   if(!upgrades.boost||boostCooldown>0||boostActive)return;
   boostActive=true;boostTimer=1.0;boostCooldown=60;
@@ -695,6 +745,24 @@ function triggerEmergencyBoost(){
   spawnParticles(ship.x,ship.y,'#00ff41',20,2);
   logEvent('⚡ BOOST','warn');
 }
+
+
+// ── Bouton frein ──
+let brakeActive=false;
+function applyBrake(dt){
+  if(!brakeActive)return;
+  ship.vx*=Math.pow(0.85,dt*60);
+  ship.vy*=Math.pow(0.85,dt*60);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const brakeBtn=document.getElementById('brake-btn');
+  if(!brakeBtn)return;
+  brakeBtn.addEventListener('touchstart',(e)=>{e.preventDefault();brakeActive=true;haptic('collect');},{passive:false});
+  brakeBtn.addEventListener('touchend',()=>{brakeActive=false;});
+  brakeBtn.addEventListener('mousedown',()=>{brakeActive=true;});
+  brakeBtn.addEventListener('mouseup',()=>{brakeActive=false;});
+});
 
 function updateBoost(dt){
   if(boostActive){boostTimer-=dt;if(boostTimer<=0)boostActive=false;}
@@ -731,6 +799,8 @@ function haptic(type){
 
 // ── Mode Zen ──────────────────────────────────
 let zenMode=false;
+let pilotName='PILOTE';
+let shipName='XKP-625';
 
 function startZenMode(){
   zenMode=true;
@@ -1773,7 +1843,6 @@ function loadMetaProgress(){
 const COSMODEX_MAX_PLANETS=250;
 
 // ── Lore du pilote ────────────────────────────
-let pilotName='INCONNU';
 let totalRuns=0;
 let totalDays=0;
 const PILOT_LORE=[
@@ -4685,6 +4754,7 @@ function updateShip(dt){
   // Drift mode — drag légèrement réduit (on glisse plus)
   const driftDrag=driftMode?DRAG*0.3:DRAG;
   ship.vx*=Math.pow(1-driftDrag,dt*60);ship.vy*=Math.pow(1-driftDrag,dt*60);
+  applyBrake(dt);
   ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
   // ── Effets univers spéciaux ──
   const curUniverse=UNIVERSES[currentUniverse]||UNIVERSES[0];
@@ -7067,6 +7137,7 @@ function checkDead(){
   if(zenMode)return; // mode zen — pas de game over
   if(state==='wormhole')return;
   if(hull<=0||(oxygen<=0&&hull<=0)){
+    saveToLeaderboard(discoveredPlanets,survivalDay,sectorCount);
     triggerFlash('#ff2020');spawnParticles(ship.x,ship.y,'#ff2020',30,3);playGameOver();
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
     planetsFound[selectedDiff]=Math.max(planetsFound[selectedDiff],discoveredPlanets);
@@ -7317,6 +7388,73 @@ function triggerRevelationActe2(){
       logEvent('SIMON — REFUS','danger');
     },{once:true});
   },36000);
+}
+
+
+// ── MDW Driver Profile — commente le pilotage ──
+let _mdwPilotTimer=0;
+let _lastMDWPilotComment=0;
+const MDW_PILOT_COMMENTS={
+  aggressive:[
+    "Pilotage agressif. Je note.",
+    "Taux d'impulsivité élevé. Attention aux débris.",
+    "Vous consommez beaucoup de propergol.",
+    "Je conseille plus de patience.",
+  ],
+  elegant:[
+    "Trajectoire élégante. Consommation optimale.",
+    "C'est agréable.",
+    "Bonne utilisation de l'inertie.",
+    "Économie de carburant optimale.",
+  ],
+  drifting:[
+    "Dérive longue. Économie de ressources.",
+    "Mode dérive. Efficace.",
+  ],
+  nearBH:[
+    "Je déconseille formellement cette trajectoire.",
+    "Distance trop faible. Risque d'aspiration.",
+    "Simon. Éloignez-vous.",
+  ],
+};
+
+let _pilotAggrCount=0,_pilotElegCount=0,_lastSpd=0;
+
+function updateMDWPilotProfile(dt){
+  if(!mdwActive||!state==='playing')return;
+  _mdwPilotTimer+=dt;
+  if(_mdwPilotTimer<30)return; // toutes les 30s max
+  const now=Date.now();
+  if(now-_lastMDWPilotComment<30000)return;
+
+  const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  const spdDelta=Math.abs(spd-_lastSpd);
+  _lastSpd=spd;
+
+  // Trou noir proche
+  const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*15);
+  if(nearBH&&Math.random()<0.5){
+    const c=MDW_PILOT_COMMENTS.nearBH;
+    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
+    _mdwPilotTimer=0;_lastMDWPilotComment=now;return;
+  }
+
+  // Style agressif ou élégant
+  if(spdDelta>2){_pilotAggrCount++;} else {_pilotElegCount++;}
+
+  if(_pilotAggrCount>_pilotElegCount*1.5&&Math.random()<0.3){
+    const c=MDW_PILOT_COMMENTS.aggressive;
+    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
+    _mdwPilotTimer=0;_lastMDWPilotComment=now;_pilotAggrCount=0;
+  } else if(spd<0.3&&Math.random()<0.2){
+    const c=MDW_PILOT_COMMENTS.drifting;
+    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
+    _mdwPilotTimer=0;_lastMDWPilotComment=now;
+  } else if(_pilotElegCount>_pilotAggrCount*2&&Math.random()<0.2){
+    const c=MDW_PILOT_COMMENTS.elegant;
+    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
+    _mdwPilotTimer=0;_lastMDWPilotComment=now;_pilotElegCount=0;
+  }
 }
 
 function getSanityState(){
@@ -10155,7 +10293,8 @@ function gameLoop(ts){
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
         if(_resumeCooldown>0)_resumeCooldown-=0.016;
-checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
+checkLore();checkEndings();checkGodEncounter();checkExchanges();
+        updateMDWPilotProfile(dt);checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
@@ -10208,6 +10347,7 @@ checkLore();checkEndings();checkGodEncounter();checkExchanges();checkActScenes()
     document.body.appendChild(errDiv);
   }
   requestAnimationFrame(gameLoop);
+renderLeaderboard();
 }
 
 // ── Support clavier PC ────────────────────────
@@ -10552,6 +10692,8 @@ canvas.addEventListener('mousemove',e=>{if(touchActive)handlePointerMove(e);});
 canvas.addEventListener('mouseup',handlePointerUp);
 
 document.getElementById('btn-start').addEventListener('click',()=>{
+  pilotName=(document.getElementById('pilot-name-input')?.value?.trim().toUpperCase()||'PILOTE').slice(0,20)||'PILOTE';
+  shipName=(document.getElementById('ship-name-input')?.value?.trim().toUpperCase()||'XKP-625').slice(0,20)||'XKP-625';
   initAudio();
   launchSequence((worldVy)=>{
     startGame();
