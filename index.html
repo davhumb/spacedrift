@@ -557,8 +557,6 @@ const PLANET_RESOURCES={
   'VIOLETTE':   {label:'CRISTAUX',    color:'#cc88ff', credits:150, effect:()=>{upgradePoints+=150;logEvent('💜 +150 CRÉDITS','planet');}},
   'DÉSERTIQUE': {label:'SILICATES',   color:'#ddaa66', credits:35,  effect:()=>{hull=Math.min(100,hull+20);energy=Math.min(100,energy+25);logEvent('🏜 +20 HULL +25 NRJ','ok');}},
   'ROGUE':      {label:'ARTEFACT',    color:'#40ff80', credits:200, effect:()=>{
-    const log=WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)];
-    writeGlitchText&&writeGlitchText(log.text,`📖 LOG — ${log.pilot}`);
     upgradePoints+=200;logEvent('⬛ +200 CRÉDITS','planet');
   }},
 };
@@ -2789,7 +2787,7 @@ function updateWormhole(dt){
       x:ship.x+Math.cos(a)*400,y:ship.y+Math.sin(a)*400,
       rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.002,
       name:['DSV REQUIEM','ARK-3 PIONEER','ISS VAGRANT'][Math.floor(Math.random()*3)],
-      log:WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)],
+      log:'Données de vol corrompues.',
       hasPassenger:Math.random()<0.3,hasResources:true,moduleKey:null,
       discovered:false,pulse:Math.random()*Math.PI*2,r:18,
     });
@@ -3437,12 +3435,17 @@ const WRECK_LOGS=[];
 const VERA_FRAGMENTS=[];
 
 function spawnPlanet(){
-  const angle=Math.random()*Math.PI*2;
-  // Espacement progressif — quadratique, 600u à 0 planètes → 3800u à 250
+  // Espacement progressif — quadratique
   const prog=Math.min(1,(discoveredPlanets||0)/250);
   const minDist=600+prog*prog*3200;
   const spread=800+prog*prog*1500;
-  const dist=minDist+Math.random()*spread;
+  // Spawner hors du viewport visible
+  const halfW=(W||400)/2+200;
+  const halfH=(H||700)/2+200;
+  const screenDist=Math.sqrt(halfW*halfW+halfH*halfH);
+  const spawnMin=Math.max(minDist,screenDist);
+  const dist=spawnMin+Math.random()*spread;
+  const angle=Math.random()*Math.PI*2;
   const normalTypes=PLANET_TYPES.filter(t=>!t.isDangerous&&!t.rare);
   const rareTypes=PLANET_TYPES.filter(t=>t.rare);
   const baseAvail=survivalDay<3?normalTypes:PLANET_TYPES.filter(t=>!t.rare);
@@ -5740,7 +5743,7 @@ function spawnWreck(){
     rot:Math.random()*Math.PI*2,
     rotV:(Math.random()-0.5)*0.003,
     name:WRECK_NAMES[Math.floor(Math.random()*WRECK_NAMES.length)],
-    log:WRECK_LOGS[Math.floor(Math.random()*WRECK_LOGS.length)].text,
+    log:'Données de vol corrompues. Boîte noire illisible.',
     hasPassenger:Math.random()<0.3,
     hasResources:Math.random()<0.7,
     moduleKey, // null si pas de module
@@ -6924,12 +6927,19 @@ function triggerRevelationActe2(){
   },36000);
 }
 
-let _lastBHWarn=0;
+let _mdwPT=0,_lastMDWP=0,_pAgg=0,_pEleg=0,_lSpd=0;
 function updateMDWPilotProfile(dt){
   if(!mdwActive||state!=='playing')return;
-  const now=Date.now();if(now-_lastBHWarn<30000)return;
+  _mdwPT+=dt;if(_mdwPT<25)return;
+  const now=Date.now();if(now-_lastMDWP<25000)return;
+  const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
   const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*14);
-  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_lastBHWarn=now;}
+  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Simon. Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;return;}
+  const delta=Math.abs(spd-_lSpd);_lSpd=spd;
+  if(delta>2)_pAgg++;else _pEleg++;
+  if(_pAgg>_pEleg*1.5&&Math.random()<0.3){showMDWLine(['Pilotage agressif.','Consommation élevée.','Plus de patience.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;_pAgg=0;}
+  else if(spd<0.3&&Math.random()<0.2){showMDWLine(['Mode dérive. Efficace.','Bonne derive.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;}
+  else if(_pEleg>_pAgg*2&&Math.random()<0.2){showMDWLine(['Trajectoire elegante.','Efficace.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;_pEleg=0;}
 }
 function getSanityState(){
   if(sanity>80)return'STABLE';
@@ -10195,11 +10205,12 @@ function updateResumeBtn(){
             state='playing';
             if(mdwEl)mdwEl.style.opacity='0';
             ship.vy=worldVy||0;
-            // Nettoyer la file narrative avant de reprendre
+            // Mettre à jour le compteur visuel
+            const pcEl=document.getElementById('pc-val');
+            if(pcEl)pcEl.textContent=discoveredPlanets;
             clearNarrativeQueue();
             narrativeBusy=false;
-            _resumeCooldown=5; // 5s avant que les échanges reprennent
-            // Message de reprise via la file
+            _resumeCooldown=5;
             setTimeout(()=>{
               
             },1500);
