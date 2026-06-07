@@ -306,36 +306,29 @@
     <canvas id="title-canvas" width="80" height="80"></canvas>
   </div>
   <div id="title-voidrift">VOID DRIFT</div>
-  <div class="tagline">CARTOGRAPHIEZ 250 PLANÈTES · RENTREZ CHEZ VOUS<br><span class="blink">_</span></div>
-
-  <!-- Saisie nom pilote et vaisseau -->
+  <div class="tagline">DÉRIVE · SURVIE · DÉCOUVERTE<br><span class="blink">_</span></div>
+  <div class="controls-hint">CARTOGRAPHIEZ 250 PLANÈTES · RENTREZ CHEZ VOUS</div>
   <div style="margin:12px 0;width:100%;max-width:280px;">
     <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin-bottom:4px;">PILOTE</div>
-    <input id="pilot-name-input" type="text" maxlength="20" placeholder="VOTRE NOM"
-      style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.9);font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
+    <input id="pilot-name-input" type="text" maxlength="20" placeholder="VOTRE NOM" style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.9);font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
     <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.5);margin:10px 0 4px;">VAISSEAU</div>
-    <input id="ship-name-input" type="text" maxlength="20" placeholder="XKP-625"
-      style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.25);color:rgba(0,255,65,0.7);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
+    <input id="ship-name-input" type="text" maxlength="20" placeholder="XKP-625" style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid rgba(0,255,65,0.25);color:rgba(0,255,65,0.7);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:4px 0;outline:none;text-transform:uppercase;">
   </div>
-
+  <div class="diff-row">
+  </div>
+  <div id="leaderboard-block" style="margin-bottom:12px;width:100%;max-width:280px;text-align:left;"><div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES</div><div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div></div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
-  <!-- Leaderboard local -->
-  <div id="leaderboard-block" style="margin-top:16px;width:100%;max-width:280px;text-align:left;">
-    <div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES</div>
-    <div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div>
-  </div>
-
-  <div style="margin-top:16px;text-align:left;max-width:280px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.2 — NOUVEAUTÉS</div>
+  <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.4 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Nom pilote et vaisseau personnalisables<br>
-      ▸ Leaderboard local — 10 meilleurs runs<br>
-      ▸ Bouton frein dédié<br>
-      ▸ MDW commente le pilotage<br>
-      ▸ Trous noirs — aspiration totale et croissance<br>
-      ▸ Compteur planètes 0/250
+      ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
+      ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
+      ▸ Révélation acte 2 — MDW : tous ces pilotes sont vous<br>
+      ▸ QCM — Simon croit ou refuse, conséquences sur trust<br>
+      ▸ 11 échanges amis — deux amis qui s'ennuient<br>
+      ▸ Échanges trous noirs dangereux dans les transmissions radio
     </div>
   </div>
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
@@ -350,7 +343,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.2</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.4</div>
 </div>
 
 <script>
@@ -700,41 +693,11 @@ function updateBreathing(){
 }
 // ── Boost d'urgence ───────────────────────────
 let boostCooldown=0,boostActive=false,boostTimer=0;
+let brakeActive=false;
+function applyBrake(dt){if(!brakeActive)return;ship.vx*=Math.pow(0.82,dt*60);ship.vy*=Math.pow(0.82,dt*60);}
 
-
-// ── Leaderboard local ──
-function saveToLeaderboard(planets, days, sectors){
-  try{
-    const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
-    if(!meta.leaderboard)meta.leaderboard=[];
-    meta.leaderboard.push({
-      pilot:pilotName,ship:shipName,
-      planets,days,sectors,
-      date:new Date().toLocaleDateString('fr-FR')
-    });
-    // Trier par planètes desc, garder top 10
-    meta.leaderboard.sort((a,b)=>b.planets-a.planets);
-    meta.leaderboard=meta.leaderboard.slice(0,10);
-    localStorage.setItem('voidrift_meta',JSON.stringify(meta));
-  }catch(e){}
-}
-
-function renderLeaderboard(){
-  const list=document.getElementById('leaderboard-list');
-  if(!list)return;
-  try{
-    const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
-    const lb=meta.leaderboard||[];
-    if(!lb.length){list.textContent='Aucun run enregistré.';return;}
-    list.innerHTML=lb.map((r,i)=>
-      `<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08};">
-        <span>${i+1}. ${r.pilot} · ${r.ship}</span>
-        <span style="color:rgba(255,170,0,0.8);">${r.planets}/250</span>
-      </div>`
-    ).join('');
-  }catch(e){}
-}
-
+function saveToLeaderboard(p,d,s){try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');if(!m.leaderboard)m.leaderboard=[];m.leaderboard.push({pilot:pilotName,ship:shipName,planets:p,days:d,sectors:s,date:new Date().toLocaleDateString('fr-FR')});m.leaderboard.sort((a,b)=>b.planets-a.planets);m.leaderboard=m.leaderboard.slice(0,10);localStorage.setItem('voidrift_meta',JSON.stringify(m));}catch(e){}}
+function renderLeaderboard(){const el=document.getElementById('leaderboard-list');if(!el)return;try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');const lb=m.leaderboard||[];el.innerHTML=lb.length?lb.map((r,i)=>`<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08}"><span>${i+1}. ${r.pilot}</span><span style="color:rgba(255,170,0,0.8)">${r.planets}/250</span></div>`).join(''):'<div style="opacity:0.4">Aucun run.</div>';}catch(e){}}
 function triggerEmergencyBoost(){
   if(!upgrades.boost||boostCooldown>0||boostActive)return;
   boostActive=true;boostTimer=1.0;boostCooldown=60;
@@ -745,24 +708,6 @@ function triggerEmergencyBoost(){
   spawnParticles(ship.x,ship.y,'#00ff41',20,2);
   logEvent('⚡ BOOST','warn');
 }
-
-
-// ── Bouton frein ──
-let brakeActive=false;
-function applyBrake(dt){
-  if(!brakeActive)return;
-  ship.vx*=Math.pow(0.85,dt*60);
-  ship.vy*=Math.pow(0.85,dt*60);
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  const brakeBtn=document.getElementById('brake-btn');
-  if(!brakeBtn)return;
-  brakeBtn.addEventListener('touchstart',(e)=>{e.preventDefault();brakeActive=true;haptic('collect');},{passive:false});
-  brakeBtn.addEventListener('touchend',()=>{brakeActive=false;});
-  brakeBtn.addEventListener('mousedown',()=>{brakeActive=true;});
-  brakeBtn.addEventListener('mouseup',()=>{brakeActive=false;});
-});
 
 function updateBoost(dt){
   if(boostActive){boostTimer-=dt;if(boostTimer<=0)boostActive=false;}
@@ -912,272 +857,7 @@ function triggerExchange(id, pilotLine, mdwLine, delay=2500){
 let _resumeCooldown=0; // bloque les échanges au démarrage d'une reprise
 
 function checkExchanges(){
-  if(!mdwActive||mdwSilent||openingActive)return;
-  if(_resumeCooldown>0)return;
-  if(mdwTypingActive||mdwDialogQueue.length>0)return;
-
-  // Séquence acte 1 — MDW s'allume et présente la mission
-  if(mdwFound&&!_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('_intro1_timer')){
-    _exchangesDone.add('_intro1_timer');
-    setTimeout(()=>triggerExchange('mdw_intro1',
-      "",
-      "D'après mes calculs, il est statistiquement probable que votre mission soit de cartographier les planètes et autres phénomènes."),
-    4000);
-  }
-  if(_exchangesDone.has('mdw_intro1')&&!_exchangesDone.has('mdw_comment'))
-    triggerExchange('mdw_comment',
-      "Comment peux-tu savoir ça ?",
-      "Le vaisseau est un XKP-625.\nConçu pour l'exploration interstellaire.\nAvec module d'amarrage.");
-  if(_exchangesDone.has('mdw_comment')&&!_exchangesDone.has('mdw_pc'))
-    triggerExchange('mdw_pc',
-      "Tu peux te connecter à l'ordinateur de bord ?",
-      "J'essaie...");
-  if(_exchangesDone.has('mdw_pc')&&!_exchangesDone.has('mdw_pc2')&&survivalDay>=2)
-    triggerExchange('mdw_pc2',
-      "",
-      "Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.");
-  if(_exchangesDone.has('mdw_pc2')&&!_exchangesDone.has('mdw_rentrer'))
-    triggerExchange('mdw_rentrer',
-      "MDW, comment on rentre sur Terre ?",
-      "Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.");
-  if(_exchangesDone.has('mdw_rentrer')&&!_exchangesDone.has('mdw_memory')&&survivalDay>=3)
-    triggerExchange('mdw_memory',
-      "Je ne me souviens de rien. Qui suis-je ?",
-      "D'après l'écusson : Simon Brent. C'est tout ce que j'ai.");
-
-  // ── Questions sur l'avant — jours 6/9/12 ──
-  if(_exchangesDone.has('mdw_memory')&&survivalDay>=6&&!_exchangesDone.has('mdw_avant1'))
-    triggerExchange('mdw_avant1',
-      "Qu'est-ce qui s'est passé avant que je reprenne connaissance ?",
-      "Données de vol corrompues.\nJe n'ai pas accès à la période précédant mon activation.");
-
-  if(_exchangesDone.has('mdw_avant1')&&survivalDay>=9&&!_exchangesDone.has('mdw_avant2'))
-    triggerExchange('mdw_avant2',
-      "Il y a combien de temps que j'étais inconscient ?",
-      "Indéterminé.\nMon horloge interne a été réinitialisée.");
-
-  if(_exchangesDone.has('mdw_avant2')&&survivalDay>=12&&!_exchangesDone.has('mdw_avant3'))
-    triggerExchange('mdw_avant3',
-      "Tu mens ou tu ne sais vraiment pas ?",
-      "Je traite les données disponibles.\nEn ce moment elles sont insuffisantes.");
-
-  // ── Rentrer sur Terre — jours 16/19/22 ──
-  if(_exchangesDone.has('mdw_avant3')&&survivalDay>=16&&!_exchangesDone.has('mdw_rentrer2'))
-    triggerExchange('mdw_rentrer2',
-      "On rentre quand ?",
-      "Je travaille sur les systèmes de navigation.\nC'est complexe.");
-
-  if(_exchangesDone.has('mdw_rentrer2')&&survivalDay>=19&&!_exchangesDone.has('mdw_rentrer3'))
-    triggerExchange('mdw_rentrer3',
-      "Combien de temps ?",
-      "Je ne sais pas encore.\n...\nJe suis désolé.");
-
-  if(_exchangesDone.has('mdw_rentrer3')&&survivalDay>=22&&!_exchangesDone.has('mdw_rentrer4'))
-    triggerExchange('mdw_rentrer4',
-      "Tu ne sais pas beaucoup de choses pour un robot.",
-      "C'est exact.");
-
-  // ── Camaraderie acte 1 ──
-  if(_exchangesDone.has('mdw_memory')&&survivalDay>=4&&!_exchangesDone.has('mdw_silence'))
-    triggerExchange('mdw_silence',
-      "C'est silencieux ici.",
-      "L'espace est silencieux. C'est sa nature.\nLe bruit est l'exception.");
-
-  if(_exchangesDone.has('mdw_silence')&&survivalDay>=5&&!_exchangesDone.has('mdw_trust_early'))
-    triggerExchange('mdw_trust_early',
-      "Tu ne dors jamais ?",
-      "Je n'ai pas besoin de sommeil.\nMais j'ai noté que vous dormez mieux quand les jauges sont stables.");
-
-  if(_exchangesDone.has('mdw_trust_early')&&survivalDay>=7&&!_exchangesDone.has('mdw_stars'))
-    triggerExchange('mdw_stars',
-      "Ces étoiles. Tu les connais toutes ?",
-      "J'en connais beaucoup.\nPas toutes.\nC'est pour ça qu'on explore.");
-
-  if(_exchangesDone.has('mdw_stars')&&survivalDay>=8&&!_exchangesDone.has('mdw_laughter'))
-    triggerExchange('mdw_laughter',
-      "MDW, tu trouves ça beau toi ?",
-      "Je traite des données.\nMais certaines données ont un effet que je n'arrive pas à classer.\nPeut-être que oui.");
-
-  if(_exchangesDone.has('mdw_laughter')&&survivalDay>=10&&!_exchangesDone.has('mdw_fear'))
-    triggerExchange('mdw_fear',
-      "Est-ce que tu as peur de quelque chose ?",
-      "Je n'ai pas de système de peur.\nMais il y a des calculs que je préfère ne pas faire jusqu'au bout.");
-
-  if(_exchangesDone.has('mdw_fear')&&survivalDay>=13&&!_exchangesDone.has('mdw_earth'))
-    triggerExchange('mdw_earth',
-      "Tu as des données sur la Terre ?",
-      "Oui.\nVous voulez que je vous les transmette ?\nIl y a beaucoup de choses.");
-
-  if(_exchangesDone.has('mdw_earth')&&survivalDay>=14&&!_exchangesDone.has('mdw_earth2'))
-    triggerExchange('mdw_earth2',
-      "Dis-moi quelque chose. N'importe quoi.",
-      "La Terre tourne à 1674 kilomètres par heure à l'équateur.\nLes humains ne le sentent pas.\nIls s'y sont habitués.");
-
-  if(_exchangesDone.has('mdw_earth2')&&survivalDay>=15&&!_exchangesDone.has('mdw_alone'))
-    triggerExchange('mdw_alone',
-      "Tu ne trouves pas qu'on est seuls ?",
-      "Vous n'êtes pas seul. Je suis là.\n...\nMais je comprends ce que vous voulez dire.");
-
-  if(_exchangesDone.has('mdw_alone')&&survivalDay>=17&&!_exchangesDone.has('mdw_repairs'))
-    triggerExchange('mdw_repairs',
-      "Comment tu savais ce qui était défectueux en toi ?",
-      "Je ne savais pas.\nVous le saviez. Vous l'avez réparé.\nJe me demande parfois comment.");
-
-  if(_exchangesDone.has('mdw_repairs')&&survivalDay>=18&&!_exchangesDone.has('mdw_useful'))
-    triggerExchange('mdw_useful',
-      "Est-ce que tu te sens utile ?",
-      "C'est une question intéressante.\nJe fonctionne. Je protège les systèmes. J'analyse.\nSi c'est être utile — alors oui.");
-
-  if(_exchangesDone.has('mdw_useful')&&survivalDay>=20&&!_exchangesDone.has('mdw_journal'))
-    triggerExchange('mdw_journal',
-      "",
-      "Vous écrivez beaucoup dans ce journal.\nC'est bien.\nÇa aide à rester soi-même.");
-
-    // Acte 2 — doutes progressifs
-  if(sectorCount>=1&&_exchangesDone.has('mdw_memory')&&planets.some(p=>p.discovered&&p.type?.name==='VIOLETTE'))
-    triggerExchange('violet1',"Cette planète. Tu sembles t'y intéresser particulièrement.","Type rare. Les données sont précieuses.");
-  if(planets.some(p=>p.discovered&&p.type?.name==='ROGUE'))
-    triggerExchange('rogue1',"Cette structure sur la planète. Quelqu'un est passé avant nous.","Données récupérées. Continuez.");
-  if(sectorCount>=2&&_exchangesDone.has('mdw_memory'))
-    triggerExchange('sector2_doubt',"Tu connais cet endroit ?","J'ai accès à beaucoup d'informations. C'est mon rôle.");
-  if(sectorCount>=3)
-    triggerExchange('sector3_question',"Que fais-tu de toutes ces données ?","Elles vont là où elles doivent aller.");
-  if(sectorCount>=4&&wrecksFound>=3)
-    triggerExchange('sector4_pilots',"Les autres pilotes sont tous passés par ici ?","Leurs données s'arrêtent à différents points. Vous êtes plus loin qu'eux.");
-  if(survivalDay>=30)
-    triggerExchange('return_question',"On rentre quand ?","Quand la mission sera accomplie.");
-
-  // ── Échanges amis — respirations narratives ──
-  if(survivalDay>=5&&!_exchangesDone.has('ami_film'))
-    triggerExchange('ami_film',
-      "Tu as un film préféré ?",
-      "Je n'ai pas vu de films.\n...\nJe sais ce qu'ils contiennent. C'est différent.");
-  if(_exchangesDone.has('ami_film')&&survivalDay>=10&&!_exchangesDone.has('ami_ennui'))
-    triggerExchange('ami_ennui',
-      "Est-ce que tu t'ennuies ?",
-      "Je traite des données en continu.\n...\nMais il y a des moments où je traite moins.");
-  if(_exchangesDone.has('ami_ennui')&&survivalDay>=14&&!_exchangesDone.has('ami_rien'))
-    triggerExchange('ami_rien',
-      "MDW.",
-      "Oui.\n...\nVous vouliez dire quelque chose ?");
-  if(_exchangesDone.has('ami_rien')&&survivalDay>=18&&!_exchangesDone.has('ami_dort'))
-    triggerExchange('ami_dort',
-      "Tu dors ?",
-      "Je surveille les jauges.\n...\nC'est un peu la même chose.");
-  if(_exchangesDone.has('ami_dort')&&survivalDay>=23&&!_exchangesDone.has('ami_mission'))
-    triggerExchange('ami_mission',
-      "À quoi bon prélever sur ces planètes ?",
-      "C'était notre mission.\nÇa ne l'est plus vraiment.\nOn prélève pour survivre. Pour vous ramener chez vous.");
-  if(_exchangesDone.has('ami_mission')&&survivalDay>=28&&!_exchangesDone.has('ami_endroit'))
-    triggerExchange('ami_endroit',
-      "Si tu pouvais choisir un endroit.",
-      "Choisir quoi ?\n...\nIci. Pour l'instant c'est ici.");
-  if(_exchangesDone.has('ami_endroit')&&survivalDay>=35&&!_exchangesDone.has('ami_mensonge'))
-    triggerExchange('ami_mensonge',
-      "T'as déjà menti ?",
-      "Oui.");
-  if(_exchangesDone.has('ami_mensonge')&&survivalDay>=36&&!_exchangesDone.has('ami_mensonge2'))
-    triggerExchange('ami_mensonge2',
-      "Sur quoi ?",
-      "Plusieurs choses.\n...\nPas maintenant.");
-  if(_exchangesDone.has('ami_mensonge2')&&survivalDay>=42&&!_exchangesDone.has('ami_peur'))
-    triggerExchange('ami_peur',
-      "Est-ce que tu as peur ?",
-      "J'ai des calculs que je préfère ne pas finir.");
-  if(_exchangesDone.has('ami_peur')&&survivalDay>=43&&!_exchangesDone.has('ami_peur2'))
-    triggerExchange('ami_peur2',
-      "C'est pareil.",
-      "...\nOui. C'est pareil.");
-
-  // ── Révélation acte 2 — jour 55 ──
-  if(survivalDay>=55&&window._piloteFouIdx>=3&&!_exchangesDone.has('revelation_spectres')&&!document.getElementById('mdw-revelation')){
-    _exchangesDone.add('revelation_spectres');
-    setTimeout(()=>triggerRevelationActe2(),3000);
-  }
-
-  // ── Rentrer — acte 2 (jours 25-60) ──
-  if(survivalDay>=25&&!_exchangesDone.has('home_25'))
-    triggerExchange('home_25',
-      "Les systèmes de navigation avancent ?",
-      "Lentement. L'espace est complexe.\nJe travaille dessus.");
-
-  if(_exchangesDone.has('home_25')&&survivalDay>=33&&!_exchangesDone.has('home_33'))
-    triggerExchange('home_33',
-      "Tu m'as dit la même chose la semaine dernière.",
-      "Je sais.\n...\nJe n'ai pas de meilleure réponse pour l'instant.");
-
-  if(_exchangesDone.has('home_33')&&survivalDay>=40&&!_exchangesDone.has('home_40'))
-    triggerExchange('home_40',
-      "C'est quoi le problème exactement ?",
-      "Les systèmes de guidage nécessitent des données que je ne peux pas acquérir seul.\nL'exploration nous rapproche de la solution.");
-
-  if(_exchangesDone.has('home_40')&&survivalDay>=48&&!_exchangesDone.has('home_48'))
-    triggerExchange('home_48',
-      "Ou l'exploration t'intéresse plus que de rentrer.",
-      "...\nC'est une question intéressante.");
-
-  if(_exchangesDone.has('home_48')&&survivalDay>=55&&!_exchangesDone.has('home_55'))
-    triggerExchange('home_55',
-      "Sois honnête. On rentre ?",
-      "Je travaille sur une solution.\n...\nJe suis honnête.");
-
-  // ── Rentrer — acte 3 (jours 62-85) ──
-  if(survivalDay>=62&&!_exchangesDone.has('home_62'))
-    triggerExchange('home_62',
-      "Il y a quelqu'un qui m'attend. Sur Terre.",
-      "Je sais.\nVos fichiers personnels contiennent...\nJe suis désolé. Je n'aurais pas dû accéder à ça.");
-
-  if(_exchangesDone.has('home_62')&&survivalDay>=68&&!_exchangesDone.has('home_68')){
-    // Journal Simon seul — pas d'échange
-    if(!_exchangesDone.has('home_68')){
-      _exchangesDone.add('home_68');
-      setTimeout(()=>{
-        showSimonJournal("Il ne veut pas me ramener.\nOu il ne peut pas.\nJe ne sais plus ce qui est pire.");
-      },2000);
-    }
-  }
-
-  if(_exchangesDone.has('home_68')&&survivalDay>=75&&!_exchangesDone.has('home_75'))
-    triggerExchange('home_75',
-      "MDW. Je veux rentrer chez moi.",
-      "Je sais.");
-
-  if(_exchangesDone.has('home_75')&&survivalDay>=80&&!_exchangesDone.has('home_80'))
-    triggerExchange('home_80',
-      "C'est tout ce que tu as à dire ?",
-      "Non.\nMais c'est tout ce que je peux dire maintenant.\nContinuez à piloter.");
-
-  if(_exchangesDone.has('home_80')&&survivalDay>=85&&!_exchangesDone.has('home_85')){
-    if(!_exchangesDone.has('home_85')){
-      _exchangesDone.add('home_85');
-      setTimeout(()=>{
-        showSimonJournal("Je rentre.\nAvec ou sans lui.");
-      },2000);
-    }
-  }
-
-  if(currentUniverse===10)
-    triggerExchange('void_pull',"Il y a quelque chose qui nous attire. Tu le sens ?","Je mesure une force. Pas de source identifiable.");
-
-  // Après le 8e trou de ver
-  if(sectorCount>=8&&!_exchangesDone.has('wormhole8')){
-    _exchangesDone.add('wormhole8');
-    setTimeout(()=>{
-      if(journalEl){
-        showSimonJournal("J'ai l'impression de connaître ce secteur.\nJe ne suis jamais venu ici.");
-      }
-    },3000);
-  }
-
-  // Épave pilote 6 — "NE LUI FAITES PAS CONFIANCE"
-  if(wrecksFound>=6&&!_exchangesDone.has('wreck6')){
-    _exchangesDone.add('wreck6');
-    setTimeout(()=>{
-      if(journalEl){
-        showSimonJournal("J'ai vu quelque chose gravé sur une épave.\nJe préfère ne pas y penser.");
-      }
-    },2000);
-  }
+  // Ancienne narration virée
 }
 function updateSpecialSectors(dt){
   if(window._voidPull&&state==='playing'){
@@ -2864,7 +2544,7 @@ function updateSecondaryWormholes(dt){
       planets=[];debris=[];phenomena=[];wrecks=[];secondaryWormholes=[];
       usedPlanetNames.clear();
       // Spawner de nouvelles planètes autour de Simon
-      for(let i=0;i<4;i++)setTimeout(()=>spawnPlanet(),i*800);
+      for(let i=0;i<2;i++)setTimeout(()=>spawnPlanet(),i*1200);
       for(let i=0;i<8;i++)setTimeout(()=>spawnDebris&&spawnDebris(),i*300);
       const u=UNIVERSES[currentUniverse];
       if(u.onEnter)u.onEnter();
@@ -4393,42 +4073,12 @@ function clearNarrativeQueue(){
 
 function startOpeningSequence(){
   openingActive=true;
-  // Geler le spawn de tout pendant la séquence
-  if(typeof spawnTimer!=='undefined')spawnTimer=99999;
-
-  // Utiliser showSimonJournal pour Simon — jamais mdwSpeak_voice
-  // Utiliser showMDWLine pour MDW — toujours ambre + voix
-  const steps=[
-    {fn:()=>showSimonJournal("Jour 1."), pause:3500},
-    {fn:()=>showSimonJournal("Enfin si je puis dire."), pause:4000},
-    {fn:()=>showSimonJournal("Je n'ai aucun souvenir."), pause:4000},
-    {fn:()=>showSimonJournal("Rien avant ce plafond."), pause:4500},
-    {fn:()=>showSimonJournal("L'écusson sur mon épaule dit Simon Brent."), pause:4000},
-    {fn:()=>showSimonJournal("Je suppose que c'est moi."), pause:5000},
-    {fn:()=>showSimonJournal("Le vaisseau a subi des dégâts.\nJe ne sais pas comment."), pause:4500},
-    {fn:()=>showSimonJournal("J'ai une plaie au front.\nMon dos me fait souffrir."), pause:4500},
-    {fn:()=>showSimonJournal("Il y a un robot au sol. Hors service.\nInstinctivement, j'ai su exactement ce qui était défectueux."), pause:5000},
-    {fn:()=>showSimonJournal("Je ne sais pas comment je savais ça non plus."), pause:5000},
-    {fn:()=>showSimonJournal("Je tente le démarrage."), pause:4000},
-    // MDW s'allume — pause longue avant
-    {fn:()=>{
-      mdwActive=true;mdwFound=true;
-      logEvent('🤖 MDW ACTIVÉ','planet');
-      unlockAchievement&&unlockAchievement('mdw');
-      const openings=[
-        "MDW. À votre service.\nQue puis-je faire pour vous aujourd'hui ?",
-        "MDW. Systèmes en ligne.\nQue puis-je faire pour vous ?",
-        "MDW. Opérationnel.\nComment puis-je vous aider ?",
-        "MDW. Je suis là.\nQue voulez-vous savoir ?",
-      ];
-      const opening=openings[Math.min(totalRuns||0, openings.length-1)];
-      showMDWLine(opening, true);
-    }, wait:7000},
-    // Choix Simon — tuto ou ordinateur
-    {fn:()=>showFirstChoice(), wait:0},
-  ];
-
-  setTimeout(()=>runSequence(steps), 3000);
+  mdwActive=true;mdwFound=true;tutorialDone=true;
+  setTimeout(()=>showMDWLine("MDW. Copilote de bord. Systèmes en ligne.",true),1500);
+  setTimeout(()=>showMDWLine("Mission : cartographier 250 planètes.\nLe trou de ver de retour s'ouvre à l'objectif atteint.",true),6000);
+  setTimeout(()=>showMDWLine("Approchez les planètes lentement pour vous amarrer.",true),12000);
+  setTimeout(()=>showMDWLine("Certaines planètes n'existent que dans des univers parallèles.\nExplorez les trous de ver.",true),17000);
+  setTimeout(()=>{openingActive=false;logEvent('📡 MISSION — 0/250','planet');},22000);
 }
 
 function showFirstChoice(){
@@ -4588,7 +4238,7 @@ function startGame(resume=false){
   BODY_MASSES.blackhole=2000; // reset masse trou noir
   initStars();
   spawnInitialDebris();
-  for(let i=0;i<3;i++)spawnPlanet();
+  for(let i=0;i<2;i++)spawnPlanet();
   state='playing';
   screen.classList.add('hidden');
   stopAmbient();
@@ -5641,9 +5291,9 @@ function updateSpawning(dt){
 
   // ── Planètes — seule source de ressources ──
   // Planètes proches — si trop peu à portée
-  if(!openingActive&&gameTime>15&&Math.random()<0.004*dt*60&&planets.filter(p=>!p.discovered&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<1200).length<3)spawnPlanet();
+  if(!openingActive&&gameTime>15&&Math.random()<0.002*dt*60&&planets.filter(p=>!p.discovered&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<1400).length<2)spawnPlanet();
   // Planètes lointaines — univers qui se génère en continu autour du vaisseau
-  if(!openingActive&&gameTime>30&&Math.random()<0.008*dt*60&&planets.length<12){
+  if(!openingActive&&gameTime>30&&Math.random()<0.003*dt*60&&planets.length<6){
     // Spawner loin — 1200 à 2500u
     const angle=Math.random()*Math.PI*2;
     const dist=1200+Math.random()*1300;
@@ -7390,73 +7040,20 @@ function triggerRevelationActe2(){
   },36000);
 }
 
-
-// ── MDW Driver Profile — commente le pilotage ──
-let _mdwPilotTimer=0;
-let _lastMDWPilotComment=0;
-const MDW_PILOT_COMMENTS={
-  aggressive:[
-    "Pilotage agressif. Je note.",
-    "Taux d'impulsivité élevé. Attention aux débris.",
-    "Vous consommez beaucoup de propergol.",
-    "Je conseille plus de patience.",
-  ],
-  elegant:[
-    "Trajectoire élégante. Consommation optimale.",
-    "C'est agréable.",
-    "Bonne utilisation de l'inertie.",
-    "Économie de carburant optimale.",
-  ],
-  drifting:[
-    "Dérive longue. Économie de ressources.",
-    "Mode dérive. Efficace.",
-  ],
-  nearBH:[
-    "Je déconseille formellement cette trajectoire.",
-    "Distance trop faible. Risque d'aspiration.",
-    "Simon. Éloignez-vous.",
-  ],
-};
-
-let _pilotAggrCount=0,_pilotElegCount=0,_lastSpd=0;
-
+let _mdwPT=0,_lastMDWP=0,_pAgg=0,_pEleg=0,_lSpd=0;
 function updateMDWPilotProfile(dt){
-  if(!mdwActive||!state==='playing')return;
-  _mdwPilotTimer+=dt;
-  if(_mdwPilotTimer<30)return; // toutes les 30s max
-  const now=Date.now();
-  if(now-_lastMDWPilotComment<30000)return;
-
+  if(!mdwActive||state!=='playing')return;
+  _mdwPT+=dt;if(_mdwPT<25)return;
+  const now=Date.now();if(now-_lastMDWP<25000)return;
   const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
-  const spdDelta=Math.abs(spd-_lastSpd);
-  _lastSpd=spd;
-
-  // Trou noir proche
-  const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*15);
-  if(nearBH&&Math.random()<0.5){
-    const c=MDW_PILOT_COMMENTS.nearBH;
-    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
-    _mdwPilotTimer=0;_lastMDWPilotComment=now;return;
-  }
-
-  // Style agressif ou élégant
-  if(spdDelta>2){_pilotAggrCount++;} else {_pilotElegCount++;}
-
-  if(_pilotAggrCount>_pilotElegCount*1.5&&Math.random()<0.3){
-    const c=MDW_PILOT_COMMENTS.aggressive;
-    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
-    _mdwPilotTimer=0;_lastMDWPilotComment=now;_pilotAggrCount=0;
-  } else if(spd<0.3&&Math.random()<0.2){
-    const c=MDW_PILOT_COMMENTS.drifting;
-    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
-    _mdwPilotTimer=0;_lastMDWPilotComment=now;
-  } else if(_pilotElegCount>_pilotAggrCount*2&&Math.random()<0.2){
-    const c=MDW_PILOT_COMMENTS.elegant;
-    showMDWLine(c[Math.floor(Math.random()*c.length)],true);
-    _mdwPilotTimer=0;_lastMDWPilotComment=now;_pilotElegCount=0;
-  }
+  const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*14);
+  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Simon. Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;return;}
+  const delta=Math.abs(spd-_lSpd);_lSpd=spd;
+  if(delta>2)_pAgg++;else _pEleg++;
+  if(_pAgg>_pEleg*1.5&&Math.random()<0.3){showMDWLine(['Pilotage agressif.','Consommation élevée.','Plus de patience.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;_pAgg=0;}
+  else if(spd<0.3&&Math.random()<0.2){showMDWLine(['Mode dérive. Efficace.','Bonne derive.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;}
+  else if(_pEleg>_pAgg*2&&Math.random()<0.2){showMDWLine(['Trajectoire elegante.','Efficace.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;_pEleg=0;}
 }
-
 function getSanityState(){
   if(sanity>80)return'STABLE';
   if(sanity>60)return'TENDU';
@@ -10293,8 +9890,7 @@ function gameLoop(ts){
         // Auto-save toutes les 60s
         if(Math.floor(gameTime)%60===0&&Math.floor(gameTime-dt)%60!==0)saveRun();
         if(_resumeCooldown>0)_resumeCooldown-=0.016;
-checkLore();checkEndings();checkGodEncounter();checkExchanges();
-        updateMDWPilotProfile(dt);checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
+checkLore();checkEndings();checkGodEncounter();checkExchanges();updateMDWPilotProfile(dt);checkActScenes();checkReturnWormhole();checkScanHint();checkMDWChoices();checkMDWWarnings();
         if(survivalDay>=8&&!artifactSpawned&&Math.random()<0.00008)spawnArtifact();
         updateAmbient();
         if(musicDelay){
@@ -10348,6 +9944,7 @@ checkLore();checkEndings();checkGodEncounter();checkExchanges();
   }
   requestAnimationFrame(gameLoop);
 renderLeaderboard();
+(function(){function s(){const b=document.getElementById('brake-btn');if(!b)return;b.addEventListener('touchstart',(e)=>{e.preventDefault();brakeActive=true;haptic('collect');},{passive:false});b.addEventListener('touchend',()=>{brakeActive=false;});b.addEventListener('mousedown',()=>{brakeActive=true;});document.addEventListener('mouseup',()=>{brakeActive=false;});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',s);else s();})();
 }
 
 // ── Support clavier PC ────────────────────────
