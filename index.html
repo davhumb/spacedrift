@@ -78,7 +78,7 @@
   @keyframes shake{0%{transform:translate(0,0)}20%{transform:translate(-4px,3px)}40%{transform:translate(4px,-3px)}60%{transform:translate(-3px,2px)}80%{transform:translate(3px,-2px)}100%{transform:translate(0,0)}}
   body.shaking{animation:shake 0.25s ease;}
 
-  #screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;background:rgba(0,9,2,0.92);gap:12px;}
+  #screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;background:rgba(0,9,2,0.92);gap:12px;overflow-y:auto;}
   #screen.hidden{display:none;}
   #screen .big-title{font-family:'VT323',monospace;font-size:clamp(48px,12vw,80px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:6px;text-align:center;}
   #screen .big-title.red{color:var(--red);text-shadow:0 0 20px var(--red),0 0 60px rgba(255,32,32,0.4);}
@@ -139,7 +139,7 @@
 
   /* TITRE — vaisseau centré au-dessus du texte */
   #title-ship-wrap{display:flex;justify-content:center;margin-bottom:4px;opacity:0.9;}
-  #title-canvas{display:block;margin:0 auto;}
+  #title-canvas{display:block;margin:0 auto;will-change:transform;}
   #title-voidrift{font-family:'VT323',monospace;font-size:clamp(48px,14vw,88px);color:var(--green);text-shadow:0 0 20px var(--green),0 0 60px rgba(0,255,65,0.4);letter-spacing:6px;line-height:1;text-align:center;}
 
   /* FONDU ENCHAÎNÉ */
@@ -280,7 +280,6 @@
     <button class="cat-tab active" data-tab="journal">PILOTE</button>
     <button class="cat-tab" data-tab="planets">PLANÈTES</button>
     <button class="cat-tab" data-tab="phenomenes">PHÉNOMÈNES</button>
-    <button class="cat-tab" data-tab="mdw">MDW</button>
     <button class="cat-tab" data-tab="upgrades">UPGRADES</button>
     <button class="cat-tab" data-tab="ship">VAISSEAU</button>
   </div>
@@ -303,7 +302,7 @@
   </div>
   <div class="diff-row">
   </div>
-  <div id="leaderboard-block" style="margin-bottom:12px;width:100%;max-width:280px;text-align:left;"><div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES · GLOBAL</div><div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div></div>
+  <div id="leaderboard-block" style="margin-bottom:12px;width:100%;max-width:280px;text-align:left;"><div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES · GLOBAL</div><div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;transition:opacity 0.3s;"></div></div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
 
 
@@ -695,7 +694,8 @@ async function saveToLeaderboard(p,d,s){
 async function renderLeaderboard(){
   const el=document.getElementById('leaderboard-list');
   if(!el)return;
-  el.innerHTML='<div style="opacity:0.3;font-size:9px;letter-spacing:2px;">CHARGEMENT...</div>';
+  // Fade out doucement au lieu de remplacer brutalement
+  el.style.opacity='0.3';
   try{
     const r=await fetch(`${SUPA_URL}/rest/v1/leaderboard?select=pilot,planets,days&order=planets.desc&limit=10`,{
       method:'GET',
@@ -704,16 +704,26 @@ async function renderLeaderboard(){
         'Authorization':'Bearer '+SUPA_KEY
       }
     });
-    if(!r.ok){el.innerHTML=`<div style="font-size:8px;color:rgba(255,80,80,0.6);">HTTP ${r.status}</div>`;return;}
+    if(!r.ok){
+      el.innerHTML=`<div style="font-size:8px;color:rgba(255,80,80,0.6);">HTTP ${r.status}</div>`;
+      el.style.opacity='1';
+      return;
+    }
     const lb=await r.json();
-    if(!Array.isArray(lb)||!lb.length){el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';return;}
+    if(!Array.isArray(lb)||!lb.length){
+      el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';
+      el.style.opacity='1';
+      return;
+    }
     el.innerHTML=lb.map((e,i)=>`
       <div style="display:flex;justify-content:space-between;gap:8px;opacity:${1-i*0.07};font-size:${i===0?'12px':'10px'}">
         <span style="color:rgba(0,255,65,${i===0?'0.9':'0.6'})">${i+1}. ${e.pilot}</span>
         <span style="color:rgba(255,170,0,${i===0?'0.95':'0.7'});white-space:nowrap">${e.planets}/250</span>
       </div>`).join('');
+    el.style.opacity='1';
   }catch(err){
     el.innerHTML=`<div style="font-size:8px;color:rgba(255,80,80,0.5);">${err.message||'ERREUR'}</div>`;
+    el.style.opacity='1';
   }
 }
 function triggerEmergencyBoost(){
@@ -938,7 +948,7 @@ let titleAnimating=false,titlePulse=0;
 
 function drawTitleShip(){
   if(!tctx||!titleCanvas)return;
-  tctx.clearRect(0,0,70,70);
+  tctx.clearRect(0,0,80,80);
   titlePulse+=0.04;
   const wobble=titleAnimating?0:Math.sin(titlePulse)*0.06;
   const mods=typeof installedModules!=='undefined'?installedModules:[];
@@ -948,10 +958,14 @@ function drawTitleShip(){
 }
 
 let titleLoopRunning=false;
-function titleLoop(){
+let _titleLastFrame=0;
+function titleLoop(ts=0){
   if(typeof state==='undefined'||state!=='menu'&&state!=='dead'){titleLoopRunning=false;return;}
   titleLoopRunning=true;
-  drawTitleShip();
+  if(ts-_titleLastFrame>100){ // ~10fps
+    _titleLastFrame=ts;
+    drawTitleShip();
+  }
   requestAnimationFrame(titleLoop);
 }
 
