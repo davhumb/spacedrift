@@ -195,7 +195,7 @@
 
   <div id="radar">
     <canvas id="radar-canvas" width="70" height="70"></canvas>
-    <div id="radar-label">RADAR</div>
+    <div id="radar-planets" style="text-align:center;margin-top:3px;font-family:'VT323',monospace;line-height:1;"><span id="pc-val" style="font-size:28px;color:rgba(255,170,0,0.95);">0</span><span style="color:rgba(255,170,0,0.4);font-size:14px;">/250</span></div>
   </div>
   <div id="top-bar">
     <div id="title-block">
@@ -209,12 +209,6 @@
     <div id="score-block">
       <div class="score-label">SURVIE</div>
       <div class="score-val" id="score-display">000000</div>
-    </div>
-    <div id="planet-counter-block" style="text-align:right;margin-top:6px;">
-      <div style="font-size:7px;letter-spacing:2px;color:rgba(255,170,0,0.5);">PLANÈTES</div>
-      <div style="font-family:'VT323',monospace;line-height:1;">
-        <span id="pc-val" style="font-size:22px;color:rgba(255,170,0,0.95);">0</span><span style="font-size:13px;color:rgba(255,170,0,0.4);">/250</span>
-      </div>
     </div>
   </div>
 
@@ -237,7 +231,6 @@
   <div id="event-log"></div>
   <button id="cosmodex-btn">📋</button>
   <button id="home-btn">⌂</button>
-  <button id="restart-btn" style="position:fixed;bottom:72px;left:8px;z-index:50;background:rgba(0,9,2,0.85);border:1px solid rgba(255,80,0,0.35);color:rgba(255,80,0,0.7);font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 8px;cursor:pointer;letter-spacing:1px;-webkit-tap-highlight-color:transparent;display:none;">↺ RESTART</button>
   <div id="day-pop">
     <div class="dp-num" id="dp-num">JOUR 2</div>
     <div class="dp-sub">▸ LE VIDE CONTINUE</div>
@@ -267,11 +260,6 @@
       <div class="gauge-val" id="val-prop" style="color:#ff8040">100%</div>
     </div>
     <div class="gauge-wrap">
-      <div class="gauge-label">⚡ NRJ</div>
-      <div class="gauge-bar"><div class="gauge-fill" id="bar-en" style="width:100%"></div></div>
-      <div class="gauge-val" id="val-en">100%</div>
-    </div>
-    <div class="gauge-wrap">
       <div class="gauge-label">🛡 HULL</div>
       <div class="gauge-bar"><div class="gauge-fill" id="bar-hp" style="width:100%"></div></div>
       <div class="gauge-val" id="val-hp">100%</div>
@@ -294,8 +282,6 @@
     <button class="cat-tab" data-tab="mdw">MDW</button>
     <button class="cat-tab" data-tab="upgrades">UPGRADES</button>
     <button class="cat-tab" data-tab="ship">VAISSEAU</button>
-    <button class="cat-tab" data-tab="phenomena">PHÉNOMÈNES</button>
-    <button class="cat-tab" data-tab="sectors">SECTEURS</button>
   </div>
   <div id="cat-content"></div>
   <div id="cat-mdw-panel" style="display:none"></div>
@@ -316,28 +302,16 @@
   </div>
   <div class="diff-row">
   </div>
-  <div id="leaderboard-block" style="margin-bottom:12px;width:100%;max-width:280px;text-align:left;"><div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES</div><div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div></div>
+  <div id="leaderboard-block" style="margin-bottom:12px;width:100%;max-width:280px;text-align:left;"><div style="font-size:8px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">MEILLEURS PILOTES · GLOBAL</div><div id="leaderboard-list" style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;font-family:'Share Tech Mono',monospace;"></div></div>
   <button class="screen-btn" id="btn-start">[ INITIALISER ]</button>
-  <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
-  <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.9 — NOUVEAUTÉS</div>
-    <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
-      ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
-      ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
-      ▸ Révélation acte 2 — MDW : tous ces pilotes sont vous<br>
-      ▸ QCM — Simon croit ou refuse, conséquences sur trust<br>
-      ▸ 11 échanges amis — deux amis qui s'ennuient<br>
-      ▸ Échanges trous noirs dangereux dans les transmissions radio
-    </div>
-  </div>
+
   <button class="haptic-toggle" id="btn-haptic">📳 VIBRATIONS : ON</button>
   <button class="haptic-toggle" id="btn-fullscreen" style="margin-top:2px;">⛶ PLEIN ÉCRAN</button>
   <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
-  <button class="reset-btn" id="btn-reset-planets" style="margin-top:4px;border-color:rgba(255,170,0,0.4);color:rgba(255,170,0,0.6);">[ REMETTRE PLANÈTES À ZÉRO ]</button>
   <div class="reset-confirm" id="reset-confirm">
-    <div class="reset-confirm-text">EFFACER UPGRADES · COSMODEX · RUNS ?</div>
+    <div class="reset-confirm-text">EFFACER TOUT — MODULES · PLANÈTES · RUNS ?</div>
     <div style="display:flex;gap:10px;">
       <button class="reset-yes" id="reset-yes">[ OUI ]</button>
       <button class="reset-no" id="reset-no">[ NON ]</button>
@@ -697,8 +671,40 @@ let boostCooldown=0,boostActive=false,boostTimer=0;
 let brakeActive=false;
 function applyBrake(dt){if(!brakeActive)return;ship.vx*=Math.pow(0.82,dt*60);ship.vy*=Math.pow(0.82,dt*60);}
 
-function saveToLeaderboard(p,d,s){try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');if(!m.leaderboard)m.leaderboard=[];m.leaderboard.push({pilot:pilotName,ship:shipName,planets:p,days:d,sectors:s,date:new Date().toLocaleDateString('fr-FR')});m.leaderboard.sort((a,b)=>b.planets-a.planets);m.leaderboard=m.leaderboard.slice(0,10);localStorage.setItem('voidrift_meta',JSON.stringify(m));}catch(e){}}
-function renderLeaderboard(){const el=document.getElementById('leaderboard-list');if(!el)return;try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');const lb=m.leaderboard||[];el.innerHTML=lb.length?lb.map((r,i)=>`<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08}"><span>${i+1}. ${r.pilot}</span><span style="color:rgba(255,170,0,0.8)">${r.planets}/250</span></div>`).join(''):'<div style="opacity:0.4">Aucun run.</div>';}catch(e){}}
+const SUPA_URL='https://kidgnukneivaagimspjc.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpZGdudWtuZWl2YWFnaW1zcGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MzE3NzYsImV4cCI6MjA5NjQwNzc3Nn0.dXLi_CjSexQSIzWxThQS9zp4UeJ05OpNxMr2YLuWck8';
+
+async function saveToLeaderboard(p,d,s){
+  try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');if(!m.leaderboard)m.leaderboard=[];m.leaderboard.push({pilot:pilotName,planets:p,days:d});m.leaderboard.sort((a,b)=>b.planets-a.planets);m.leaderboard=m.leaderboard.slice(0,10);localStorage.setItem('voidrift_meta',JSON.stringify(m));}catch(e){}
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/leaderboard`,{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({pilot:pilotName||'INCONNU',planets:p,days:d})
+    });
+    renderLeaderboard();
+  }catch(e){}
+}
+
+async function renderLeaderboard(){
+  const el=document.getElementById('leaderboard-list');
+  if(!el)return;
+  el.innerHTML='<div style="opacity:0.3;font-size:9px;letter-spacing:2px;">CHARGEMENT...</div>';
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/leaderboard?select=pilot,planets,days&order=planets.desc&limit=10`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
+    });
+    const lb=await r.json();
+    if(!Array.isArray(lb)||!lb.length){el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';return;}
+    el.innerHTML=lb.map((e,i)=>`
+      <div style="display:flex;justify-content:space-between;gap:8px;opacity:${1-i*0.07};font-size:${i===0?'12px':'10px'}">
+        <span style="color:rgba(0,255,65,${i===0?'0.9':'0.6'})">${i+1}. ${e.pilot}</span>
+        <span style="color:rgba(255,170,0,${i===0?'0.95':'0.7'});white-space:nowrap">${e.planets}/250</span>
+      </div>`).join('');
+  }catch(err){
+    try{const m=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');const lb=m.leaderboard||[];el.innerHTML=lb.length?lb.map((e,i)=>`<div style="display:flex;justify-content:space-between;opacity:${1-i*0.08}"><span>${i+1}. ${e.pilot}</span><span style="color:rgba(255,170,0,0.8)">${e.planets}/250</span></div>`).join(''):'<div style="opacity:0.4">Aucun run.</div>';}catch(e2){}
+  }
+}
 function triggerEmergencyBoost(){
   if(!upgrades.boost||boostCooldown>0||boostActive)return;
   boostActive=true;boostTimer=1.0;boostCooldown=60;
@@ -4025,7 +4031,7 @@ function startGame(resume=false){
   document.getElementById('hud').style.opacity='1';
   document.getElementById('home-btn').style.display='block';
   document.getElementById('cosmodex-btn').style.display='block';
-  document.getElementById('restart-btn').style.display='block';
+  
   requestWakeLock();
   initMDW();
   if(!resume){
@@ -6135,7 +6141,7 @@ function initMDW(){
   if(mdwEl)return; // déjà initialisé
   mdwEl=document.createElement('div');
   mdwEl.id='mdw-hud';
-  mdwEl.style.cssText=`position:fixed;top:110px;right:8px;pointer-events:none;z-index:15;text-align:right;opacity:0;transition:opacity 0.5s;max-width:165px;`;
+  mdwEl.style.cssText=`position:fixed;top:200px;left:8px;pointer-events:none;z-index:15;text-align:left;opacity:0;transition:opacity 0.5s;max-width:165px;`;
   mdwEl.innerHTML=`
     <div style="font-size:7px;letter-spacing:3px;color:#c07820;margin-bottom:2px;font-family:'Share Tech Mono',monospace;">MDW</div>
     <div id="mdw-text" style="font-size:12px;color:#e8a030;letter-spacing:0.3px;padding:4px 0;line-height:1.6;font-family:'Share Tech Mono',monospace;text-shadow:0 0 8px rgba(200,120,32,0.4);"></div>
@@ -10509,12 +10515,17 @@ document.querySelectorAll('.cat-tab').forEach(btn=>{
 });
 function resetGame(){
   try{localStorage.removeItem('voidDrift_v1');}catch(e){}
+  try{localStorage.removeItem('voidrift_meta');}catch(e){}
+  try{localStorage.removeItem('voidrift_run');}catch(e){}
   upgradePoints=0;totalRuns=0;totalDays=0;pilotName='INCONNU';
   cosmodexEntries=[];installedModules=[];
+  discoveredPlanets=0;returnWormholeSpawned=false;
   if(unlockedAch)unlockedAch.clear();
   hiScores={easy:0,hard:0,harder:0};
   Object.keys(upgrades).forEach(k=>upgrades[k]=0);
   Object.values(UPGRADES).forEach(u=>{try{if(u.apply)u.apply();}catch(e){}});
+  const pcEl=document.getElementById('pc-val');
+  if(pcEl)pcEl.textContent='0';
 }
 
 // ── Speech Synthesis — voix MDW ──────────────
@@ -10535,9 +10546,8 @@ function initVoice(){
 
 function mdwSpeak_voice(text){
   if(!voiceEnabled||!window.speechSynthesis)return;
-  // Relancer speechSynthesis si suspendu (après traversée trou de ver sur mobile)
-  if(speechSynthesis.paused)speechSynthesis.resume();
-  // Réinitialiser la voix si perdue
+  // Android bug : speechSynthesis reste bloqué — cancel + re-init
+  if(speechSynthesis.paused){try{speechSynthesis.cancel();}catch(e){}}
   if(!mdwVoice)initVoice();
   const utt=new SpeechSynthesisUtterance(text);
   if(mdwVoice)utt.voice=mdwVoice;
@@ -10555,11 +10565,27 @@ function mdwSpeak_voice(text){
   utt.rate=Math.max(0.6,1.15+rateMod);
   utt.pitch=Math.max(0.1,0.3+pitchMod);
   utt.volume=0.35;
-  // Retry si speechSynthesis ne démarre pas (bug mobile connu)
   utt.onerror=(e)=>{
     if(e.error==='interrupted')return;
-    setTimeout(()=>speechSynthesis.speak(utt),300);
+    // Retry avec cancel propre
+    setTimeout(()=>{
+      try{speechSynthesis.cancel();}catch(ex){}
+      setTimeout(()=>speechSynthesis.speak(utt),100);
+    },300);
   };
+  // Watchdog Android : si rien ne se passe après 500ms, cancel+retry
+  let started=false;
+  utt.onstart=()=>{started=true;};
+  setTimeout(()=>{
+    if(!started&&voiceEnabled){
+      try{speechSynthesis.cancel();}catch(e){}
+      if(!mdwVoice)initVoice();
+      const utt2=new SpeechSynthesisUtterance(text);
+      if(mdwVoice)utt2.voice=mdwVoice;
+      utt2.rate=utt.rate;utt2.pitch=utt.pitch;utt2.volume=0.35;
+      speechSynthesis.speak(utt2);
+    }
+  },600);
   speechSynthesis.speak(utt);
 }
 
@@ -10626,26 +10652,11 @@ document.getElementById('home-btn').addEventListener('click',()=>{
     document.getElementById('hud').style.opacity='0';
     document.getElementById('home-btn').style.display='none';
     document.getElementById('cosmodex-btn').style.display='none';
-    document.getElementById('restart-btn').style.display='none';
+    
     state='menu';
     showTitleScreen();
     setTimeout(updateResumeBtn,500);
   }
-});
-
-document.getElementById('restart-btn').addEventListener('click',()=>{
-  if(state!=='playing'&&state!=='trade')return;
-  if(confirm('Recommencer à zéro ?')){
-    saveToLeaderboard(discoveredPlanets,survivalDay,sectorCount);
-    document.getElementById('restart-btn').style.display='none';
-    resetRun();
-    startGame(false);
-  }
-});
-
-document.getElementById('btn-zen').addEventListener('click',()=>{
-  if(!audioCtx)initAudio();
-  launchSequence((vy)=>{startZenMode();if(vy)ship.vy=vy;ship.angle=-Math.PI/2;});
 });
 
 const hapticBtn=document.getElementById('btn-haptic');
@@ -10677,20 +10688,6 @@ document.getElementById('reset-no').addEventListener('click',()=>{
   document.getElementById('reset-confirm').classList.remove('visible');
 });
 
-document.getElementById('btn-reset-planets').addEventListener('click',()=>{
-  if(confirm('Remettre le compteur de planètes à zéro ?')){
-    try{
-      const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
-      meta.planets=[];
-      localStorage.setItem('voidrift_meta',JSON.stringify(meta));
-      const pcEl=document.getElementById('pc-val');
-      if(pcEl)pcEl.textContent='0';
-      renderLeaderboard();
-    }catch(e){}
-    returnWormholeSpawned=false;
-    discoveredPlanets=0;
-  }
-});
 loadGame();
 titleShipAngle=-(Math.PI/2)+(((totalRuns||0)*0.7)%(Math.PI*2));
 initStars();
