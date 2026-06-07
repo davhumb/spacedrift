@@ -720,16 +720,17 @@ async function renderLeaderboard(){
     }
     const medals=['🥇','🥈','🥉'];
     const cols=['#ffdd00','#d0d0d0','#ff8844'];
-    const glows=['rgba(255,221,0,0.7)','rgba(200,200,200,0.5)','rgba(255,136,68,0.5)'];
+    const glows=['0 0 14px rgba(255,221,0,0.9),0 0 28px rgba(255,221,0,0.4)','0 0 12px rgba(220,220,220,0.8),0 0 24px rgba(200,200,200,0.3)','0 0 12px rgba(255,136,68,0.8),0 0 24px rgba(255,100,40,0.3)'];
     el.innerHTML=lb.map((e,i)=>{
       const top=i<3;
       const medal=top?medals[i]:`${i+1}.`;
-      const col=top?cols[i]:'rgba(0,255,65,0.5)';
-      const glow=top?`text-shadow:0 0 10px ${glows[i]};`:'';
+      const col=top?cols[i]:'rgba(0,255,65,0.6)';
+      const glow=top?`text-shadow:${glows[i]};`:'text-shadow:0 0 6px rgba(0,255,65,0.4);';
       const sz=i===0?'24px':i===1?'19px':i===2?'16px':'13px';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:${top?'5':'2'}px;${top?`border-left:2px solid ${col};padding:3px 6px;`:''}">`+
+      const bg=top?`background:rgba(255,255,255,0.03);border-left:2px solid ${col};padding:4px 8px;`:'padding:2px 4px;';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:${top?'6':'3'}px;${bg}">`+
         `<span style="font-size:${sz};color:${col};${glow}">${medal} ${e.pilot}</span>`+
-        `<span style="font-size:${sz};color:${col};${glow};white-space:nowrap">${e.planets}<span style="font-size:9px;opacity:0.5;">/250</span></span>`+
+        `<span style="font-size:${sz};color:${col};${glow};white-space:nowrap">${e.planets}<span style="font-size:9px;opacity:0.6;">/250</span></span>`+
       `</div>`;
     }).join('');
     el.style.opacity='1';
@@ -1325,7 +1326,7 @@ function checkMDWMeta(){
       mdwMetaSaid.add(runs);
       setTimeout(()=>{
         mdwSpeak(text,true);
-        writeGlitchText&&writeGlitchText(text,'🤖 MDW — MÉMOIRE LONGUE');
+        
       },5000+Math.random()*10000);
       break;
     }
@@ -1578,7 +1579,7 @@ function checkLore(){
     if(sectorCount>=entry.sector&&survivalDay>=entry.day){
       shownLoreEntries.add(key);
       setTimeout(()=>{
-        writeGlitchText(entry.text,'🧠 MÉMOIRE');
+        
         if(entry.sector===1&&entry.day===3){
           pilotName='ANONYME';
           
@@ -1850,7 +1851,7 @@ const UNIVERSES=[
    onEnter:()=>{
      if(typeof mdwActive!=='undefined'&&mdwActive)
        setTimeout(()=>mdwSpeak('Quelque chose est inversé ici.',true),2000);
-     writeGlitchText&&writeGlitchText('Quelque chose est différent ici. Le radar montre des directions qui ne correspondent pas à ma trajectoire. Comme un miroir.','🌀 ANOMALIE SECTORIELLE');
+     showMDWLine&&showMDWLine('Anomalie directionnelle. Le radar ne correspond plus à la trajectoire.',true);
    }},
 
   {id:7, name:'SECTEUR DENSE',   bg:'#001800', primary:'#80ff80', dim:'#408040', accent:'#ffdd00',
@@ -1873,7 +1874,7 @@ const UNIVERSES=[
    onEnter:()=>{
      if(typeof mdwActive!=='undefined'&&mdwActive)
        setTimeout(()=>mdwSpeak('Ce secteur est vieux. Très vieux.',true),2000);
-     writeGlitchText&&writeGlitchText('Les étoiles ici sont vieilles. Plus vieilles que tout ce que j\'ai vu. Je me demande si quelqu\'un d\'autre a déjà traversé ce secteur.','🌅 SECTEUR ANCIEN');
+     showMDWLine&&showMDWLine('Étoiles de classe M tardive. Ce secteur est très vieux.',true);
    }},
 
   {id:9, name:'SECTEUR SIGNAL',  bg:'#001a08', primary:'#00ffaa', dim:'#008855', accent:'#ffff00',
@@ -1884,7 +1885,7 @@ const UNIVERSES=[
    gravMult:1.1, debrisMult:1.0, radarSaturated:true,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Radar saturé. Quelque chose émet depuis le centre.',true),2000);
-     writeGlitchText&&writeGlitchText('Tout parle ici. Je ne sais pas si c\'est dangereux ou si c\'est une réponse à quelque chose que j\'aurais dit sans le savoir.','📡 SECTEUR SIGNAL');
+     showMDWLine&&showMDWLine('Saturation des émissions. Toutes les fréquences sont occupées.',true);
    }},
 
   // ── Secteurs avancés ──
@@ -1897,7 +1898,7 @@ const UNIVERSES=[
    gravMult:0.3, debrisMult:0.05,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Aucune étoile détectée. Aucun objet. Et pourtant je détecte une force. Source inconnue.',true),2000);
-     writeGlitchText&&writeGlitchText('Le vide ici n\'est pas vide. Il y a une direction. Je ne sais pas comment je le sais. Mais je la sens.','⬛ SECTEUR VIDE');
+     showMDWLine&&showMDWLine('Secteur anormalement vide. Je détecte une force directionnelle. Source indéterminée.',true);
      // Attirer passivement le vaisseau dans une direction
      setTimeout(()=>{
        if(typeof ship!=='undefined'){
@@ -1915,7 +1916,7 @@ const UNIVERSES=[
    gravMult:0.8, debrisMult:0.6, timeDilationMult:0.4,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Dilatation temporelle. Nous sommes proches d\'un objet très massif. Le temps se courbe.',true),2000);
-     writeGlitchText&&writeGlitchText('Tout est ralenti. Mon propre rythme cardiaque semble différent. MDW dit que c\'est physique. Que c\'est réel.','⏳ SECTEUR LENT');
+     showMDWLine&&showMDWLine('Dilatation temporelle confirmée. Vitesse relative réduite de 60%.',true);
    }},
 
   {id:12, name:'SECTEUR BRUIT',   bg:'#250025', primary:'#ff40ff', dim:'#801080', accent:'#ff80ff',
@@ -1926,7 +1927,7 @@ const UNIVERSES=[
    gravMult:1.0, debrisMult:1.5, radarSaturated:true,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Je ne peux plus distinguer le signal du bruit. Quelque chose interfère depuis partout.',true),1500);
-     writeGlitchText&&writeGlitchText('Le radar montre tout et rien. MDW recalibre depuis 10 minutes. Il n\'a pas l\'air inquiet. Moi si.','📻 SECTEUR BRUIT');
+     showMDWLine&&showMDWLine('Interférence massive. Je recalibre. Résultat partiel.',true);
    }},
 
   {id:13, name:'SECTEUR CHAUD',   bg:'#2a0800', primary:'#ff6600', dim:'#aa3300', accent:'#ffcc00',
@@ -1938,7 +1939,7 @@ const UNIVERSES=[
    hullDrainPassive:0.5, // drain passif de coque
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Température ambiante critique. La coque dissipe de la chaleur en permanence. Restez en mouvement.',true),2000);
-     writeGlitchText&&writeGlitchText('La chaleur ici est omniprésente. Pas une étoile proche — juste le fond du secteur lui-même. Comme si l\'espace brûlait.','🔥 SECTEUR CHAUD');
+     showMDWLine&&showMDWLine('Température ambiante critique. La coque dissipe de la chaleur en permanence.',true);
    }},
 
   {id:14, name:'SECTEUR CRISTAL', bg:'#002830', primary:'#00ffff', dim:'#408888', accent:'#ffffff',
@@ -1949,7 +1950,7 @@ const UNIVERSES=[
    gravMult:1.0, debrisMult:1.0, crystalEffect:true,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Anomalie optique. Je détecte des doublons sur tous les capteurs. Ce n\'est pas une panne.',true),2000);
-     writeGlitchText&&writeGlitchText('Je vois double. Pas mes yeux — les instruments. MDW dit que c\'est le secteur. Que chaque objet a un reflet dans une dimension adjacente.','💎 SECTEUR CRISTAL');
+     showMDWLine&&showMDWLine('Anomalie optique. Doublons sur tous les capteurs. Ce n\'est pas une panne.',true);
    }},
 
   // ── SECTEUR TERMINAL — avant dieu ──
@@ -1963,7 +1964,7 @@ const UNIVERSES=[
    onEnter:()=>{
      setTimeout(()=>{if(mdwActive)mdwSpeak('Je ne sais pas ce qui est devant nous.',true);},5000);
      setTimeout(()=>{if(mdwActive)mdwSpeak("Dans toutes mes données. Dans toutes les expéditions. Personne n'est allé plus loin.",true);},15000);
-     writeGlitchText&&writeGlitchText("Les étoiles s'éteignent. Une par une. MDW ne dit rien. Pour la première fois depuis le début, il ne dit rien.",'◈ SECTEUR TERMINAL');
+     
      window._terminalWhiten=0;
    }},
   {id:16, name:'LES VORACES',   bg:'#250000', primary:'#ff2000', dim:'#880000', accent:'#ff6020',
@@ -1993,15 +1994,8 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Anomalie géométrique. Je ne détecte aucune courbe dans ce secteur.',true),2000);
        setTimeout(()=>mdwSpeak('Les lois de la physique sont respectées. Mais leur expression est... différente.',true),9000);
      }
-     writeGlitchText&&writeGlitchText('Les planètes sont carrées ici.\nRien n\'est rond.\nComme si quelqu\'un avait recodé les règles.','◼ SECTEUR EUCLIDIEN');
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Les planètes sont carrées ici.\nMDW dit que la physique est normale.\nJe lui dis que les planètes sont carrées.\nIl dit : oui. C'est inhabituel.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
+     showMDWLine&&showMDWLine('Anomalie géométrique. Je ne détecte aucune courbe dans ce secteur.',true);
+
    }},
 
   // ── SECTEUR INVERSÉ — gravité repoussante ──
@@ -2016,7 +2010,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Inversion gravitationnelle détectée. Toutes les masses se repoussent.',true),2000);
        setTimeout(()=>mdwSpeak('Conseil : réduisez les poussées. La navigation est contre-intuitive.',true),9000);
      }
-     writeGlitchText&&writeGlitchText('Tout me repousse.\nLes planètes s\'éloignent quand j\'approche.\nMDW dit que c\'est la physique.\nJe dis que la physique est cassée.\nIl dit : non. Elle est juste inversée.','↕ SECTEUR INVERSÉ');
+     showMDWLine&&showMDWLine('Inversion gravitationnelle. Toutes les masses se repoussent. La navigation est contre-intuitive.',true);
    }},
 
   // ── SECTEUR LENT — tout au ralenti ──
@@ -2030,7 +2024,7 @@ const UNIVERSES=[
      if(mdwActive){
        setTimeout(()=>mdwSpeak('Dilatation temporelle locale. Vitesse relative réduite.',true),3000);
      }
-     writeGlitchText&&writeGlitchText('Tout est lent ici.\nLes débris dérivent comme dans de l\'eau.\nJe me demande si moi aussi je suis ralenti.\nSi quelqu\'un me regardait de dehors — est-ce qu\'il me verrait bouger ?','🕐 SECTEUR LENT');
+     showMDWLine&&showMDWLine('Dilatation temporelle locale. Vitesse relative réduite.',true);
    }},
 
   // ── SECTEUR VIDE — rien ──
@@ -2038,93 +2032,14 @@ const UNIVERSES=[
    starColors:['#222222','#333333','#111111'],
    nebulaColors:['rgba(10,10,10,'],
    scan:'rgba(40,40,40,0.03)',
-   lore:"Rien. Pas de planètes. Pas de débris. Juste le silence et Simon.",
+   lore:"Rien. Pas de planètes. Pas de débris. Silence absolu.",
    gravMult:0, debrisMult:0, emptyMode:true,
    onEnter:()=>{
      if(mdwActive){
        setTimeout(()=>mdwSpeak("Je n'ai rien à cosmodexr ici.",true),3000);
        setTimeout(()=>mdwSpeak("...",true),12000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="C'est reposant.\nMDW n'a rien à dire.\nMoi non plus.\nOn dérive.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },6000);
-   }},
 
-  // ── SECTEUR NÉGATIF — couleurs inversées ──
-  {id:21, name:'SECTEUR NÉGATIF', bg:'#f0f0f0', primary:'#000000', dim:'#333333', accent:'#000000',
-   starColors:['#000000','#111111','#222222','#333333'],
-   nebulaColors:['rgba(0,0,0,','rgba(20,20,20,'],
-   scan:'rgba(0,0,0,0.06)',
-   lore:"Tout est en négatif. Le fond est blanc. Les étoiles sont noires. Simon se demande si c'est vraiment là.",
-   gravMult:1.0, debrisMult:1.0, negativeMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak("Inversion photonique. Je traite les données. Elles sont... inversées.",true),2000);
-     writeGlitchText&&writeGlitchText('Le fond est blanc.\nLes étoiles sont noires.\nJe ne sais plus ce qui est devant et ce qui est derrière.\nMDW dit que c\'est juste une inversion photonique.\nJe lui dis que ce n\'est pas rassurant.\nIl dit : non.','◻ SECTEUR NÉGATIF');
-   }},
-
-  // ── SECTEUR GÉANT — tout est énorme ──
-  {id:22, name:'SECTEUR GÉANT', bg:'#001a05', primary:'#00ff88', dim:'#008844', accent:'#44ffaa',
-   starColors:['#00ff88','#44ffaa','#00cc66','#88ffcc','#ffffff'],
-   nebulaColors:['rgba(0,150,80,','rgba(0,120,60,'],
-   scan:'rgba(0,255,136,0.04)',
-   lore:"Tout est immense. Les planètes remplissent l'horizon. Les débris font la taille d'une lune.",
-   gravMult:2.0, debrisMult:0.5, giantMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak("Masse des objets anormalement élevée. Restez à distance des corps célestes.",true),2000);
-     writeGlitchText&&writeGlitchText('Tout est immense.\nUne planète occupe la moitié de mon champ de vision.\nJe me sens encore plus petit qu\'avant.\nC\'était déjà beaucoup.','🔴 SECTEUR GÉANT');
-   }},
-
-  // ── SECTEUR MINIATURE — tout est minuscule ──
-  {id:23, name:'SECTEUR MINIATURE', bg:'#150028', primary:'#cc88ff', dim:'#664488', accent:'#ddaaff',
-   starColors:['#cc88ff','#ddaaff','#aa66dd','#eeccff','#ffffff'],
-   nebulaColors:['rgba(140,80,200,','rgba(110,60,170,'],
-   scan:'rgba(200,136,255,0.04)',
-   lore:"Des dizaines de petites planètes. Minuscules. Serrées. Comme un système solaire en maquette.",
-   gravMult:0.3, debrisMult:3.0, miniMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak("Objets de masse réduite. Densité élevée. Navigation prudente recommandée.",true),2000);
-     writeGlitchText&&writeGlitchText('Tout est petit ici.\nDes dizaines de planètes minuscules.\nComme des billes dans le vide.\nMDW les cosmodex toutes.\nIl a l\'air content.','· SECTEUR MINIATURE');
-   }},
-
-  // ── SECTEUR PARASITE — glitch visuel ──
-  {id:24, name:'SECTEUR PARASITE', bg:'#050505', primary:'#00ff00', dim:'#005500', accent:'#88ff88',
-   starColors:['#00ff00','#ff0000','#0000ff','#ffffff','#ffff00'],
-   nebulaColors:['rgba(0,150,0,','rgba(150,0,0,'],
-   scan:'rgba(0,255,0,0.08)',
-   lore:"Le signal est corrompu. Tout parasite. MDW glitche. Simon ne sait plus ce qu'il voit vraiment.",
-   gravMult:1.0, debrisMult:2.0, noiseMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>mdwSpeak("Si̴g̷n̸a̵l̴ ̷c̸o̵r̷r̸o̵m̸p̸u̴.̵ ̷J̸e̵ ̷t̴r̷a̴i̵t̸e̵.̷",true),2000);
-       setTimeout(()=>mdwSpeak("Recommande de traverser rapidement ce secteur.",true),8000);
-     }
-     writeGlitchText&&writeGlitchText('SIGNAL CORROMPU\nJE NE SAIS PAS CE QUE JE VOIS\nMDW GLITCHE\nON CONTINUE','▒ SECTEUR PARASITE');
-   }},
-
-  {id:25, name:'SECTEUR MÉMOIRE', bg:'#100808', primary:'#ffaa44', dim:'#885522', accent:'#ffcc88',
-   starColors:['#ffaa44','#ffcc88','#dd8822','#ffffff','#ffddaa'],
-   nebulaColors:['rgba(180,100,40,','rgba(140,80,30,'],
-   scan:'rgba(255,170,68,0.05)',
-   lore:"Des fragments de mémoire flottent dans l'espace. Simon ne sait pas si c'est réel.",
-   gravMult:0.8, debrisMult:0.6, memoryMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>mdwSpeak('Je ne détecte rien d\'inhabituel. Les lectures sont normales.',true),2000);
-       setTimeout(()=>mdwSpeak('Simon. Vous regardez quelque chose que je ne vois pas.',true),10000);
-     }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Il y a des choses qui flottent ici.\nPas des débris.\nMDW dit qu'il ne voit rien.\nMais je les vois.\nUne cuisine. Une odeur. Quelqu'un.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
    }},
 
   {id:26, name:'SECTEUR BOUCLE', bg:'#080015', primary:'#aa88ff', dim:'#554477', accent:'#ccaaff',
@@ -2138,65 +2053,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Coordonnées inédites. Nous n\'avons jamais traversé ce secteur.',true),2000);
        setTimeout(()=>mdwSpeak('Vos constantes vitales indiquent un état de stress. Tout va bien ?',true),12000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Je suis déjà passé ici.\nJe reconnais cette planète. Ce débris. Cette étoile.\nMDW dit que non.\nMDW se trompe.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },6000);
-   }},
 
-  {id:27, name:'SECTEUR PLEIN', bg:'#001508', primary:'#44ff88', dim:'#228844', accent:'#88ffaa',
-   starColors:['#44ff88','#88ffaa','#22cc66','#aaffcc','#ffffff'],
-   nebulaColors:['rgba(40,160,80,','rgba(30,130,60,'],
-   scan:'rgba(68,255,136,0.05)',
-   lore:"L'espace est plein. Des centaines de débris serrés. On avance en slalomant.",
-   gravMult:0.8, debrisMult:4.5, denseMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak('Densité de débris anormalement élevée. Naviguez prudemment.',true),2000);
-     writeGlitchText&&writeGlitchText('C\'est plein ici.\nPlein de tout.\nIl faut slalomer.\nMais les ressources sont là.\nSi on survit.','⬛ SECTEUR DENSE');
-   }},
-
-  {id:28, name:'SECTEUR MAGNÉTIQUE', bg:'#000818', primary:'#4488ff', dim:'#224488', accent:'#88aaff',
-   starColors:['#4488ff','#88aaff','#2255cc','#aabbff','#ffffff'],
-   nebulaColors:['rgba(40,80,200,','rgba(30,60,170,'],
-   scan:'rgba(68,136,255,0.05)',
-   lore:"Les débris sont attirés vers le vaisseau. Il faut se déplacer vite.",
-   gravMult:0.6, debrisMult:2.0, magnetMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak('Champ magnétique intense. Les débris sont attirés vers nous. Maintenez la vitesse.',true),2000);
-     writeGlitchText&&writeGlitchText('Tout m\'attire.\nLes débris. Les rochers. Les épaves.\nMDW dit de ne pas s\'arrêter.\nJe ne m\'arrête pas.','🧲 MAGNÉTIQUE');
-   }},
-
-  {id:29, name:'SECTEUR FANTÔME', bg:'#000818', primary:'#88ccff', dim:'#446688', accent:'#aaddff',
-   starColors:['#88ccff','#aaddff','#6699cc','#cceeff','#ffffff'],
-   nebulaColors:['rgba(80,140,220,','rgba(60,110,190,'],
-   scan:'rgba(136,204,255,0.04)',
-   lore:"Tout est semi-transparent. On n'est jamais sûr de ce qui est solide.",
-   gravMult:0.7, debrisMult:1.5, ghostMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak('Les objets présentent une densité anormalement faible. Ou peut-être qu\'ils n\'existent pas tout à fait.',true),2000);
-     writeGlitchText&&writeGlitchText('Tout est flou ici.\nLes planètes sont là mais pas vraiment.\nJe ne sais plus ce qui est solide.','👻 SECTEUR FANTÔME');
-   }},
-
-  {id:30, name:'SECTEUR AURORE', bg:'#002018', primary:'#00ffcc', dim:'#008866', accent:'#44ffdd',
-   starColors:['#00ffcc','#44ffdd','#00ccaa','#88ffee','#ffffff'],
-   nebulaColors:['rgba(0,200,150,','rgba(0,150,200,','rgba(100,0,200,'],
-   scan:'rgba(0,255,204,0.04)',
-   lore:"Des nappes de lumière colorée ondulent dans l'espace. MDW ne sait pas ce que c'est.",
-   gravMult:0.5, debrisMult:0.3, auroraMode:true,
-   onEnter:()=>{
-     if(mdwActive)setTimeout(()=>mdwSpeak('Je ne sais pas ce que c\'est. Mais je mesure quelque chose qui ressemble à de la beauté.',true),3000);
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="C'est beau.\nJe ne sais pas comment dire autrement.\nMDW a dit qu'il mesure quelque chose qui ressemble à de la beauté.\nJe lui ai dit que c'est exactement ça.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
    }},
 
   {id:31, name:'SECTEUR BINAIRE', bg:'#201500', primary:'#ffdd44', dim:'#886622', accent:'#ffeeaa',
@@ -2207,7 +2064,7 @@ const UNIVERSES=[
    gravMult:1.8, debrisMult:0.8, binaryMode:true,
    onEnter:()=>{
      if(mdwActive)setTimeout(()=>mdwSpeak('Système binaire. Deux masses stellaires en orbite mutuelle. C\'est élégant.',true),2000);
-     writeGlitchText&&writeGlitchText('Deux soleils.\nIls tournent l\'un autour de l\'autre depuis des milliards d\'années.\nMDW dit que c\'est élégant.\nC\'est la première fois qu\'il utilise ce mot.','☀ SECTEUR BINAIRE');
+     showMDWLine&&showMDWLine('Système binaire. Deux étoiles en orbite mutuelle. Trajectoires complexes.',true);
    }},
 
   // ── SECTEUR FRACTAL — l'espace se replie ──
@@ -2222,14 +2079,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Erreur de coordonnées. Je détecte votre vaisseau à deux endroits simultanément.',true),2000);
        setTimeout(()=>mdwSpeak('L\'espace est... récursif. Naviguez prudemment. Ou pas.',true),9000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Je suis sorti par la droite.\nJe suis revenu par la gauche.\nMDW dit que c'est la physique.\nJe dis que c'est de la triche.\nIl dit : c'est pareil.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
+
    }},
 
   // ── SECTEUR DÉJÀ-VU — des copies de ton vaisseau ──
@@ -2242,16 +2092,9 @@ const UNIVERSES=[
    onEnter:()=>{
      if(mdwActive){
        setTimeout(()=>mdwSpeak('C\'est une coïncidence statistique. Ne lisez pas les logs de ces épaves.',true),2000);
-       setTimeout(()=>mdwSpeak('Simon. Éloignez-vous de ces débris.',true),10000);
+       setTimeout(()=>mdwSpeak('Éloignez-vous de ces débris.',true),10000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Ces épaves.\nElles ressemblent à mon vaisseau.\nMDW dit de ne pas regarder les logs.\nPourquoi il dit ça ?";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
+
      // Spawner des épaves qui ressemblent au vaisseau du joueur
      setTimeout(()=>spawnDejavuWrecks(),8000);
    }},
@@ -2268,59 +2111,7 @@ const UNIVERSES=[
        setTimeout(()=>mdwSpeak('Je détecte une substance organique dans tout le secteur. Elle répond à nos mouvements.',true),2000);
        setTimeout(()=>mdwSpeak('Arrêtez de bouger. Je ne veux pas... le réveiller.',true),8000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Le fluide réagit quand je bouge.\nMDW dit d'arrêter.\nJe ralentis.\nLes filaments s'approchent.\nIls ne font pas mal.\nIls réparent la coque.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },6000);
-   }},
 
-  // ── SECTEUR SILENCIEUX ──
-  {id:35, name:'SECTEUR SILENCIEUX', bg:'#020202', primary:'#888888', dim:'#444444', accent:'#aaaaaa',
-   starColors:['#888888','#aaaaaa','#666666','#cccccc','#ffffff'],
-   nebulaColors:['rgba(80,80,80,','rgba(60,60,60,'],
-   scan:'rgba(128,128,128,0.03)',
-   lore:"Aucun son. Pas de musique. MDW n'utilise plus sa voix. Simon doit lire entre les lignes.",
-   gravMult:0.9, debrisMult:1.0, silentMode:true,
-   onEnter:()=>{
-     // Couper la musique et la voix
-     if(window.masterGain)window.masterGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.5);
-     window._silentModeActive=true;
-     // MDW en texte seulement — pas de voix
-     setTimeout(()=>showMDWLine('...\n∅ SILENCE DÉTECTÉ\n01001110\nVOUS ÊTES SEUL ICI',false),3000);
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Silence total.\nMDW ne parle plus.\nJe lis ses données directement.\nC'est pire.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },8000);
-   }},
-
-  // ── SECTEUR QUANTIQUE ──
-  {id:36, name:'SECTEUR QUANTIQUE', bg:'#050010', primary:'#ff88ff', dim:'#881188', accent:'#ffaaff',
-   starColors:['#ff88ff','#ffaaff','#dd44dd','#ffccff','#ffffff'],
-   nebulaColors:['rgba(200,50,200,','rgba(160,30,160,'],
-   scan:'rgba(255,136,255,0.05)',
-   lore:"Les objets n'ont pas de position fixe. Ils clignotent. Il faut s'arrêter pour les stabiliser.",
-   gravMult:0.7, debrisMult:1.5, quantumMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>mdwSpeak('Positions non déterminées. Les objets existent en superposition.',true),2000);
-       setTimeout(()=>mdwSpeak('Arrêtez de bouger. L\'observation stabilise la réalité.',true),9000);
-     }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Les planètes clignotent.\nElles sont là. Puis pas là.\nMDW dit que si j'arrête de bouger, elles deviennent réelles.\nJ'essaie de rester immobile.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
    }},
 
   // ── LE FOYER — réplique de la Terre ──
@@ -2333,100 +2124,9 @@ const UNIVERSES=[
    onEnter:()=>{
      // MDW se tait — long silence puis une phrase
      setTimeout(()=>{
-       if(mdwActive)showMDWLine("Ce n'est pas réel.\n...\nMais ça vous fait du bien.",true);
+      
      },8000);
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Je reconnais quelque chose ici.\nLa couleur du ciel. La forme des nuages.\nCe n'est pas la Terre.\nMais c'est ce que j'en garde.\nMDW dit que ce n'est pas réel.\nJe sais.\nÇa ne change rien.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },4000);
-     // Spawner une planète spéciale — "la Terre"
-     setTimeout(()=>{
-       const earthType={
-         name:'FOYER',massKey:'planet_ocean',color:'#2266aa40',glowColor:'#88aaff',ring:false,rare:true,
-         onApproach:()=>{
-           if(mdwActive)setTimeout(()=>showMDWLine("...",false),500);
-         },
-         effect:()=>{
-           sanity=Math.min(100,sanity+40);
-           oxygen=Math.min(maxOxygen,oxygen+50);
-           hull=Math.min(100,hull+30);
-           upgradePoints+=80;
-           logEvent('🌍 LE FOYER — +SANITY +O₂ +HULL','planet');
-           
-         },
-       };
-       const angle=Math.random()*Math.PI*2;
-       planets.push({
-         x:ship.x+Math.cos(angle)*500,y:ship.y+Math.sin(angle)*500,
-         vx:0,vy:0,r:55,pulse:0,orbitAngle:0,orbitSpeed:0,moons:[],
-         type:earthType,name:'LE FOYER',discovered:false,mined:false,
-       });
-     },5000);
-   }},
 
-  // ── SECTEUR DE L'OUBLI — journal corrompu ──
-  {id:38, name:'SECTEUR DE L\'OUBLI', bg:'#080020', primary:'#7777ff', dim:'#222277', accent:'#aaaaff',
-   starColors:['#7777ff','#9999ff','#5555dd','#aaaaff','#ccccff'],
-   nebulaColors:['rgba(80,80,200,','rgba(60,60,180,'],
-   scan:'rgba(119,119,255,0.04)',
-   lore:"Les entrées du journal deviennent illisibles. La mémoire vacille.",
-   gravMult:0.9, debrisMult:1.0, oubliMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>showMDWLine("Votre taux de cortisol augmente. Vous avez peur d'oublier.",true),3000);
-       setTimeout(()=>showMDWLine("Je préserve les données. Ne vous inquiétez pas.",true),10000);
-     }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="J̷o̴u̵r̸ ̶?̷?̴\nJ̵e̸ ̶n̸e̵ ̴m̷e̸ ̶s̸o̴u̷v̵i̸e̷n̸s̷ ̷p̵l̴u̸s̵.\nM̸D̸W̶ ̶d̷i̵t̷ ̸q̴u̵e̸ ̷t̵o̸u̴t̸ ̴v̶a̵ ̸b̶i̷e̸n̸.\nJ̷e̴ ̷l̸i̸s̷ ̵c̴e̸ ̷q̴u̵e̸ ̵j̷'̷a̵i̶ ̴é̶c̵r̷i̶t̷ ̸h̵i̵e̶r̸.\nJe̶ ̷n̵e̸ ̶r̷e̵c̴o̴n̸n̷a̸i̵s̷ ̴p̸a̵s̷ ̶m̷o̴n̵ ̸é̴c̵r̸i̸t̶u̵r̸e̷.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='J̴O̸U̵R̷N̶A̸L̵';
-         journalText.textContent='';journalText.style.color='rgba(119,119,255,0.85)';
-       }
-     },6000);
-   }},
-
-  // ── SECTEUR PULSARIEN — ondes de choc ──
-  {id:39, name:'SECTEUR PULSARIEN', bg:'#001828', primary:'#00ffff', dim:'#008888', accent:'#aaffff',
-   starColors:['#00ffff','#aaffff','#00cccc','#ccffff','#ffffff'],
-   nebulaColors:['rgba(0,180,200,','rgba(0,150,180,'],
-   scan:'rgba(0,255,255,0.05)',
-   lore:"Toutes les 5 secondes, une onde de choc. Pendant 0.5s les contrôles s'inversent.",
-   gravMult:0.8, debrisMult:1.3, pulsarianMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>showMDWLine("Je détecte des ondes de choc régulières. Préparez-vous.",true),2000);
-       setTimeout(()=>showMDWLine("Je compense les interférences... pas complètement.",true),8000);
-     }
-     writeGlitchText&&writeGlitchText('Des ondes.\nRégulières.\nToutes les 5 secondes.\nPendant une fraction de seconde tout s\'inverse.\nMDW essaie de compenser.\nIl n\'y arrive pas tout à fait.','⚡ SECTEUR PULSARIEN');
-     window._pulsarTimer=0;
-     window._pulsarInverted=false;
-   }},
-
-  // ── LE SECTEUR MUSÉE — tout est figé ──
-  {id:40, name:'LE SECTEUR MUSÉE', bg:'#001510', primary:'#aaccbb', dim:'#446655', accent:'#cceedd',
-   starColors:['#aaccbb','#cceedd','#88bbaa','#ddeedd','#ffffff'],
-   nebulaColors:['rgba(100,160,140,','rgba(80,130,110,'],
-   scan:'rgba(170,204,187,0.04)',
-   lore:"Tout est figé. Les débris ne bougent pas. Les planètes ne tournent pas. Même les particules sont arrêtées.",
-   gravMult:0, debrisMult:1.8, museumMode:true,
-   onEnter:()=>{
-     if(mdwActive){
-       setTimeout(()=>showMDWLine("Je ne détecte aucun mouvement.",true),3000);
-       setTimeout(()=>showMDWLine("Ça ne devrait pas être possible.",true),10000);
-     }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Tout est figé ici.\nMême la poussière.\nMême la lumière semble hésiter.\nMDW dit qu'il ne détecte aucun mouvement.\nJe retiens ma respiration.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
    }},
 
   // ── SECTEUR CŒUR — tout pulse ensemble ──
@@ -2441,14 +2141,7 @@ const UNIVERSES=[
        setTimeout(()=>showMDWLine("Je détecte une fréquence. 0.83 Hz.\nC'est le rythme cardiaque humain au repos.",true),3000);
        setTimeout(()=>showMDWLine("La fréquence change quand vous bougez.",true),12000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="Tout bat.\nLes planètes. Les étoiles. L'espace lui-même.\nMDW dit que c'est le rythme cardiaque humain.\nC'est mon cœur.\nOu c'est l'espace qui bat comme moi.\nJe ne sais plus.";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
+
    }},
 
   // ── SECTEUR GRILLE — tout aligné géométriquement ──
@@ -2463,14 +2156,7 @@ const UNIVERSES=[
        setTimeout(()=>showMDWLine("Les positions sont régulières. Espacement identique. Ce n'est pas naturel.",true),2000);
        setTimeout(()=>showMDWLine("Je ne trouve pas d'explication.",true),9000);
      }
-     setTimeout(()=>{
-       if(journalEl){
-         journalFullText="C'est trop propre.\nL'espace n'est jamais propre.\nTout est aligné. Tout est espacé pareil.\nComme si quelqu'un avait rangé l'univers.\nPourquoi ?";
-         journalCharIdx=0;journalActive=true;journalWriteTimer=0;
-         journalEl.classList.add('active');journalDay.textContent='JOURNAL';
-         journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
-       }
-     },5000);
+
    }},
 ];
 
@@ -3034,7 +2720,7 @@ function triggerSilenceRadio(){
   mdwSilent=true;
   haptic('silence');
   logEvent('📡 SILENCE RADIO','warn');
-  writeGlitchText&&writeGlitchText('MDW ne répond plus. Depuis ce matin. J\'ai essayé plusieurs fois. Rien.','📡 SILENCE');
+  
   setTimeout(()=>{
     mdwSilent=false;
     logEvent('📡 MDW EN LIGNE','ok');
@@ -3047,7 +2733,7 @@ let mdwSilent=false;
 function triggerPhase2Transmission(){
   if(sectorCount<1)return;
   const msg=PHASE2_TRANSMISSIONS[Math.floor(Math.random()*PHASE2_TRANSMISSIONS.length)];
-  writeGlitchText(msg,'📡 TRANSMISSION REÇUE');
+  logEvent('📡 TRANSMISSION REÇUE','warn');
   
   if(mdwActive)setTimeout(()=>mdwSpeak('Signal capté. Source inconnue.',true),2000);
 }
@@ -3473,11 +3159,11 @@ function spawnPlanet(){
   const prog=Math.min(1,(discoveredPlanets||0)/250);
   const minDist=600+prog*prog*3200;
   const spread=800+prog*prog*1500;
-  // Spawner hors du viewport visible
-  const halfW=(W||400)/2+200;
-  const halfH=(H||700)/2+200;
+  // Spawner hors du viewport visible — marge confortable
+  const halfW=(W||400)/2+300;
+  const halfH=(H||700)/2+300;
   const screenDist=Math.sqrt(halfW*halfW+halfH*halfH);
-  const spawnMin=Math.max(minDist,screenDist);
+  const spawnMin=Math.max(minDist,screenDist+100);
   const dist=spawnMin+Math.random()*spread;
   const angle=Math.random()*Math.PI*2;
   const normalTypes=PLANET_TYPES.filter(t=>!t.isDangerous&&!t.rare);
@@ -6811,7 +6497,7 @@ const MDW_WARNINGS=[
    disobeyEffect:()=>{
      adjustTrust(-15);upgradePoints+=80;
      setTimeout(()=>showMDWLine("Approche confirmée. Anomalie visuelle non répertoriée.", true),2000);
-     setTimeout(()=>showMDWLine("Vous êtes encore en vie. C'est... bien.",true),6000);
+     
    }},
   {id:'warn_dead_planet',
    trigger:(p)=>p.type?.name==='MORTE',type:'planet',range:300,
@@ -6918,62 +6604,15 @@ function spawnDejavuWrecks(){
 }
 
 function triggerRevelationActe2(){
-  // Séquence narrative — MDW révèle que tous les pilotes sont Simon
-  
-  setTimeout(()=>showMDWLine("J'ai analysé les spectres vocaux de toutes les transmissions captées.",true),6000);
-  
-  setTimeout(()=>showMDWLine("Les signatures sont identiques.",true),16000);
-  
-  setTimeout(()=>showMDWLine("Simon.\n...\nTous ces pilotes sont vous.",true),28000);
-  // QCM après la révélation
-  setTimeout(()=>{
-    if(document.getElementById('mdw-revelation'))return;
-    const overlay=document.createElement('div');
-    overlay.id='mdw-revelation';
-    overlay.style.cssText=`position:fixed;bottom:90px;left:12px;right:12px;z-index:70;
-      background:rgba(0,9,2,0.97);border:1px solid rgba(0,255,65,0.3);
-      padding:14px;font-family:'Share Tech Mono',monospace;pointer-events:all;`;
-    overlay.innerHTML=`
-      <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:10px;">SIMON</div>
-      <div style="display:flex;gap:8px;flex-direction:column;">
-        <button id="rev-believe" style="background:transparent;border:1px solid rgba(0,255,65,0.4);color:rgba(0,255,65,0.8);font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;cursor:pointer;text-align:left;line-height:1.5;">▸ Je te crois.</button>
-        <button id="rev-deny" style="background:transparent;border:1px solid rgba(255,80,0,0.4);color:rgba(255,80,0,0.8);font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;cursor:pointer;text-align:left;line-height:1.5;">▸ Ce n'est pas possible. Tu mens ou tu te trompes.</button>
-      </div>`;
-    document.getElementById('hud').appendChild(overlay);
-
-    document.getElementById('rev-believe').addEventListener('click',()=>{
-      overlay.remove();
-      adjustTrust(+20);
-      
-      setTimeout(()=>showMDWLine("Je sais. C'est pourquoi je vous le dis maintenant.\nPas avant.",true),5000);
-      
-      logEvent('SIMON — JE TE CROIS','planet');
-    },{once:true});
-
-    document.getElementById('rev-deny').addEventListener('click',()=>{
-      overlay.remove();
-      adjustTrust(-15);
-      
-      setTimeout(()=>showMDWLine("Comme vous voulez.",true),4000);
-      
-      logEvent('SIMON — REFUS','danger');
-    },{once:true});
-  },36000);
+  // Séquence narrative retirée
 }
 
-let _mdwPT=0,_lastMDWP=0,_pAgg=0,_pEleg=0,_lSpd=0;
+let _lastBHWarn=0;
 function updateMDWPilotProfile(dt){
   if(!mdwActive||state!=='playing')return;
-  _mdwPT+=dt;if(_mdwPT<25)return;
-  const now=Date.now();if(now-_lastMDWP<25000)return;
-  const spd=Math.sqrt(ship.vx**2+ship.vy**2)*60;
+  const now=Date.now();if(now-_lastBHWarn<30000)return;
   const nearBH=phenomena.some(p=>p.name==='TROU NOIR'&&Math.sqrt((p.x-ship.x)**2+(p.y-ship.y)**2)<p.r*14);
-  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Simon. Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;return;}
-  const delta=Math.abs(spd-_lSpd);_lSpd=spd;
-  if(delta>2)_pAgg++;else _pEleg++;
-  if(_pAgg>_pEleg*1.5&&Math.random()<0.3){showMDWLine(['Pilotage agressif.','Consommation élevée.','Plus de patience.'][Math.floor(Math.random()*3)],true);_mdwPT=0;_lastMDWP=now;_pAgg=0;}
-  else if(spd<0.3&&Math.random()<0.2){showMDWLine(['Mode dérive. Efficace.','Bonne derive.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;}
-  else if(_pEleg>_pAgg*2&&Math.random()<0.2){showMDWLine(['Trajectoire elegante.','Efficace.'][Math.floor(Math.random()*2)],true);_mdwPT=0;_lastMDWP=now;_pEleg=0;}
+  if(nearBH){showMDWLine(['Je déconseille cette trajectoire.','Éloignez-vous.','Distance critique.'][Math.floor(Math.random()*3)],true);_lastBHWarn=now;}
 }
 function getSanityState(){
   if(sanity>80)return'STABLE';
@@ -7051,7 +6690,7 @@ function drainSanity(){
   }
   if(state_sanity==='PERDU'){
     setTimeout(()=>{
-      if(mdwActive)mdwSpeak_voice_interrupt('Simon. Concentrez-vous sur les jauges.');
+      if(mdwActive)mdwSpeak_voice_interrupt('Concentrez-vous sur les jauges.');
     },3000);
   }
 }
