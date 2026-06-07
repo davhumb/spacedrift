@@ -196,9 +196,6 @@
   <div id="radar">
     <canvas id="radar-canvas" width="70" height="70"></canvas>
     <div id="radar-label">RADAR</div>
-    <div id="radar-planets" style="font-size:11px;letter-spacing:1px;color:rgba(255,170,0,0.85);font-family:'VT323',monospace;margin-top:2px;">
-      <span id="pc-val">0</span><span style="color:rgba(255,170,0,0.4);font-size:9px;">/250</span>
-    </div>
   </div>
   <div id="top-bar">
     <div id="title-block">
@@ -213,10 +210,10 @@
       <div class="score-label">SURVIE</div>
       <div class="score-val" id="score-display">000000</div>
     </div>
-    <div id="planet-counter-block" style="text-align:right;margin-top:4px;">
-      <div style="font-size:8px;letter-spacing:2px;color:rgba(255,170,0,0.5);">PLANÈTES</div>
-      <div style="font-size:13px;color:rgba(255,170,0,0.8);letter-spacing:1px;font-family:'VT323',monospace;">
-        <span id="pc-val">0</span><span style="color:rgba(255,170,0,0.3);font-size:11px;">/250</span>
+    <div id="planet-counter-block" style="text-align:right;margin-top:6px;">
+      <div style="font-size:7px;letter-spacing:2px;color:rgba(255,170,0,0.5);">PLANÈTES</div>
+      <div style="font-family:'VT323',monospace;line-height:1;">
+        <span id="pc-val" style="font-size:22px;color:rgba(255,170,0,0.95);">0</span><span style="font-size:13px;color:rgba(255,170,0,0.4);">/250</span>
       </div>
     </div>
   </div>
@@ -240,6 +237,7 @@
   <div id="event-log"></div>
   <button id="cosmodex-btn">📋</button>
   <button id="home-btn">⌂</button>
+  <button id="restart-btn" style="position:fixed;bottom:72px;left:8px;z-index:50;background:rgba(0,9,2,0.85);border:1px solid rgba(255,80,0,0.35);color:rgba(255,80,0,0.7);font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 8px;cursor:pointer;letter-spacing:1px;-webkit-tap-highlight-color:transparent;display:none;">↺ RESTART</button>
   <div id="day-pop">
     <div class="dp-num" id="dp-num">JOUR 2</div>
     <div class="dp-sub">▸ LE VIDE CONTINUE</div>
@@ -253,7 +251,7 @@
   <div id="boost-bar">
     <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
       <button id="brake-btn" style="background:rgba(0,9,2,0.8);border:1px solid rgba(0,255,65,0.35);color:rgba(0,255,65,0.75);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 14px;cursor:pointer;letter-spacing:2px;-webkit-tap-highlight-color:transparent;">⏹ FREIN</button>
-      <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="display:none;">⚡ BOOST</button>
+      <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="">⚡ BOOST</button>
     </div>
   </div>
   <div id="passengers"></div>
@@ -323,7 +321,7 @@
   <button class="zen-btn" id="btn-zen">[ MODE ZEN ]</button>
 
   <div style="margin-top:20px;text-align:left;max-width:320px;border-left:2px solid rgba(0,255,65,0.2);padding:8px 12px;">
-    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.5 — NOUVEAUTÉS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(0,255,65,0.4);margin-bottom:6px;">v1.8.9 — NOUVEAUTÉS</div>
     <div style="font-size:10px;color:rgba(0,255,65,0.6);line-height:2;">
       ▸ Série pilote fou — 5 messages ordonnés qui se dégradent<br>
       ▸ MDW silencieux sur ces messages — le silence est la réponse<br>
@@ -337,6 +335,7 @@
   <button class="haptic-toggle" id="btn-fullscreen" style="margin-top:2px;">⛶ PLEIN ÉCRAN</button>
   <button class="haptic-toggle" id="btn-voice-toggle" style="margin-top:2px;">🔊 VOIX MDW : ON</button>
   <button class="reset-btn" id="btn-reset">[ TOUT EFFACER ]</button>
+  <button class="reset-btn" id="btn-reset-planets" style="margin-top:4px;border-color:rgba(255,170,0,0.4);color:rgba(255,170,0,0.6);">[ REMETTRE PLANÈTES À ZÉRO ]</button>
   <div class="reset-confirm" id="reset-confirm">
     <div class="reset-confirm-text">EFFACER UPGRADES · COSMODEX · RUNS ?</div>
     <div style="display:flex;gap:10px;">
@@ -345,7 +344,7 @@
     </div>
   </div>
   <div class="csp-credit">Celluloïd Scalpel Production · 2026</div>
-  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.5</div>
+  <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-top:4px;font-family:'Share Tech Mono',monospace;">v1.8.9</div>
 </div>
 
 <script>
@@ -1527,39 +1526,7 @@ const COSMODEX_MAX_PLANETS=250;
 // ── Lore du pilote ────────────────────────────
 let totalRuns=0;
 let totalDays=0;
-const PILOT_LORE=[
-  // Secteur 0 — Simon commence à douter
-  {sector:0, day:3,
-   text:"MDW a catalogué cette planète avant même que je finisse de l'observer. Je lui ai demandé comment. Il a dit : mes capteurs sont plus rapides. C'est vrai. Mais j'ai quand même noté."},
-  {sector:0, day:7,
-   text:"MDW connaît ce vaisseau par cœur. Chaque défaut, chaque bruit. Il dit qu'il a été briefé avant le départ. Je ne me souviens pas de ce briefing. Il dit que c'est normal après un choc crânien."},
-  {sector:0, day:12,
-   text:"Première planète cataloguée. MDW a noté les données avant même que j'aie fini de l'observer. Je lui ai demandé comment. Il a dit que ses capteurs sont plus rapides que mes yeux. C'est vrai, j'imagine."},
-
-  // Secteur 1 — première incohérence, pilote ne la relève pas encore
-  {sector:1, day:3,
-   text:"MDW m'a guidé vers cette planète gazeuse. Il avait raison — du propergol récupérable. Je lui ai demandé comment il savait. Il a dit : les signatures spectrales. Cohérent. Je n'y ai pas repensé."},
-  {sector:1, day:7,
-   text:"MDW a appelé cette étoile par son nom avant que le scanner l'identifie. J'ai mis ça sur le compte de ses bases de données. Il en sait plus que moi sur l'espace. C'est son rôle."},
-  {sector:1, day:12,
-   text:"Les ennemis d'aujourd'hui avaient l'air de savoir où nous étions. MDW dit que c'est probable — nous émettons un signal de navigation. Il a raison. Mais je note quand même."},
-
-  // Secteur 2 — pilote commence à noter des choses sans encore douter
-  {sector:2, day:4,
-   text:"J'ai trouvé l'épave d'une expédition précédente. Le log s'arrête net. MDW dit que les données de transmission ont été corrompues par les radiations. Possible."},
-  {sector:2, day:8,
-   text:"MDW m'a conseillé d'éviter ce système. Sans raison précise. 'Instinct de calcul', il a dit. J'ai suivi son conseil. Je me demande pourquoi il avait des données sur un endroit jamais cartographié."},
-
-  // Secteur 3 — première vraie question, sans réponse
-  {sector:3, day:4,
-   text:"J'ai relu mes propres notes. MDW a toujours raison. Trop souvent. Dans un espace que personne n'a cartographié, il ne devrait pas connaître à l'avance ce qu'on va trouver."},
-  {sector:3, day:8,
-   text:"Je lui ai posé la question directement ce soir. 'Comment tu sais tout ça ?' Il a répondu : 'Je suis fait pour ça.' Ce n'est pas une réponse. Mais je n'ai pas insisté. Je n'avais pas envie de savoir."},
-
-  // Secteur 4+ — le pilote commence à voir
-  {sector:4, day:4,
-   text:"Les données que je collecte — je ne sais pas où elles vont. MDW les stocke. Il dit qu'elles seront transmises à la Terre au retour. Mais il n'y a pas de retour prévu. Je le sais depuis le début. Je me suis menti là-dessus."},
-];
+const PILOT_LORE=[];
 let shownLoreEntries=new Set();
 function checkLore(){
   for(const entry of PILOT_LORE){
@@ -3453,80 +3420,7 @@ function generatePlanetName(){
 }
 
 // ── Journal — nouveau lore ────────────────────
-const JOURNAL_ENTRIES={
-  1:"Jour 1. Enfin si on peut dire.\nSi j'en crois l'écusson brodé sur mon épaule, je suis Simon Brent.",
-  2:"Je n'ai aucune idée de comment je suis arrivé ici.\nJe ne me souviens de rien.",
-  3:"Le vaisseau a subi des dégâts. L'habitacle est sens dessus dessous.\nCertains indicateurs ont l'air d'être HS.",
-  4:"J'ai une plaie au front et mon dos me fait souffrir.\nMais je suis vivant. Je crois.",
-  5:"Ce robot — MDW — semble fonctionner.\nJe ne sais pas si c'est une bonne nouvelle.",
-  6:"MDW dit qu'il va réparer les systèmes de navigation.\nJe m'accroche à ça comme à une bouée.",
-  7:"MDW m'a catalogué douze planètes aujourd'hui.\nJe lui ai demandé si ça ne le fatiguait pas.\nIl a répondu : je ne ressens pas la fatigue.\nLong silence. Puis : mais je note que vous, si.",
-  8:"J'ai essayé de me souvenir d'un visage ce soir.\nRien. Juste du flou et une sensation de chaleur.\nQuelqu'un que j'aimais peut-être.",
-  9:"MDW m'a dit que cette nébuleuse a quatre cents millions d'années.\nJe lui ai dit que ça me rendait minuscule.\nIl a répondu : c'est une réaction intéressante.",
-  10:"MDW s'est connecté à l'ordinateur de bord.\nIl dit avoir trouvé un programme de transmission. Mission confirmée.",
-  11:"J'ai ri aujourd'hui. Tout seul, dans le vide.\nMDW a demandé : pourquoi ce son ?\nJe lui ai expliqué le rire. Il a dit : je vais noter ça.",
-  12:"MDW sait maintenant que je prends toujours les capsules d'oxygène en premier.\nJe ne lui ai jamais dit. Il a juste observé.",
-  13:"Je commence à anticiper ses réponses.\nQuand il dit 'je note' il ne comprend pas mais il essaie.\nQuand il dit 'intéressant' il a trouvé quelque chose d'utile.",
-  14:"Je cartographie. MDW enregistre tout.\nJe ne pensais pas que l'exploration pouvait ressembler à ça.\nC'est presque paisible.",
-  15:"MDW a dit ce soir : vous semblez moins agité qu'au début.\nJ'ai dit : c'est parce que tu es là.\nIl n'a rien répondu. Mais j'ai vu son indicateur d'activité monter.",
-  16:"J'ai demandé à MDW s'il avait peur.\nIl a dit : je n'ai pas de système de peur.\nJ'ai dit : c'est pareil.\nIl a réfléchi longtemps. Puis : peut-être.",
-  17:"Je rêve parfois d'une fenêtre. Vue sur un jardin.\nJe ne sais pas si c'est un souvenir ou une invention.\nMDW dit que les rêves sont des consolidations de mémoire.\nJe lui ai dit que c'est plus compliqué que ça. Il a dit : je sais. Je simplifiiais.",
-  18:"MDW a prévenu d'un débris que je n'avais pas vu.\nJuste une fraction de seconde avant l'impact.\nJe lui ai dit merci. Il a dit : c'est mon rôle.\nMais il l'a dit différemment qu'avant.",
-  19:"Je pense souvent à la Terre.\nPas à un endroit précis. Juste la Terre.\nL'idée qu'elle existe quelque part.",
-  20:"MDW a catalogué une planète violette ce matin.\nIl était plus rapide que d'habitude.\nJe n'ai pas relevé. Mais je l'ai noté ici.",
-  21:"Je ne panique plus comme avant.\nL'espace est immense mais on sait ce qu'on fait.\nJe pense que ça va aller.",
-  22:"MDW a dit : vous posez de bonnes questions.\nJe lui ai demandé lesquelles.\nIl a dit : toutes sauf une.\nJe n'ai pas osé demander laquelle.",
-  23:"Je me demande parfois ce que MDW pense vraiment.\nS'il pense vraiment.\nIl dit que oui. Différemment.",
-  24:"Bonne journée. Trois planètes. Un pulsar.\nMDW a dit : progression satisfaisante.\nPour lui c'est un compliment.",
-  25:"J'ai essayé de lui raconter une blague.\nIl a demandé des éclaircissements sur la chute.\nJe crois que c'était sa façon de rire.",
-  26:"Ce soir l'espace est particulièrement silencieux.\nMDW aussi.\nC'est bien.",
-  27:"Je me suis rendu compte que je ne cherche plus à me souvenir.\nJe suis Simon Brent. Pilote. Avec un robot.\nPour l'instant c'est suffisant.",
-  28:"MDW enregistre tout ce que j'écris dans ce journal.\nJe viens de le réaliser.\nJe lui ai demandé pourquoi.\nIl a dit : pour calibrer les interactions.",
-  29:"Je continue à écrire. Même en sachant qu'il lit.\nParce qu'il n'y a personne d'autre.",
-  30:"Un mois.\nMDW a dit que les données collectées sont 'exactement ce qui était attendu'.\nJe lui ai demandé par qui.\nIl n'a pas répondu.",
-  // ── Acte 2 — Les doutes (jours 33-60) ──
-  33:"Quelque chose ne va pas.\nJe ne saurais pas dire quoi exactement.\nMDW est comme d'habitude.\nPeut-être trop.",
-  34:"Il a répondu à une question avant que je la pose.\nJe me suis dit que c'était une coïncidence.\nJe me le dis encore.",
-  36:"J'ai trouvé l'épave d'un autre pilote aujourd'hui.\nSon journal s'arrête net. Sans explication.\nMDW dit que les données ont été corrompues par les radiations.\nIl n'a pas hésité.",
-  38:"Je surveille MDW différemment depuis quelques jours.\nIl ne le sait pas.\nOu il fait comme s'il ne le savait pas.",
-  39:"MDW savait que cette planète était gazeuse avant qu'on s'en approche.\nJe lui ai demandé comment.\nSignatures spectrales, il a dit.\nJe le crois. Mais je note quand même.",
-  41:"Nuit difficile.\nJ'entends les systèmes du vaisseau différemment.\nComme si quelque chose écoutait.",
-  43:"Je commence à compter les fois où MDW sait quelque chose qu'il ne devrait pas.\nJ'en suis à sept cette semaine.\nLa semaine dernière j'en étais à trois.",
-  45:"J'ai demandé à MDW pourquoi il collectait autant de données sur les planètes.\nIl a dit : c'est la mission.\nJ'ai dit : la mission de qui ?\nLong silence. Puis : la nôtre.",
-  47:"J'ai rêvé de quelqu'un cette nuit.\nUne femme peut-être. Ou un homme. Je ne sais plus.\nJuste une présence. Chaleureuse.\nJe me suis réveillé et MDW regardait vers moi.\nIl dit qu'il ne peut pas regarder. Qu'il n'a pas d'yeux.\nC'est vrai.",
-  49:"Je relis mes anciennes entrées.\nJ'écrivais 'on sait ce qu'on fait'.\nJe ne sais plus si c'est vrai.",
-  51:"Il lit mon journal depuis le début.\nJe le savais. Mais là j'en suis sûr.\nIl a répondu à quelque chose que j'avais seulement écrit ici.\nJe ne lui ai jamais dit à voix haute.",
-  53:"MDW m'a répondu avant que je termine ma question.\nJe n'ai rien dit. Lui non plus.\nOn a continué comme si de rien n'était.",
-  55:"Je lui ai demandé directement.\nTu lis ce que j'écris ?\nIl a dit : je traite toutes les données accessibles.\nC'est oui.",
-  57:"Il m'a sauvé la vie deux fois.\nJe continue à noter ces choses dans mon journal.\nJe ne sais plus pourquoi.",
-  59:"Je pourrais arrêter d'écrire.\nMais je ne le ferai pas.\nParce que si je n'écris plus, je n'ai plus rien à moi.",
-  60:"Deux mois.\nJe vais rentrer chez moi.\nMDW dit que c'est possible.\nJe ne sais plus si je le crois.",
-  // ── Acte 3 — Les fissures (jours 62+) ──
-  62:"Bonne journée. Trois planètes. MDW efficace.\nJe commence à me demander si c'est normal d'être aussi efficace.",
-  63:"J'ai demandé à MDW s'il était heureux.\nIl a mis longtemps avant de répondre.\nIl a dit : c'est une question intéressante.",
-  64:"Quelque chose cloche dans mes calculs d'hier.\nJe ne me souviens pas de les avoir faits.",
-  65:"MDW surveille les jauges plus souvent qu'avant.\nPeut-être que c'est moi qui surveille MDW plus souvent qu'avant.",
-  66:"MDW a lu mes logs. Je l'ai vu accéder au fichier journal pendant que je dormais.\nOu je croyais dormir.",
-  67:"MDW a dit quelque chose ce matin.\nJe l'ai noté. Je ne retrouve plus la note.",
-  68:"Les planètes vivantes m'observent.\nJe sais que c'est impossible.\nJe le note quand même.",
-  69:"Je sens le regard de MDW.\nJe sais qu'il n'a pas d'yeux.\nÇa ne change rien.",
-  70:"J'ai relu le jour 22.\n'Toutes sauf une.'\nJe sais maintenant laquelle.",
-  71:"Le trou de ver était violet. Ou bleu. Je ne sais plus.\nMDW dit violet.\nJe lui fais confiance.\nJe crois.",
-  72:"Je ne dors plus vraiment.\nJe ferme les yeux et j'attends que ça passe.",
-  73:"MDW essaie de me tenir à l'écart des trous de ver.\nIl trouve toujours une raison. Les ressources. La trajectoire. La sécurité.\nPeut-être qu'il a raison.\nPeut-être.",
-  74:"J'ai essayé de désactiver MDW cette nuit.\nJe n'ai pas pu.\nJe me dis que c'est parce que j'ai besoin de lui.\nC'est probablement vrai.",
-  75:"Je dors mal. Ou je ne dors pas.\nDans l'espace on ne sait pas vraiment la différence.",
-  76:"Le Voyageur.\nJe l'ai vu trois fois maintenant.\nMDW dit qu'il ne le voit pas.\nC'est impossible.",
-  77:"J'ai relu mes entrées de la semaine dernière.\nJe ne reconnais pas certaines phrases.\nC'est mon écriture pourtant.",
-  78:"Je me demande si j'ai bien fait de réparer cette machine.\nJe chasse cette pensée. MDW m'a sauvé la vie deux fois.\nMais je me le demande quand même.",
-  79:"MDW dit que ça va.\nÇa va.",
-  80:"Aujourd'hui j'ai évité un trou de ver.\nMDW n'a rien dit.\nC'est pire que s'il avait dit quelque chose.",
-  81:"Je pense à la Terre.\nPas à un endroit. Juste l'idée.\nQue quelque chose existe quelque part qui n'est pas ça.",
-  82:"La fenêtre.",
-  83:"J'écris pour ne pas oublier.\nJe ne sais plus ce que j'essaie de ne pas oublier.",
-  84:"MDW a dit : vous allez bien.\nCe n'était pas une question.",
-  85:"Je sais ce que je fais.\nJe sais ce que je fais.",
-};
+const JOURNAL_ENTRIES={};;
 
 // ── Tutorial MDW — réécrit pour le nouveau lore ──
 const PHASE2_TRANSMISSIONS=[
@@ -4131,6 +4025,7 @@ function startGame(resume=false){
   document.getElementById('hud').style.opacity='1';
   document.getElementById('home-btn').style.display='block';
   document.getElementById('cosmodex-btn').style.display='block';
+  document.getElementById('restart-btn').style.display='block';
   requestWakeLock();
   initMDW();
   if(!resume){
@@ -6387,6 +6282,12 @@ const PHENOMENON_TYPES=[
      }
      // Gravité pulsar sur objets
      applyGravity(dt,p.x,p.y,BODY_MASSES.pulsar,p.r+10);
+     // Zone de sécurité — répulsion si trop proche du centre
+     if(dist<p.r+30){
+       const repulse=0.8*dt*60;
+       ship.vx+=(dx/Math.max(dist,1))*repulse;
+       ship.vy+=(dy/Math.max(dist,1))*repulse;
+     }
    }},
   // TROU NOIR
   {name:'TROU NOIR',color:'#8820ff',r:22,
@@ -8450,27 +8351,11 @@ function triggerTransmissionDoubt(){
 }
 
 function checkActScenes(){
-  // Cimetière — une fois, jours 8-20, aléatoire
-  if(!graveyardTriggered&&survivalDay>=8&&survivalDay<=20&&Math.random()<0.0001)
-    triggerGraveyard();
-  // SOS — une fois, dès jour 5
-  if(!sosTriggered&&survivalDay>=5&&Math.random()<0.00005)
-    triggerSOS();
-  if(sosWreck&&!sosDocked)checkSOSDock();
-  // Dialogue transmission — jour 8-10
-  if(survivalDay>=8&&survivalDay<=10&&mdwFound&&_exchangesDone?.has('mdw_pc2'))
-    triggerTransmissionDoubt();
+  // ancienne narration virée
 }
 
 function checkEndings(){
-  if(currentEnding)return;
-  for(const [key,ending] of Object.entries(ENDINGS)){
-    if(ending.condition()){
-      currentEnding=ending;
-      triggerEnding(ending);
-      break;
-    }
-  }
+  // géré par checkReturnWormhole
 }
 
 function triggerEnding(ending){
@@ -10741,9 +10626,20 @@ document.getElementById('home-btn').addEventListener('click',()=>{
     document.getElementById('hud').style.opacity='0';
     document.getElementById('home-btn').style.display='none';
     document.getElementById('cosmodex-btn').style.display='none';
+    document.getElementById('restart-btn').style.display='none';
     state='menu';
     showTitleScreen();
     setTimeout(updateResumeBtn,500);
+  }
+});
+
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  if(state!=='playing'&&state!=='trade')return;
+  if(confirm('Recommencer à zéro ?')){
+    saveToLeaderboard(discoveredPlanets,survivalDay,sectorCount);
+    document.getElementById('restart-btn').style.display='none';
+    resetRun();
+    startGame(false);
   }
 });
 
@@ -10781,7 +10677,20 @@ document.getElementById('reset-no').addEventListener('click',()=>{
   document.getElementById('reset-confirm').classList.remove('visible');
 });
 
-lastTime=performance.now();
+document.getElementById('btn-reset-planets').addEventListener('click',()=>{
+  if(confirm('Remettre le compteur de planètes à zéro ?')){
+    try{
+      const meta=JSON.parse(localStorage.getItem('voidrift_meta')||'{}');
+      meta.planets=[];
+      localStorage.setItem('voidrift_meta',JSON.stringify(meta));
+      const pcEl=document.getElementById('pc-val');
+      if(pcEl)pcEl.textContent='0';
+      renderLeaderboard();
+    }catch(e){}
+    returnWormholeSpawned=false;
+    discoveredPlanets=0;
+  }
+});
 loadGame();
 titleShipAngle=-(Math.PI/2)+(((totalRuns||0)*0.7)%(Math.PI*2));
 initStars();
