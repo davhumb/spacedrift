@@ -10043,6 +10043,7 @@ function checkScanHint(){
 }
 
 function scanNearestPhenomenon(){
+  if(openingActive)return; // pas de scan pendant le tuto
   // Rayon selon module scanner
   const hasScanner=installedModules.includes('scanner');
   const SCAN_R=hasScanner?800:400;
@@ -10075,7 +10076,6 @@ function scanNearestPhenomenon(){
   haptic('collect');
 
   if(!candidates.length){
-    // Discret — juste un log, pas de voix
     logEvent('📡 RIEN À PORTÉE','warn');
     return;
   }
@@ -10094,16 +10094,11 @@ function scanNearestPhenomenon(){
       addToCosmodex('phenomene',entryName,text,icon,deep?.draw);
       autoScanned.add(scanKey);
     }
-    // Affichage discret — une ligne, pas de voix
     logEvent(`📡 ${p.name} — enregistré`,'planet');
 
   }else if(best.type==='planet'){
     const p=best.obj;
-    const desc=`${p.name}.\nClasse : ${p.type?.name||'inconnue'}.\n${p.type?.rare?'Planète rare.':'Corps céleste répertorié.'}`;
-    if(!alreadyScanned){
-      addToCosmodex('planet',`${p.name} — SCAN`,desc,'🪐');
-      autoScanned.add(scanKey);
-    }
+    // Pas d'entrée cosmodex séparée pour les scans de planètes — log seulement
     logEvent(`📡 ${p.name} — classe ${p.type?.name||'?'}`,'planet');
 
   }else if(best.type==='wreck'){
@@ -10445,7 +10440,7 @@ function renderCatTab(tab){
     return;
   }
   const typeMap={planets:'planet',phenomenes:'phenomene',sectors:'univers'};
-  const filtered=(cosmodexEntries||[]).filter(e=>e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')));
+  const filtered=(cosmodexEntries||[]).filter(e=>(e.type===typeMap[tab]||(tab==='planets'&&(e.type==='planet'||e.type==='dock'||e.type==='blackbox')))&&!e.name?.endsWith('— SCAN'));
   if(!filtered.length){content.innerHTML='<div style="color:rgba(0,255,65,0.3);font-size:9px;padding:8px">Rien encore.</div>';return;}
   content.innerHTML=filtered.map((e,i)=>`
     <div class="cat-entry" id="cat-entry-${i}">
