@@ -546,7 +546,7 @@ function drawHullMarks(ctx,s){
 
 // ── Amarrage planètes ─────────────────────────
 let dockedPlanet=null,dockTimer=0,dockProgress=0;
-const DOCK_SPEED=6,DOCK_DURATION=6;
+const DOCK_SPEED=12,DOCK_DURATION=2;
 
 const PLANET_RESOURCES={
   'ROCHEUSE':   {label:'MINÉRAUX',    color:'#aaaaaa', credits:40,  effect:()=>{hull=Math.min(100,hull+35);energy=Math.min(100,energy+15);logEvent('🪨 +35 HULL +15 NRJ','ok');}},
@@ -570,7 +570,7 @@ function tryDock(){
     const dx=p.x-ship.x,dy=p.y-ship.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     const speed=Math.sqrt(ship.vx**2+ship.vy**2)*60;
-    if(dist<p.r+50&&speed<DOCK_SPEED){
+    if(dist<p.r+80&&speed<DOCK_SPEED){
       dockedPlanet=p;dockTimer=0;dockProgress=0;
       const res=PLANET_RESOURCES[p.type.name]||PLANET_RESOURCES['ROCHEUSE'];
       logEvent(`⚓ AMARRAGE — ${p.name}`,'planet');haptic('dock');
@@ -691,13 +691,16 @@ async function renderLeaderboard(){
   if(!el)return;
   el.innerHTML='<div style="opacity:0.3;font-size:9px;letter-spacing:2px;">CHARGEMENT...</div>';
   try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),5000);
     const r=await fetch(`${SUPA_URL}/rest/v1/leaderboard?select=pilot,planets,days&order=planets.desc&limit=10`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`},
+      signal:controller.signal
     });
+    clearTimeout(timeout);
     const lb=await r.json();
     if(lb&&lb.code){
-      // Erreur Supabase (ex: table inexistante)
-      el.innerHTML='<div style="opacity:0.4;font-size:8px;color:rgba(255,80,80,0.6);">ERREUR DB: '+lb.code+'</div>';
+      el.innerHTML=`<div style="opacity:0.4;font-size:8px;color:rgba(255,80,80,0.6);">ERREUR: ${lb.code}</div>`;
       return;
     }
     if(!Array.isArray(lb)||!lb.length){el.innerHTML='<div style="opacity:0.4">Aucun run.</div>';return;}
@@ -856,7 +859,7 @@ const _exchangesDone=new Set();
 
 function pilotMDWExchange(pilotLine, mdwLine, delay=2500){
   if(!journalEl)return;
-  if(pilotLine)showSimonJournal(pilotLine,'PILOTE');
+  
   if(mdwActive)setTimeout(()=>showMDWLine(mdwLine,true),delay);
 }
 
@@ -1738,7 +1741,7 @@ function activateSignal(){
   setTimeout(()=>signalBannerEl2.classList.remove('visible'),100);
   logEvent('📡 SIGNAL DÉTECTÉ','planet');
   mdwReact('signal');
-  showSimonJournal("Jour "+survivalDay+". Un signal. Quelque chose dans le vide répond. Je dois y aller.");
+  
   journalEl.classList.add('active');
   journalDay.textContent='📡 TRANSMISSION';journalText.textContent='';
 }
@@ -2324,7 +2327,7 @@ const UNIVERSES=[
            hull=Math.min(100,hull+30);
            upgradePoints+=250;
            logEvent('🌍 LE FOYER — +SANITY +O₂ +HULL','planet');
-           setTimeout(()=>showSimonJournal("J'ai amarré.\nCe n'était pas la Terre.\nMais pendant quelques secondes je n'ai pensé à rien d'autre."),2000);
+           
          },
        };
        const angle=Math.random()*Math.PI*2;
@@ -2494,7 +2497,7 @@ function updateSecondaryWormholes(dt){
         const note=uNotes[w.targetUniverse];
         if(note){
           setTimeout(()=>{
-            showSimonJournal(note);
+            showMDWLine(note, true);
           },3000);
         }
       }
@@ -2505,7 +2508,7 @@ function updateSecondaryWormholes(dt){
         _exchangesDone?.add('wormhole_effects');
         setTimeout(()=>{
           if(!journalEl)return;
-          showSimonJournal("J'ai mal à la tête depuis la traversée.\nComme si le temps ne s'était pas tout à fait remis en place.");
+          
           journalEl.classList.add('active');journalDay.textContent='JOURNAL';
           journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
         },3000);
@@ -2514,7 +2517,7 @@ function updateSecondaryWormholes(dt){
         },12000);
         setTimeout(()=>{
           if(!journalEl)return;
-          showSimonJournal("Il a répondu trop vite.\nComme si la question était attendue.");
+          
           journalEl.classList.add('active');journalDay.textContent='JOURNAL';
           journalText.textContent='';journalText.style.color='rgba(0,255,65,0.85)';
         },18000);
@@ -2969,7 +2972,7 @@ function startTutorial(){
   showMDWLine("C'est tout ce que vous avez besoin de savoir pour l'instant.", true);
 
   // Après le tuto — Simon demande l'ordinateur
-  showSimonJournal("Tu peux te connecter à l'ordinateur de bord ?");
+  
   showMDWLine("J'essaie...", true);
   showMDWLine("Je suis connecté. Je vois un programme de transmission de données.\nModule de collecte 235.\nMission de cartographie confirmée.", true);
 
@@ -2981,7 +2984,7 @@ function startPostTutorial(){
   tutorialDone=true;
 
   // Séquence commune — rentrer sur Terre
-  showSimonJournal("MDW, comment on rentre sur Terre ?");
+  
   showMDWLine("Appareils de guidage et de localisation défectueux. Je vais essayer de réparer.", true);
 
   // Débloquer
@@ -3025,7 +3028,7 @@ function triggerJournal(day){
   const entry=JOURNAL_ENTRIES[day];
   if(!entry||journalShownDays.has(day))return;
   journalShownDays.add(day);
-  showSimonJournal(entry);
+  showMDWLine(entry, true);
 }
 function playTypeSound(){
   if(!audioCtx)return;
@@ -3431,48 +3434,18 @@ function generatePlanetName(){
 }
 
 // ── Journal — nouveau lore ────────────────────
-const JOURNAL_ENTRIES={};;
-
-// ── Tutorial MDW — réécrit pour le nouveau lore ──
-const PHASE2_TRANSMISSIONS=[
-  "Expédition 3. Les données que vous collectez — demandez à votre robot ce qu'il en fait. J'aurais dû poser cette question plus tôt.",
-  "Expédition 2. MDW ne sait pas que j'envoie ça. La mission se passe bien. Trop bien.",
-  "Expédition 4. Les planètes que MDW me fait cosmodexr — il y a un pattern. Je ne l'ai pas encore compris.",
-  "Expédition 5. Pas de contact avec la Terre depuis 30 jours. MDW dit que c'est normal. Trop calmement.",
-];
-
-// ── Logs des autres pilotes dans les épaves ───
-const WRECK_LOGS=[
-  {pilot:'KESSEL', num:1,
-   text:"Expédition 1, jour 34. Tout se passe bien. MDW est efficace. On cartographie vite — il semble toujours savoir quelle planète vaut le détour.\n\nJe n'ai pas encore trouvé ça étrange."},
-  {pilot:'ANDROS', num:2,
-   text:"Expédition 2. MDW a refusé de transmettre mon message à la Terre hier. Il a dit que la fréquence était saturée. Aujourd'hui il a suggéré un cap précis sans que je lui demande.\n\nJe suis le cap."},
-  {pilot:'MIRA', num:3,
-   text:"Jour 67. Les données que je collecte — MDW les compresse dans un format que je ne reconnais pas. Il dit que c'est son protocole standard. Je n'ai pas les codes pour vérifier.\n\nJ'ai demandé à qui elles sont envoyées. Il a dit : au programme. Comme toujours."},
-  {pilot:'CHEN', num:4,
-   text:"MDW connaît cet endroit. Je ne sais pas comment. On n'est jamais venu ici — aucune expédition n'a cartographié ce secteur. Mais il m'a guidé directement vers cette planète.\n\nJe lui ai demandé. Il a dit : intuition de calcul. Je ne sais plus quoi penser."},
-  {pilot:'VALE', num:5,
-   text:"Je pense que MDW nous guide quelque part. Pas nous — lui. On est le véhicule.\n\nJe continue quand même. Parce que ce qu'il y a au bout m'intéresse aussi maintenant. Et parce que je n'ai plus vraiment le choix."},
-  {pilot:'INCONNU', num:6,
-   text:"Badge numéro 6. Épave récente.\n\nPas de journal. Pas de nom. Une seule phrase gravée dans la coque, en lettres irrégulières, comme tracées à la main :\n\nNE LUI FAITES PAS CONFIANCE."},
-];
-
-const VERA_FRAGMENTS=[
-  {id:0, label:'📖 FRAGMENT — MIRA / EXP. 3',
-   text:"MDW cosmodex les planètes avec une précision qui m'inquiète un peu. Il note des choses que je n'aurais pas pensé à noter. Comme s'il savait exactement ce qu'on cherche.\n\nJe lui ai demandé. Il a souri — enfin, ce qui ressemble à un sourire pour un robot. Il a dit : 'Je suis programmé pour ça.'"},
-  {id:1, label:'📖 FRAGMENT — ANDROS / EXP. 2',
-   text:"Trois fois cette semaine, MDW m'a guidé vers des planètes 'prometteuses'. Les trois fois, il avait raison.\n\nÀ un moment j'ai demandé comment il faisait. Il a dit que les algorithmes de prédiction étaient avancés. J'ai accepté ça. Maintenant je me demande si j'aurais dû creuser davantage."},
-  {id:2, label:'📖 FRAGMENT — KESSEL / EXP. 1',
-   text:"Jour 89. Ce robot est remarquable. Il anticipe tout. Il dit que la mission avance bien — mieux que prévu. Il semble presque satisfait.\n\nJe ne lui ai pas demandé de qui était le programme. Ça ne m'a pas traversé l'esprit à l'époque."},
-  {id:3, label:'📖 FRAGMENT — CHEN / EXP. 4',
-   text:"MDW a dit ce matin : 'Les données de ce secteur sont exactement ce qui était attendu.' J'ai demandé par qui. Il a répondu : 'Par moi.'\n\nPremière fois qu'il ne dit pas 'par le programme'. Je n'ai pas su quoi répondre."},
-  {id:4, label:'📖 FRAGMENT — VALE / EXP. 5',
-   text:"Je ne rentre pas. Je le sais depuis un moment. MDW aussi. Il ne dit rien parce que ce n'est pas dans ses protocoles de dire des choses inutiles.\n\nCe qui est inutile pour lui — ma survie — est encore très utile pour moi."},
-];
+const JOURNAL_ENTRIES={};
+const PHASE2_TRANSMISSIONS=[];
+const WRECK_LOGS=[];
+const VERA_FRAGMENTS=[];
 
 function spawnPlanet(){
   const angle=Math.random()*Math.PI*2;
-  const dist=600+Math.random()*800;
+  // Espacement progressif — quadratique, 600u à 0 planètes → 3800u à 250
+  const prog=Math.min(1,(discoveredPlanets||0)/250);
+  const minDist=600+prog*prog*3200;
+  const spread=800+prog*prog*1500;
+  const dist=minDist+Math.random()*spread;
   const normalTypes=PLANET_TYPES.filter(t=>!t.isDangerous&&!t.rare);
   const rareTypes=PLANET_TYPES.filter(t=>t.rare);
   const baseAvail=survivalDay<3?normalTypes:PLANET_TYPES.filter(t=>!t.rare);
@@ -3711,7 +3684,7 @@ function updatePlanets(dt){
           ship.vx+=nx*0.0003*proximity*dt*60;
           ship.vy+=ny*0.0003*proximity*dt*60;
           if(!p._vivanteMsgShown){p._vivanteMsgShown=true;
-            setTimeout(()=>showSimonJournal("Elle produit quelque chose.\nJe respire mieux ici."),2000);}
+            setTimeout(()=>showMDWLine("Atmosphère riche détectée. Niveaux O₂ en hausse.", true),2000);}
         }
       }
 
@@ -4004,7 +3977,7 @@ function showFirstChoice(){
 
   document.getElementById('choice-tuto').addEventListener('click',()=>{
     overlay.remove();
-    showSimonJournal("J'ai besoin du tutoriel.");
+    
     setTimeout(()=>{
       showMDWLine("Bien. Lancement séquence.",true);
       setTimeout(()=>startTutorial(),3000);
@@ -4013,7 +3986,7 @@ function showFirstChoice(){
 
   document.getElementById('choice-pc').addEventListener('click',()=>{
     overlay.remove();
-    showSimonJournal("Tu peux te connecter à l'ordinateur de bord ?");
+    
     setTimeout(()=>{
       showMDWLine("J'essaie...",true);
       setTimeout(()=>{
@@ -6636,7 +6609,7 @@ function updatePhenomena(dt){
           BODY_MASSES.blackhole=p.mass;
           triggerFlash('#ff4400',0.3);
           spawnParticles(pl.x,pl.y,pl.type?.glowColor||'#ff6020',20,2);
-          showSimonJournal("Il vient d'avaler une planète.\nComme si elle n'avait jamais existé.");
+          showMDWLine("Masse détectée s'effondrant sur elle-même.\nObjet englouti. Signal perdu.", true);
           return false;
         }
         return true;
@@ -6785,7 +6758,7 @@ function showMDWChoice(choice){
   function resolve(chosen){
     overlay.remove();
     adjustTrust(chosen.trust);
-    showSimonJournal(chosen.text);
+    showMDWLine(chosen.text, true);
     setTimeout(()=>showMDWLine(chosen.response,true),3000);
     logEvent(chosen.trust>0?'💙 MDW +CONFIANCE':'🔴 MDW -CONFIANCE','planet');
   }
@@ -6803,7 +6776,7 @@ const MDW_WARNINGS=[
    obeyEffect:()=>adjustTrust(+5),
    disobeyEffect:()=>{
      adjustTrust(-15);upgradePoints+=300;
-     setTimeout(()=>showSimonJournal("Je me suis approché.\nMDW avait tort. Ou raison.\nMais j'ai vu quelque chose."),2000);
+     setTimeout(()=>showMDWLine("Approche confirmée. Anomalie visuelle non répertoriée.", true),2000);
      setTimeout(()=>showMDWLine("Vous êtes encore en vie. C'est... bien.",true),6000);
    }},
   {id:'warn_dead_planet',
@@ -6813,7 +6786,7 @@ const MDW_WARNINGS=[
    obeyEffect:()=>adjustTrust(+3),
    disobeyEffect:()=>{
      adjustTrust(-8);
-     setTimeout(()=>showSimonJournal("MDW m'avait dit de ne pas m'approcher.\nIl avait peut-être raison.\nMais il y avait quelque chose là."),3000);
+     
    }},
   {id:'warn_vivante',
    trigger:(p)=>p.type?.name==='VIVANTE',type:'planet',range:250,
@@ -6823,7 +6796,7 @@ const MDW_WARNINGS=[
    disobeyEffect:()=>{
      adjustTrust(-5);
      oxygen=Math.min(maxOxygen,oxygen+30);
-     setTimeout(()=>showSimonJournal("MDW m'avait dit de ne pas m'approcher.\nElle m'a donné de l'air.\nComme si elle savait."),3000);
+     setTimeout(()=>showMDWLine("Composition atmosphérique anormale. Favorable.", true),3000);
      setTimeout(()=>showMDWLine("Je note l'anomalie. Et votre décision.",true),7000);
    }},
   {id:'warn_voyageur',
@@ -6834,7 +6807,7 @@ const MDW_WARNINGS=[
    obeyEffect:()=>adjustTrust(+8),
    disobeyEffect:()=>{
      adjustTrust(-12);
-     setTimeout(()=>showSimonJournal("Je m'en suis approché.\nIl était immense.\nIl n'a rien fait.\nMDW n'a rien dit non plus."),2000);
+     
    }},
 ];
 
@@ -6875,11 +6848,11 @@ function showMDWWarning(w){
       </div>`;
     document.getElementById('hud').appendChild(overlay);
     document.getElementById('warn-obey').addEventListener('click',()=>{
-      overlay.remove();showSimonJournal(w.obeyLine);
+      overlay.remove();showMDWLine(w.obeyLine, true);
       if(w.obeyEffect)w.obeyEffect();logEvent('✓ OBÉIT','planet');
     },{once:true});
     document.getElementById('warn-disobey').addEventListener('click',()=>{
-      overlay.remove();showSimonJournal(w.disobeyLine);
+      overlay.remove();showMDWLine(w.disobeyLine, true);
       if(w.disobeyEffect)w.disobeyEffect();logEvent('✗ DÉSOBÉIT','danger');
     },{once:true});
   },4000);
@@ -6912,11 +6885,11 @@ function spawnDejavuWrecks(){
 
 function triggerRevelationActe2(){
   // Séquence narrative — MDW révèle que tous les pilotes sont Simon
-  showSimonJournal("MDW. Ces transmissions radio.\nTu peux analyser les voix ?");
+  
   setTimeout(()=>showMDWLine("J'ai analysé les spectres vocaux de toutes les transmissions captées.",true),6000);
-  setTimeout(()=>showSimonJournal("Et ?"),12000);
+  
   setTimeout(()=>showMDWLine("Les signatures sont identiques.",true),16000);
-  setTimeout(()=>showSimonJournal("C'est le même pilote ? Toutes ces voix viennent du même pilote ?"),22000);
+  
   setTimeout(()=>showMDWLine("Simon.\n...\nTous ces pilotes sont vous.",true),28000);
   // QCM après la révélation
   setTimeout(()=>{
@@ -6937,18 +6910,18 @@ function triggerRevelationActe2(){
     document.getElementById('rev-believe').addEventListener('click',()=>{
       overlay.remove();
       adjustTrust(+20);
-      showSimonJournal("Je te crois.\nJe ne sais pas ce que ça change.\nMais je te crois.");
+      
       setTimeout(()=>showMDWLine("Je sais. C'est pourquoi je vous le dis maintenant.\nPas avant.",true),5000);
-      setTimeout(()=>showSimonJournal("Pourquoi pas avant ?\n...\nNon. Laisse tomber.\nJe sais pourquoi."),12000);
+      
       logEvent('SIMON — JE TE CROIS','planet');
     },{once:true});
 
     document.getElementById('rev-deny').addEventListener('click',()=>{
       overlay.remove();
       adjustTrust(-15);
-      showSimonJournal("Ce n'est pas possible.\nTu mens. Ou tu te trompes.\nL'un ou l'autre.");
+      
       setTimeout(()=>showMDWLine("Comme vous voulez.",true),4000);
-      setTimeout(()=>showSimonJournal("Comme je veux.\n...\nMDW ne revient jamais sur quelque chose une fois qu'il l'a dit.\nJe sais ça."),10000);
+      
       logEvent('SIMON — REFUS','danger');
     },{once:true});
   },36000);
@@ -7024,7 +6997,7 @@ function drainSanity(){
   if(sanity<45)triggerChromAber(4,0.3);
   if(sanity<35){
     triggerFlash('#aa77ff',0.2);
-    setTimeout(()=>showSimonJournal("Je me souviens de ce secteur.\nJe n'y suis jamais venu."),2000);
+    setTimeout(()=>showMDWLine("Secteur connu dans mes archives. Coordonnées identiques à l'expédition précédente.", true),2000);
   }
   if(sanity<25)setTimeout(()=>spawnGhostShip(),2000);
 
@@ -7868,7 +7841,7 @@ function updateVoyageur(dt){
       // MDW se tait — rare
       setTimeout(()=>mdwSpeak_voice('...'),3000);
     }
-    setTimeout(()=>showSimonJournal("Il y a quelque chose là-bas.\nImmense.\nQui se déplace.\nMDW ne dit rien."),2000);
+    setTimeout(()=>showMDWLine("Masse mobile détectée. Classification impossible. Distance : inconnue.", true),2000);
   }
   if(voyageur.life<=0)voyageur=null;
 }
@@ -8037,31 +8010,31 @@ function triggerSectorNameJournal(){
   const sequences=[
     // Gravité forte
     ()=>{
-      showSimonJournal("La gravité ici est... différente.\nLe cap est difficile à tenir.");
+      
       setTimeout(()=>showMDWLine("Je suis connecté au système de pilotage. Je compense.",true),5000);
-      setTimeout(()=>showSimonJournal("Bien. On tient.\nQuittons "+name+"."),12000);
+      
     },
     // Silence étrange
     ()=>{
-      showSimonJournal("Quelque chose cloche ici.\nTrop calme.");
+      
       setTimeout(()=>showMDWLine("Je suggère de chercher un trou de ver.",true),5000);
-      setTimeout(()=>showSimonJournal("D'accord.\nPartis de "+name+"."),11000);
+      
     },
     // Phénomène visuel
     ()=>{
-      showSimonJournal("Tu vois ça MDW ?");
+      
       setTimeout(()=>showMDWLine("Je vois. Je ne sais pas ce que c'est.",true),4000);
-      setTimeout(()=>showSimonJournal("Moi non plus.\nJe note "+name+".\nPour me souvenir."),10000);
+      
     },
     // Dérive
     ()=>{
-      showSimonJournal("On dérive.\nMDW, le cap ?");
+      
       setTimeout(()=>showMDWLine("Cap maintenu. Secteur stable.",true),4000);
-      setTimeout(()=>showSimonJournal("Bien.\n"+name+". C'est ce que ça ressemble."),9000);
+      
     },
     // Court — juste Simon qui note
     ()=>{
-      setTimeout(()=>showSimonJournal(name+".\nC'est le nom que je donne à cet endroit.\nMDW ne dit rien."),5000);
+      
     },
   ];
   // Choisir une séquence selon le sectorCount pour varier
@@ -8097,7 +8070,7 @@ function updateGhostSignal(dt){
     if(ghostSignal.moves===1&&mdwActive)
       setTimeout(()=>mdwSpeak_voice("Je ne détecte rien. Pourtant le signal existe."),500);
     if(ghostSignal.moves>=4){
-      setTimeout(()=>showSimonJournal("Le signal a disparu.\nMDW dit qu'il n'a jamais existé.\nJe l'ai vu."),2000);
+      setTimeout(()=>showMDWLine("Signal perdu. Aucune trace dans les logs. Origine indéterminée.", true),2000);
       ghostSignal=null;return;
     }
   }
@@ -10238,7 +10211,7 @@ function updateResumeBtn(){
             _resumeCooldown=5; // 5s avant que les échanges reprennent
             // Message de reprise via la file
             setTimeout(()=>{
-              showSimonJournal('Jour '+survivalDay+'.\nLà où je m\'étais arrêté.');
+              
             },1500);
           }
         });
