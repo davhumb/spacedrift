@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -243,7 +244,7 @@
   </div>
   <div id="boost-bar">
     <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
-      <button id="brake-btn" style="background:rgba(0,9,2,0.8);border:1px solid rgba(0,255,65,0.35);color:rgba(0,255,65,0.75);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 14px;cursor:pointer;letter-spacing:2px;-webkit-tap-highlight-color:transparent;">⏹ FREIN</button>
+      <button id="brake-btn" style="background:rgba(0,9,2,0.8);border:1px solid rgba(0,255,65,0.35);color:rgba(0,255,65,0.75);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 14px;cursor:pointer;letter-spacing:2px;-webkit-tap-highlight-color:transparent;">▼ ARRIÈRE</button>
       <button class="b-btn" id="boost-charge" onclick="if(upgrades&&upgrades.boost>0)triggerEmergencyBoost()" style="display:none;">⚡ BOOST</button>
     </div>
   </div>
@@ -443,7 +444,7 @@ const RELIC_TYPES=[
   {name:'CRISTAL DE MÉMOIRE',   color:'#80ffff', icon:'💎',
    mdw:"Cristal de mémoire. Je peux le lire. Partiellement.",
    text:"Données corrompues : fragments d'une carte. Secteur inconnu. Coordonnées : NULL. Remarque : ce cristal a été manufacturé dans le futur.",
-   effect:()=>{upgradePoints+=80;logEvent('💎 RELIQUE +80 PTS','planet');}},
+   effect:()=>{upgradePoints+=25;logEvent('💎 RELIQUE +25 PTS','planet');}},
   {name:'BALISE TEMPORELLE',    color:'#ffff40', icon:'⏱',
    mdw:"Balise temporelle. Théoriquement impossible.",
    text:"Fréquence : 440 Hz. Émission : continue depuis 12 000 ans. Destinataire : INCONNU. Message : 'N\'OUBLIE PAS.'",
@@ -455,7 +456,7 @@ const RELIC_TYPES=[
   {name:'SPHÈRE DE NAVIGATION', color:'#ff80ff', icon:'🔮',
    mdw:"Sphère de navigation organique. Elle pointe vers quelque chose.",
    text:"Direction : constante depuis activation. Distance estimée : 4 secteurs. Nature de la cible : inconnue. La sphère vibre quand on s'approche d'un trou de ver.",
-   effect:()=>{upgradePoints+=150;logEvent('🔮 SPHÈRE DE NAVIGATION +150 PTS','planet');}},
+   effect:()=>{upgradePoints+=50;logEvent('🔮 SPHÈRE DE NAVIGATION +50 PTS','planet');}},
 ];
 
 let spawnedRelics=0;
@@ -493,16 +494,16 @@ function spawnRelic(){
 
 // ── Contrats de run ───────────────────────────
 const CONTRACT_POOL=[
-  {text:'EXPLORER 3 PLANÈTES',       reward:150, check:()=>discoveredPlanets>=3},
-  {text:'SURVIVRE 7 JOURS',          reward:200, check:()=>survivalDay>=7},
-  {text:'TRAVERSER UN TROU DE VER',  reward:300, check:()=>sectorCount>=1},
+  {text:'EXPLORER 3 PLANÈTES',       reward:50, check:()=>discoveredPlanets>=3},
+  {text:'SURVIVRE 7 JOURS',          reward:66, check:()=>survivalDay>=7},
+  {text:'TRAVERSER UN TROU DE VER',  reward:100, check:()=>sectorCount>=1},
   // mission capsules virée
-  {text:'DÉTRUIRE 5 ENNEMIS',        reward:250, check:()=>false}, // suivi via killCount
-  {text:'TROUVER UNE ÉPAVE',         reward:100, check:()=>wrecksFound>=1},
-  {text:'TROUVER UNE RELIQUE',       reward:200, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&cosmodexEntries.some(e=>e.type==='relic')},
-  {text:'SURVIVRE 15 JOURS',         reward:400, check:()=>survivalDay>=15},
-  {text:'DÉCOUVRIR 5 PLANÈTES',      reward:250, check:()=>discoveredPlanets>=5},
-  {text:'ATTEINDRE LE SIGNAL',       reward:500, check:()=>signalReached},
+  {text:'DÉTRUIRE 5 ENNEMIS',        reward:83, check:()=>false}, // suivi via killCount
+  {text:'TROUVER UNE ÉPAVE',         reward:33, check:()=>wrecksFound>=1},
+  {text:'TROUVER UNE RELIQUE',       reward:66, check:()=>capsules.filter(c=>c.isRelic&&c.collected).length>=1||spawnedRelics>0&&cosmodexEntries.some(e=>e.type==='relic')},
+  {text:'SURVIVRE 15 JOURS',         reward:133, check:()=>survivalDay>=15},
+  {text:'DÉCOUVRIR 5 PLANÈTES',      reward:83, check:()=>discoveredPlanets>=5},
+  {text:'ATTEINDRE LE SIGNAL',       reward:166, check:()=>signalReached},
 ];
 
 let activeContracts=[];
@@ -549,15 +550,15 @@ let dockedPlanet=null,dockTimer=0,dockProgress=0;
 const DOCK_SPEED=12,DOCK_DURATION=2;
 
 const PLANET_RESOURCES={
-  'ROCHEUSE':   {label:'MINÉRAUX',    color:'#aaaaaa', credits:40,  effect:()=>{hull=Math.min(100,hull+35);energy=Math.min(100,energy+15);logEvent('🪨 +35 HULL +15 NRJ','ok');}},
-  'GAZEUSE':    {label:'HYDROGÈNE',   color:'#80aaff', credits:50,  effect:()=>{propellant=Math.min(maxPropellant,propellant+80);energy=Math.min(100,energy+20);logEvent('💨 +80 PROP +20 NRJ','ok');}},
-  'GLACÉE':     {label:'GLACE CO₂',   color:'#aaeeff', credits:45,  effect:()=>{oxygen=Math.min(maxOxygen,oxygen+60);logEvent('🧊 +60 O₂','ok');}},
-  'OCÉAN':      {label:'EAU',         color:'#4488ff', credits:55,  effect:()=>{oxygen=Math.min(maxOxygen,oxygen+45);propellant=Math.min(maxPropellant,propellant+40);logEvent('🌊 +45 O₂ +40 PROP','ok');}},
-  'BRÛLANTE':   {label:'TROP CHAUD',  color:'#ff4400', credits:20,  effect:()=>{hull=Math.max(0,hull-15);energy=Math.min(100,energy+30);logEvent('🔥 -15 HULL +30 NRJ','danger');}},
-  'VIOLETTE':   {label:'CRISTAUX',    color:'#cc88ff', credits:150, effect:()=>{upgradePoints+=150;logEvent('💜 +150 CRÉDITS','planet');}},
-  'DÉSERTIQUE': {label:'SILICATES',   color:'#ddaa66', credits:35,  effect:()=>{hull=Math.min(100,hull+20);energy=Math.min(100,energy+25);logEvent('🏜 +20 HULL +25 NRJ','ok');}},
-  'ROGUE':      {label:'ARTEFACT',    color:'#40ff80', credits:200, effect:()=>{
-    upgradePoints+=200;logEvent('⬛ +200 CRÉDITS','planet');
+  'ROCHEUSE':   {label:'MINÉRAUX',    color:'#aaaaaa', credits:12,  effect:()=>{hull=Math.min(100,hull+35);energy=Math.min(100,energy+15);logEvent('🪨 +35 HULL +15 NRJ','ok');}},
+  'GAZEUSE':    {label:'HYDROGÈNE',   color:'#80aaff', credits:15,  effect:()=>{propellant=Math.min(maxPropellant,propellant+80);energy=Math.min(100,energy+20);logEvent('💨 +80 PROP +20 NRJ','ok');}},
+  'GLACÉE':     {label:'GLACE CO₂',   color:'#aaeeff', credits:14,  effect:()=>{oxygen=Math.min(maxOxygen,oxygen+60);logEvent('🧊 +60 O₂','ok');}},
+  'OCÉAN':      {label:'EAU',         color:'#4488ff', credits:18,  effect:()=>{oxygen=Math.min(maxOxygen,oxygen+45);propellant=Math.min(maxPropellant,propellant+40);logEvent('🌊 +45 O₂ +40 PROP','ok');}},
+  'BRÛLANTE':   {label:'TROP CHAUD',  color:'#ff4400', credits:8,  effect:()=>{hull=Math.max(0,hull-15);energy=Math.min(100,energy+30);logEvent('🔥 -15 HULL +30 NRJ','danger');}},
+  'VIOLETTE':   {label:'CRISTAUX',    color:'#cc88ff', credits:50, effect:()=>{upgradePoints+=50;logEvent('💜 +50 CRÉDITS','planet');}},
+  'DÉSERTIQUE': {label:'SILICATES',   color:'#ddaa66', credits:12,  effect:()=>{hull=Math.min(100,hull+20);energy=Math.min(100,energy+25);logEvent('🏜 +20 HULL +25 NRJ','ok');}},
+  'ROGUE':      {label:'ARTEFACT',    color:'#40ff80', credits:80, effect:()=>{
+    upgradePoints+=60;logEvent('⬛ +60 CRÉDITS','planet');
   }},
 };
 
@@ -667,7 +668,14 @@ function updateBreathing(){
 // ── Boost d'urgence ───────────────────────────
 let boostCooldown=0,boostActive=false,boostTimer=0;
 let brakeActive=false;
-function applyBrake(dt){if(!brakeActive)return;ship.vx*=Math.pow(0.82,dt*60);ship.vy*=Math.pow(0.82,dt*60);}
+function applyBrake(dt){
+  if(!brakeActive)return;
+  // Marche arrière — poussée opposée au nez
+  const thrustForce=THRUST_FORCE*(installedModules.includes('thruster')?1.4:1)*0.8;
+  ship.vx-=Math.cos(ship.angle)*thrustForce*dt*60;
+  ship.vy-=Math.sin(ship.angle)*thrustForce*dt*60;
+  if(propellant>0)propellant=Math.max(0,propellant-PROPELLANT_THRUST_COST*0.6*dt);
+}
 
 const SUPA_URL='https://kidgnukneivaagimspjc.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpZGdudWtuZWl2YWFnaW1zcGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MzE3NzYsImV4cCI6MjA5NjQwNzc3Nn0.dXLi_CjSexQSIzWxThQS9zp4UeJ05OpNxMr2YLuWck8';
@@ -1672,14 +1680,14 @@ function drawTradePosts(){
 
 // ── Missions ──────────────────────────────────
 const MISSION_POOL=[
-  {text:'SURVIVRE 2 JOURS',     check:()=>survivalDay>=currentMission.startDay+2, reward:80},
+  {text:'SURVIVRE 2 JOURS',     check:()=>survivalDay>=currentMission.startDay+2, reward:26},
   // mission capsules virée
-  {text:'ÉVITER 10 DÉBRIS',     check:()=>missionCounter>=10,                      reward:120, counter:true},
-  {text:'DÉCOUVRIR UNE PLANÈTE',check:()=>missionCounter>=1,                       reward:150, counter:true},
-  {text:'ATTEINDRE 2000 PTS',   check:()=>score>=currentMission.targetScore,       reward:90},
-  {text:'COMBO ×5',             check:()=>missionCounter>=1,                       reward:110, counter:true},
-  {text:'SURVIVRE 3 JOURS',     check:()=>survivalDay>=currentMission.startDay+3,  reward:130},
-  {text:'COLLECTER 3 ÉNERGIE',  check:()=>missionCounter>=3,                       reward:100, counter:true},
+  {text:'ÉVITER 10 DÉBRIS',     check:()=>missionCounter>=10,                      reward:40, counter:true},
+  {text:'DÉCOUVRIR UNE PLANÈTE',check:()=>missionCounter>=1,                       reward:50, counter:true},
+  {text:'ATTEINDRE 2000 PTS',   check:()=>score>=currentMission.targetScore,       reward:30},
+  {text:'COMBO ×5',             check:()=>missionCounter>=1,                       reward:36, counter:true},
+  {text:'SURVIVRE 3 JOURS',     check:()=>survivalDay>=currentMission.startDay+3,  reward:43},
+  {text:'COLLECTER 3 ÉNERGIE',  check:()=>missionCounter>=3,                       reward:33, counter:true},
 ];
 let currentMission=null,missionCounter=0,missionDone=false;
 let debrisAvoided=0; // compteur global pour les missions
@@ -2320,7 +2328,7 @@ const UNIVERSES=[
            sanity=Math.min(100,sanity+40);
            oxygen=Math.min(maxOxygen,oxygen+50);
            hull=Math.min(100,hull+30);
-           upgradePoints+=250;
+           upgradePoints+=80;
            logEvent('🌍 LE FOYER — +SANITY +O₂ +HULL','planet');
            
          },
@@ -3293,7 +3301,7 @@ const PLANET_TYPES=[
    onApproach:(p)=>{
      if(mdwActive)setTimeout(()=>mdwSpeak_voice("Masse considérable. Attention à la gravité."),1000);
    },
-   effect:()=>{oxygen=Math.min(maxOxygen,oxygen+80);propellant=Math.min(maxPropellant,propellant+80);hull=Math.min(100,hull+40);upgradePoints+=120;logEvent('🟠 GÉANTE — RESSOURCES MASSIVES','planet');}},
+   effect:()=>{oxygen=Math.min(maxOxygen,oxygen+80);propellant=Math.min(maxPropellant,propellant+80);hull=Math.min(100,hull+40);upgradePoints+=35;logEvent('🟠 GÉANTE — RESSOURCES MASSIVES','planet');}},
 
   {name:'MORTE',     massKey:'planet_rocheuse', color:'#44444450',glowColor:'#666666',ring:false,
    rare:true,
@@ -3310,7 +3318,7 @@ const PLANET_TYPES=[
          journalText.textContent='';journalText.style.color='rgba(0,255,65,0.6)';
        }
      },1000);
-     hull=Math.min(100,hull+50);upgradePoints+=180;logEvent('⬛ PLANÈTE MORTE — +180 CRÉDITS','planet');}},
+     hull=Math.min(100,hull+50);upgradePoints+=55;logEvent('⬛ PLANÈTE MORTE — +55 CRÉDITS','planet');}},
 
   {name:'MIROIR',    massKey:'planet_violette', color:'#ffffff20',glowColor:'#ccddff',ring:false,
    rare:true,
@@ -3318,7 +3326,7 @@ const PLANET_TYPES=[
      if(mdwActive)setTimeout(()=>mdwSpeak_voice("Je ne comprends pas ce que je mesure. La surface renvoie tout."),2000);
      triggerChromAber(2,0.5);
    },
-   effect:()=>{sanity=Math.min(100,sanity+25);upgradePoints+=140;logEvent('🪞 MIROIR — +140 CRÉDITS','planet');}},
+   effect:()=>{sanity=Math.min(100,sanity+25);upgradePoints+=45;logEvent('🪞 MIROIR — +45 CRÉDITS','planet');}},
 
   {name:'VIVANTE',   massKey:'planet_glacee',   color:'#20ff6050',glowColor:'#20ff60',ring:false,
    rare:true,
@@ -3344,14 +3352,14 @@ const PLANET_TYPES=[
        }
      },3000);
    },
-   effect:()=>{sanity=Math.min(100,sanity+30);upgradePoints+=200;logEvent('🟢 VIVANTE — +200 CRÉDITS','planet');}},
+   effect:()=>{sanity=Math.min(100,sanity+30);upgradePoints+=60;logEvent('🟢 VIVANTE — +60 CRÉDITS','planet');}},
 
   {name:'BRISÉE',    massKey:'planet_rocheuse', color:'#aa660050',glowColor:'#aa6600',ring:false,
    rare:true, broken:true,
    onApproach:(p)=>{
      if(mdwActive)setTimeout(()=>mdwSpeak_voice("Planète fragmentée. Les débris orbitent encore autour du centre de masse."),1500);
    },
-   effect:()=>{hull=Math.min(100,hull+60);upgradePoints+=160;logEvent('💥 BRISÉE — MINERAIS DENSES +160 CRÉDITS','planet');}},
+   effect:()=>{hull=Math.min(100,hull+60);upgradePoints+=50;logEvent('💥 BRISÉE — MINERAIS DENSES +50 CRÉDITS','planet');}},
 ];
 
 // ── Noms de planètes SF ───────────────────────
@@ -6775,7 +6783,7 @@ const MDW_WARNINGS=[
    obeyLine:"Je m'éloigne.",disobeyLine:"Je veux voir.",
    obeyEffect:()=>adjustTrust(+5),
    disobeyEffect:()=>{
-     adjustTrust(-15);upgradePoints+=300;
+     adjustTrust(-15);upgradePoints+=80;
      setTimeout(()=>showMDWLine("Approche confirmée. Anomalie visuelle non répertoriée.", true),2000);
      setTimeout(()=>showMDWLine("Vous êtes encore en vie. C'est... bien.",true),6000);
    }},
@@ -7105,7 +7113,7 @@ function triggerFinA(){
         clearInterval(fi);
         finAActive=false;
         saveToLeaderboard(discoveredPlanets,survivalDay,sectorCount);
-        const earned=Math.floor(survivalDay*15+discoveredPlanets*25+(score/80));
+        const earned=Math.floor(survivalDay*4+discoveredPlanets*8+(score/300));
         upgradePoints+=earned;
         totalRuns=(totalRuns||0)+1;
         saveGame();
@@ -7277,7 +7285,7 @@ function triggerFinB(){
         viewZoom=1;
         // Noir 4 secondes puis scores
         setTimeout(()=>{
-          const earned=Math.floor(survivalDay*15+discoveredPlanets*25+cosmodexEntries.length*10+(score/80));
+          const earned=Math.floor(survivalDay*4+discoveredPlanets*8+cosmodexEntries.length*2+(score/300));
           upgradePoints+=earned;
           hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
           totalRuns=(totalRuns||0)+1;
@@ -7582,7 +7590,7 @@ function updateGodFlare(dt){
     godFlareActive=false;
     ship._spinRate=0;
     // Retour au début — nouvelle run
-    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+cosmodexEntries.length*10+(score/80));
+    const earned=Math.floor(survivalDay*4+discoveredPlanets*8+cosmodexEntries.length*2+(score/300));
     upgradePoints+=earned;
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
     totalRuns=(totalRuns||0)+1;
@@ -8408,7 +8416,7 @@ function showGameOver(){
   setTimeout(updateResumeBtn,500);
   const dc=DIFF_CONFIG[selectedDiff];
   hiScores[selectedDiff]=Math.max(hiScores[selectedDiff],score);
-  const earned=Math.floor(survivalDay*10+discoveredPlanets*20+(score/100));
+  const earned=Math.floor(survivalDay*4+discoveredPlanets*8+(score/300));
   upgradePoints+=earned;
   const modList=installedModules.map(k=>(SHIP_MODULES[k]&&SHIP_MODULES[k].name)||k).join(' · ');
   saveGame();
@@ -10619,7 +10627,7 @@ document.getElementById('home-btn').addEventListener('click',()=>{
   if(state!=='playing'&&state!=='trade')return;
   if(confirm('Retourner à l\'accueil ? La partie sera sauvegardée.')){
     saveRun(); // sauvegarder avant de partir
-    const earned=Math.floor(survivalDay*15+discoveredPlanets*25+(score/80));
+    const earned=Math.floor(survivalDay*4+discoveredPlanets*8+(score/300));
     upgradePoints+=earned;
     hiScores[selectedDiff]=Math.max(hiScores[selectedDiff]||0,score);
     totalRuns=(totalRuns||0)+1;
