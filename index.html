@@ -2411,12 +2411,17 @@ function updateWormhole(dt){
     }
     initStars();
     initMolecularClouds();
-    // Persistance — reset environnement seulement, pas les ressources
+    // Reset complet — nouveau secteur = nouvelle carte
     signalActive=false;signalPos=null;signalReached=false;
-    planets=[];wrecks=[];phenomena=[];comets=[];enemies=[];
+    planets=[];wrecks=[];phenomena=[];comets=[];enemies=[];debris=[];
+    capsules=capsules.filter(c=>c.isRelic&&!c.collected); // garder reliques non collectées
     window._gravFieldsStatic=[];
-    secondaryWormholes=[];gravWaves=[];darkMatterZones=[];
-    ship.vx*=0.4;ship.vy*=0.4;
+    secondaryWormholes=[];gravWaves=[];darkMatterZones=[];usedPlanetNames?.clear();
+    // Téléporter le vaisseau — vrai changement de carte
+    const exitAngle2=Math.random()*Math.PI*2;
+    ship.x=Math.cos(exitAngle2)*200;ship.y=Math.sin(exitAngle2)*200;
+    ship.vx*=0.3;ship.vy*=0.3;
+    camX=ship.x;camY=ship.y;
     for(let i=0;i<2;i++)spawnPlanet();
     // Épave garantie dans le nouveau secteur aussi
     const a=Math.random()*Math.PI*2;
